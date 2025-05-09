@@ -173,7 +173,14 @@
       <!-- Handelsaktionen -->
       <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700">
         <h3 class="text-lg font-pixel text-primary-light dark:text-primary-dark mb-4">TRADE AUSFÜHREN</h3>
-        <form class="space-y-4">
+        
+        <div class="mb-2">
+            <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">DEIN GUTHABEN: 
+                <span id="user-balance" class="text-primary-light dark:text-primary-dark font-bold">$0.00</span>
+            </p>
+        </div>
+
+        <form id="trade-form" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label for="quantity" class="block text-xs font-pixel text-gray-700 dark:text-gray-300 mb-1">MENGE:</label>
@@ -203,11 +210,11 @@
           </div>
           
           <div class="flex space-x-4 pt-2">
-            <button type="submit" name="action" value="buy"
+            <button type="button" id="buy-button"
                     class="flex-1 py-3 px-4 bg-game-green border-b-4 border-green-700 text-white font-pixel text-sm rounded hover:bg-green-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
               KAUFEN
             </button>
-            <button type="submit" name="action" value="sell"
+            <button type="button" id="sell-button"
                     class="flex-1 py-3 px-4 bg-game-red border-b-4 border-red-700 text-white font-pixel text-sm rounded hover:bg-red-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
               VERKAUFEN
             </button>
@@ -247,11 +254,13 @@
     let currentSymbol = 'SPY';
     let currentTimeframe = '3M';
     let chart = null;
+    let currentStockPrice = 0;
     
     // Initialize the page
     function initializePage() {
       // Set up chart
       setupChart();
+      loadUserBalance(); // Load user balance on page load
       
       // Set up event listeners for stock items
       document.querySelectorAll('.stock-item').forEach(item => {
@@ -261,8 +270,9 @@
           const price = this.getAttribute('data-price');
           const change = this.getAttribute('data-change');
           
-          // Update current symbol
+          // Update current symbol and price
           currentSymbol = symbol;
+          currentStockPrice = parseFloat(price); // Store current price
           
           // Update stock info in UI
           document.getElementById('stock-name').textContent = `${name} (${symbol})`;
@@ -310,15 +320,31 @@
       // Set up event listeners for quantity input
       document.getElementById('quantity').addEventListener('input', updateTotalPrice);
       
+      // Setup trade buttons
+      document.getElementById('buy-button').addEventListener('click', () => handleTrade('buy'));
+      document.getElementById('sell-button').addEventListener('click', () => handleTrade('sell'));
+
       // Select first stock item by default
       document.querySelector('.stock-item').click();
     }
     
     // Update total price based on quantity and current price
     function updateTotalPrice() {
-      const quantity = parseFloat(document.getElementById('quantity').value);
-      const price = parseFloat(document.getElementById('current-price').textContent.replace('$', ''));
-      const total = quantity * price;
+      const quantityInput = document.getElementById('quantity');
+      let quantity = parseFloat(quantityInput.value);
+
+      if (isNaN(quantity) || quantity < 0) {
+        quantity = 0; 
+      }
+      // Ensure currentStockPrice is up-to-date from the selected stock or API
+      const priceText = document.getElementById('current-price').textContent.replace('$', '');
+      const price = parseFloat(priceText);
+      
+      if (!isNaN(price)) {
+        currentStockPrice = price; // Update global currentStockPrice if needed
+      }
+
+      const total = quantity * currentStockPrice;
       
       document.getElementById('total-price').textContent = `$${total.toFixed(2)}`;
       
@@ -456,6 +482,10 @@
           // Update stock stats
           if (data.length > 0) {
             const lastDataPoint = data[data.length - 1];
+            currentStockPrice = parseFloat(lastDataPoint.close); // Update current stock price
+            document.getElementById('current-price').textContent = `$${currentStockPrice.toFixed(2)}`;
+            updateTotalPrice(); // Recalculate total with new price
+
             document.getElementById('stock-high').textContent = `$${parseFloat(lastDataPoint.high).toFixed(2)}`;
             document.getElementById('stock-low').textContent = `$${parseFloat(lastDataPoint.low).toFixed(2)}`;
             document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
@@ -494,6 +524,10 @@
       
       // Update stats with demo data
       const lastData = demoData[demoData.length - 1];
+      currentStockPrice = parseFloat(lastData.y[3]); // Update current stock price from demo
+      document.getElementById('current-price').textContent = `$${currentStockPrice.toFixed(2)}`;
+      updateTotalPrice(); // Recalculate total with new price
+
       document.getElementById('stock-high').textContent = `$${Math.max(...lastData.y).toFixed(2)}`;
       document.getElementById('stock-low').textContent = `$${Math.min(...lastData.y).toFixed(2)}`;
       document.getElementById('stock-volume').textContent = formatNumber(Math.floor(Math.random() * 10000000 + 500000));
@@ -577,7 +611,7 @@
     // Demo data generator
     function generateCandlestickData(days = 30, startPrice = 100) {
       const data = [];
-      let currentPrice = startPrice;
+      let price = startPrice; // Use local variable 'price' to avoid conflict
       
       const today = new Date();
       
@@ -590,7 +624,7 @@
         const changePercent = (Math.random() * volatility * 2) - volatility;
         
         // Calculate OHLC values
-        const open = currentPrice;
+        const open = price;
         const close = open * (1 + changePercent);
         const high = Math.max(open, close) * (1 + Math.random() * 0.01);
         const low = Math.min(open, close) * (1 - Math.random() * 0.01);
@@ -600,10 +634,72 @@
           y: [open.toFixed(2), high.toFixed(2), low.toFixed(2), close.toFixed(2)]
         });
         
-        currentPrice = close;
+        price = close; // Update local price for next iteration
       }
       
       return data;
+    }
+
+    // Function to load user balance
+    function loadUserBalance() {
+        fetch('/api/portfolio')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.balance !== null) {
+                    document.getElementById('user-balance').textContent = `$${parseFloat(data.balance).toFixed(2)}`;
+                } else if (data.message) {
+                    console.error("Error fetching balance: ", data.message);
+                    document.getElementById('user-balance').textContent = 'N/A';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching user balance:', error);
+                document.getElementById('user-balance').textContent = 'Fehler';
+            });
+    }
+
+    // Function to handle trade execution
+    function handleTrade(action) {
+        const quantity = parseFloat(document.getElementById('quantity').value);
+        // Ensure currentStockPrice is the most up-to-date price for the selected stock
+        const priceString = document.getElementById('current-price').textContent.replace('$', '');
+        const price = parseFloat(priceString);
+
+        if (isNaN(quantity) || quantity <= 0) {
+            alert('Bitte geben Sie eine gültige Menge ein.');
+            return;
+        }
+        if (isNaN(price) || price <= 0) {
+            alert('Aktueller Aktienkurs konnte nicht ermittelt werden.');
+            return;
+        }
+
+        const tradeData = {
+            symbol: currentSymbol,
+            quantity: quantity,
+            price: price 
+        };
+
+        fetch(`/api/trade/${action}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Include CSRF token if your app uses them
+            },
+            body: JSON.stringify(tradeData)
+        })
+        .then(response => response.json())
+        .then(result => {
+            alert(result.message); // Simple feedback
+            if (result.success) {
+                loadUserBalance(); // Refresh balance after successful trade
+                // Optionally, refresh portfolio holdings if displayed on this page
+            }
+        })
+        .catch(error => {
+            console.error('Trade error:', error);
+            alert('Ein Fehler ist während der Transaktion aufgetreten.');
+        });
     }
     
     // Filter stocks by search input

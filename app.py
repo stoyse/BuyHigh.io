@@ -7,12 +7,14 @@ import json
 import db_handler
 import auth
 import stock_data
+import transactions_handler # Importiere den Transaction Handler
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24) # Replace with a strong, static secret key in production
 
 # Initialize database
 db_handler.init_db()
+transactions_handler.init_asset_types() # Stelle sicher, dass Asset-Typen initialisiert werden
 
 # Decorator for routes that require login
 def login_required(view):
@@ -41,9 +43,20 @@ def index():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Determine if dark mode should be active based on user's theme preference
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
-    return render_template('dashboard.html', user=g.user, darkmode=dark_mode_active)
+    
+    portfolio_data = transactions_handler.show_user_portfolio(g.user['id'])
+    recent_transactions_data = transactions_handler.get_recent_transactions(g.user['id'])
+
+    # Stelle sicher, dass g.user.balance aktuell ist, falls es Abweichungen gibt
+    # Normalerweise sollte g.user.balance durch den load_logged_in_user Hook aktuell sein.
+    # Das portfolio_data['balance'] ist eine gute Referenz aus der users Tabelle.
+    
+    return render_template('dashboard.html', 
+                           user=g.user, 
+                           darkmode=dark_mode_active,
+                           portfolio_data=portfolio_data,
+                           recent_transactions=recent_transactions_data.get('transactions', []))
 
 @app.route('/trade')
 @login_required
@@ -51,6 +64,114 @@ def trade():
     # Determine if dark mode should be active based on user's theme preference
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     return render_template('trade.html', user=g.user, darkmode=dark_mode_active)
+
+
+@app.route('/api/stock-data')
+@login_required
+def api_stock_data():
+    symbol = request.args.get('symbol', 'AAPL')
+    timeframe = request.args.get('timeframe', '3M')
+    
+    # Calculate date range based on timeframe
+    end_date = datetime.now().strftime('%Y-%m-%d')
+    days = 90  # Default to 3 months
+    
+    if timeframe == '1W':
+        days = 7
+    elif timeframe == '1M':
+        days = 30
+    elif timeframe == '3M':
+        days = 90
+    elif timeframe == '6M':
+        days = 180
+    elif timeframe == '1Y':
+        days = 365
+    elif timeframe == 'ALL':
+        days = 1825  # 5 years
+    
+    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+    
+    try:
+        # Get real stock data
+        df = stock_data.get_stock_data(symbol, start_date, end_date)
+        
+        # If no data found, try demo data
+        if df.empty:
+            df = stock_data.get_demo_stock_data(symbol, days)
+        
+        # Convert to list of dictionaries for JSON response
+        data = []
+        for index, row in df.iterrows():
+            data.append({
+                'date': index.strftime('%Y-%m-%d'),
+                'open': float(row['Open']),
+                'high': float(row['High']),
+                'low': float(row['Low']),
+                'close': float(row['Close']),
+                'volume': int(row['Volume'])
+            })
+        
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/trade/<symbol>/')
+@login_required
+def api_stock_data_symbol(symbol):
+    pass
+
+@app.route('/api/trade/buy', methods=['POST'])
+@login_required
+def api_buy_stock():
+    data = request.get_json()
+    symbol = data.get('symbol')
+    quantity = data.get('quantity')
+    price = data.get('price')
+
+    if not all([symbol, quantity, price]):
+        return jsonify({"success": False, "message": "Missing data for transaction."}), 400
+
+    try:
+        quantity = float(quantity)
+        price = float(price)
+        if quantity <= 0 or price <= 0:
+            raise ValueError("Quantity and price must be positive.")
+    except ValueError as e:
+        return jsonify({"success": False, "message": f"Invalid input: {e}"}), 400
+
+    user_id = g.user['id']
+    result = transactions_handler.buy_stock(user_id, symbol, quantity, price)
+    return jsonify(result)
+
+@app.route('/api/trade/sell', methods=['POST'])
+@login_required
+def api_sell_stock():
+    data = request.get_json()
+    symbol = data.get('symbol')
+    quantity = data.get('quantity')
+    price = data.get('price')
+
+    if not all([symbol, quantity, price]):
+        return jsonify({"success": False, "message": "Missing data for transaction."}), 400
+
+    try:
+        quantity = float(quantity)
+        price = float(price)
+        if quantity <= 0 or price <= 0:
+            raise ValueError("Quantity and price must be positive.")
+    except ValueError as e:
+        return jsonify({"success": False, "message": f"Invalid input: {e}"}), 400
+        
+    user_id = g.user['id']
+    result = transactions_handler.sell_stock(user_id, symbol, quantity, price)
+    return jsonify(result)
+
+@app.route('/api/portfolio', methods=['GET'])
+@login_required
+def api_get_portfolio():
+    user_id = g.user['id']
+    portfolio_data = transactions_handler.show_user_portfolio(user_id)
+    return jsonify(portfolio_data)
 
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
@@ -173,54 +294,7 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
-@app.route('/api/stock-data')
-@login_required
-def api_stock_data():
-    symbol = request.args.get('symbol', 'AAPL')
-    timeframe = request.args.get('timeframe', '3M')
-    
-    # Calculate date range based on timeframe
-    end_date = datetime.now().strftime('%Y-%m-%d')
-    days = 90  # Default to 3 months
-    
-    if timeframe == '1W':
-        days = 7
-    elif timeframe == '1M':
-        days = 30
-    elif timeframe == '3M':
-        days = 90
-    elif timeframe == '6M':
-        days = 180
-    elif timeframe == '1Y':
-        days = 365
-    elif timeframe == 'ALL':
-        days = 1825  # 5 years
-    
-    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-    
-    try:
-        # Get real stock data
-        df = stock_data.get_stock_data(symbol, start_date, end_date)
-        
-        # If no data found, try demo data
-        if df.empty:
-            df = stock_data.get_demo_stock_data(symbol, days)
-        
-        # Convert to list of dictionaries for JSON response
-        data = []
-        for index, row in df.iterrows():
-            data.append({
-                'date': index.strftime('%Y-%m-%d'),
-                'open': float(row['Open']),
-                'high': float(row['High']),
-                'low': float(row['Low']),
-                'close': float(row['Close']),
-                'volume': int(row['Volume'])
-            })
-        
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     # db_handler.py now ensures the 'database' directory exists

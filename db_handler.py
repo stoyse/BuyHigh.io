@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 
 DATABASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database')
-DATABASE_PATH = os.path.join(DATABASE_DIR, 'users.db')
+DATABASE_PATH = os.path.join(DATABASE_DIR, 'database.db')  # Geändert zu database.db
 
 if not os.path.exists(DATABASE_DIR):
     os.makedirs(DATABASE_DIR)
@@ -56,8 +56,32 @@ def init_db():
         profit_loss REAL DEFAULT 0.0
     );
     """)
+    
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS asset_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE
+    );
+    """)
+    
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        asset_type_id INTEGER NOT NULL,
+        asset_symbol TEXT NOT NULL,
+        quantity REAL NOT NULL,
+        price_per_unit REAL NOT NULL,
+        transaction_type TEXT NOT NULL CHECK(transaction_type IN ('buy', 'sell')),
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (asset_type_id) REFERENCES asset_types(id)
+    );
+    """)
+    
     conn.commit()
     conn.close()
+    print("Database initialized with users, asset_types, and transactions tables.")
 
 def add_user(username, email, password_hash):
     conn = get_db_connection()

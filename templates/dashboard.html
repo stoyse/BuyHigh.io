@@ -13,14 +13,16 @@
       <div class="space-y-5">
         <div>
           <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Aktuelles Guthaben:</p>
-          <p class="text-xl font-pixel text-game-green dark:text-game-green mt-2">${{ "%.2f"|format(g.user.balance) }}</p>
+          <p class="text-xl font-pixel text-game-green dark:text-game-green mt-2">
+            ${{ "%.2f"|format(g.user.balance if g.user.balance is not none else 0) }}
+          </p>
         </div>
         <div>
           <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Gesamte Trades:</p>
           <div class="mt-2 flex items-center">
             <p class="text-lg font-pixel text-gray-700 dark:text-gray-300">{{ g.user.total_trades }}</p>
             <div class="ml-4 bg-gray-200 dark:bg-gray-700 h-4 w-full rounded-sm">
-              <div class="bg-game-blue h-4 rounded-sm" style="width: {% if g.user.total_trades > 100 %}100{% else %}{{ g.user.total_trades }}{% endif %}%;"></div>
+              <div class="bg-game-blue h-4 rounded-sm" style="width: '{% if g.user.total_trades > 100 %}100{% else %}{{ g.user.total_trades }}{% endif %}%';"></div>
             </div>
           </div>
           <p class="text-xxs font-pixel text-gray-500 dark:text-gray-500 mt-1">Level Progress</p>
@@ -49,7 +51,7 @@
               <span class="text-sm font-pixel">{{ g.user.pet_energy }}/100</span>
             </div>
             <div class="w-full bg-gray-300 dark:bg-gray-700 rounded-sm h-6 border-2 border-gray-400 dark:border-gray-600">
-              <div class="bg-game-gold h-full rounded-sm" style="width: {{ g.user.pet_energy }}%;"></div>
+              <div class="bg-game-gold h-full rounded-sm" style="width: {{ g.user.pet_energy|default(0) }}%;"></div>
             </div>
           </div>
         </div>
@@ -69,14 +71,32 @@
       </div>
     </div>
 
-    <!-- Portfolio Overview Card (Placeholder) -->
+    <!-- Portfolio Overview Card -->
     <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-6">
       <h2 class="text-lg font-pixel text-game-blue dark:text-game-blue mb-6 text-center">Portfolio</h2>
-      <div class="flex justify-center items-center h-32">
-        <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 text-center">Portfolio-Details kommen bald!</p>
-      </div>
+      {% if portfolio_data and portfolio_data.success and portfolio_data.portfolio %}
+        <div class="space-y-3 max-h-48 overflow-y-auto pr-2">
+          {% for item in portfolio_data.portfolio %}
+            <div class="p-2 border-b-2 border-gray-200 dark:border-gray-700">
+              <div class="flex justify-between items-center">
+                <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">{{ item.symbol }}</p>
+                <p class="font-pixel text-xs text-gray-600 dark:text-gray-400">{{ "%.2f"|format(item.quantity) }} Einheiten</p>
+              </div>
+              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-500">{{ item.type }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% elif portfolio_data and not portfolio_data.success %}
+        <div class="flex justify-center items-center h-32">
+          <p class="text-xs font-pixel text-game-red text-center">Fehler beim Laden des Portfolios:<br>{{ portfolio_data.message }}</p>
+        </div>
+      {% else %}
+        <div class="flex justify-center items-center h-32">
+          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 text-center">Dein Portfolio ist leer.</p>
+        </div>
+      {% endif %}
       <!-- Placeholder for portfolio pixel art -->
-      <div class="mt-4 bg-gray-100 dark:bg-gray-700 h-32 flex items-center justify-center rounded">
+      <div class="mt-4 bg-gray-100 dark:bg-gray-700 h-24 flex items-center justify-center rounded">
         <p class="font-pixel text-sm text-gray-500 dark:text-gray-400">[ PIXEL ART HIER ]</p>
       </div>
     </div>
@@ -93,19 +113,24 @@
       </div>
     </div>
     
-    <!-- Recent Activity Card (Placeholder) -->
+    <!-- Recent Activity Card -->
     <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-red rounded-lg p-6 md:col-span-2 lg:col-span-1">
       <h2 class="text-lg font-pixel text-game-red dark:text-game-red mb-6 text-center">Letzte Aktivitäten</h2>
       <div class="space-y-3 h-40 overflow-y-auto pr-2">
-        <!-- Beispiel für Aktivitäten -->
-        <div class="border-l-4 border-game-green pl-3 py-2">
-          <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">Gekauft: 5 AAPL @ $175.20</p>
-          <p class="text-xxs font-pixel text-gray-500 dark:text-gray-400">25 May 15:30</p>
-        </div>
-        <div class="border-l-4 border-game-red pl-3 py-2">
-          <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">Verkauft: 2 TSLA @ $250.75</p>
-          <p class="text-xxs font-pixel text-gray-500 dark:text-gray-400">24 May 12:15</p>
-        </div>
+        {% if recent_transactions %}
+          {% for tx in recent_transactions %}
+            <div class="border-l-4 {{ 'border-game-green' if tx.transaction_type == 'buy' else 'border-game-red' }} pl-3 py-2">
+              <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">
+                {{ 'Gekauft' if tx.transaction_type == 'buy' else 'Verkauft' }}: {{ "%.0f"|format(tx.quantity) }} {{ tx.asset_symbol }} @ ${{ "%.2f"|format(tx.price_per_unit) }}
+              </p>
+              <p class="text-xxs font-pixel text-gray-500 dark:text-gray-400">
+                {{ tx.timestamp.split(' ')[0] }}
+              </p>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 text-center">Keine kürzlichen Aktivitäten.</p>
+        {% endif %}
       </div>
     </div>
 
