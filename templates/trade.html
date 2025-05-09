@@ -162,6 +162,7 @@
 
       <!-- Timeframe Selection -->
       <div class="mb-6 flex flex-wrap gap-2 justify-center">
+        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="1MIN">1MIN</button>
         <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="1W">1W</button>
         <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="1M">1M</button>
         <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-primary-light dark:bg-primary-dark text-white rounded border-2 border-primary-light dark:border-primary-dark" data-timeframe="3M">3M</button>
@@ -394,6 +395,20 @@
             style: {
               fontSize: '8px',
               fontFamily: '"Press Start 2P", cursive',
+            },
+            formatter: function (value, timestamp, opts) {
+              const currentTf = currentTimeframe;
+              if (currentTf === '1MIN') {
+                return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              } else if (opts && opts.w && opts.w.config.series[0] && opts.w.config.series[0].data && opts.w.config.series[0].data.length > 0) {
+                const first = opts.w.config.series[0].data[0].x;
+                const last = opts.w.config.series[0].data[opts.w.config.series[0].data.length - 1].x;
+                const range = last - first;
+                if (range <= 2 * 24 * 60 * 60 * 1000) {
+                  return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+              }
+              return new Date(timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
             }
           }
         },
@@ -450,7 +465,19 @@
       // Show loading state
       document.getElementById('candlestick-chart').classList.add('opacity-50');
       
-      // Try to fetch real data from API
+      chart.updateOptions({
+        xaxis: {
+          labels: {
+            formatter: function (value, timestamp, opts) {
+              if (timeframe === '1MIN') {
+                return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              }
+              return new Date(timestamp).toLocaleDateString([], { year: '2-digit', month: 'short', day: 'numeric' });
+            }
+          }
+        }
+      });
+
       fetch(`/api/stock-data?symbol=${symbol}&timeframe=${timeframe}`)
         .then(response => {
           if (!response.ok) {
@@ -463,7 +490,6 @@
             throw new Error(data.error);
           }
           
-          // Update chart with real data
           const chartData = data.map(item => ({
             x: new Date(item.date),
             y: [
@@ -479,151 +505,83 @@
             data: chartData
           }]);
           
-          // Update stock stats
           if (data.length > 0) {
             const lastDataPoint = data[data.length - 1];
-            currentStockPrice = parseFloat(lastDataPoint.close); // Update current stock price
+            currentStockPrice = parseFloat(lastDataPoint.close);
             document.getElementById('current-price').textContent = `$${currentStockPrice.toFixed(2)}`;
-            updateTotalPrice(); // Recalculate total with new price
+            updateTotalPrice();
 
             document.getElementById('stock-high').textContent = `$${parseFloat(lastDataPoint.high).toFixed(2)}`;
             document.getElementById('stock-low').textContent = `$${parseFloat(lastDataPoint.low).toFixed(2)}`;
             document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
             
-            // Calculate market cap (simplified for demo)
             const marketCap = calculateMarketCap(symbol, parseFloat(lastDataPoint.close));
             document.getElementById('stock-market-cap').textContent = formatCurrency(marketCap);
           }
           
-          // Remove loading state
           document.getElementById('candlestick-chart').classList.remove('opacity-50');
         })
         .catch(error => {
           console.error('Error fetching stock data:', error);
-          
-          // Fallback to demo data
           useDemoData(symbol, timeframe);
-          
-          // Remove loading state
           document.getElementById('candlestick-chart').classList.remove('opacity-50');
         });
     }
     
-    // Fallback to demo data if API fails
     function useDemoData(symbol, timeframe) {
-      // Generate demo data
-      const days = getTimeframeDays(timeframe);
+      const units = getTimeframeUnits(timeframe);
       const startPrice = getStartPrice(symbol);
-      const demoData = generateCandlestickData(days, startPrice);
+      const isMinutes = timeframe === '1MIN';
+      const demoData = generateCandlestickData(units, startPrice, isMinutes);
       
-      // Update chart
       chart.updateSeries([{
         name: symbol,
         data: demoData
       }]);
       
-      // Update stats with demo data
       const lastData = demoData[demoData.length - 1];
-      currentStockPrice = parseFloat(lastData.y[3]); // Update current stock price from demo
+      currentStockPrice = parseFloat(lastData.y[3]);
       document.getElementById('current-price').textContent = `$${currentStockPrice.toFixed(2)}`;
-      updateTotalPrice(); // Recalculate total with new price
+      updateTotalPrice();
 
       document.getElementById('stock-high').textContent = `$${Math.max(...lastData.y).toFixed(2)}`;
       document.getElementById('stock-low').textContent = `$${Math.min(...lastData.y).toFixed(2)}`;
       document.getElementById('stock-volume').textContent = formatNumber(Math.floor(Math.random() * 10000000 + 500000));
       
-      // Calculate market cap (simplified for demo)
       const marketCap = calculateMarketCap(symbol, parseFloat(lastData.y[3]));
       document.getElementById('stock-market-cap').textContent = formatCurrency(marketCap);
     }
     
-    // Helper function to determine days based on timeframe
-    function getTimeframeDays(timeframe) {
+    function getTimeframeUnits(timeframe) {
       switch (timeframe) {
+        case '1MIN': return 240;
         case '1W': return 7;
         case '1M': return 30;
         case '3M': return 90;
         case '6M': return 180;
         case '1Y': return 365;
-        case 'ALL': return 1825; // 5 years
+        case 'ALL': return 1825;
         default: return 90;
       }
     }
     
-    // Helper function to determine start price based on symbol
-    function getStartPrice(symbol) {
-      switch (symbol) {
-        case 'SPY': return 450;
-        case 'AAPL': return 175;
-        case 'TSLA': return 250;
-        case 'MSFT': return 330;
-        case 'AMZN': return 130;
-        case 'GOOGL': return 140;
-        case 'META': return 295;
-        default: return 100;
-      }
-    }
-    
-    // Helper function to calculate market cap (simplified)
-    function calculateMarketCap(symbol, price) {
-      const sharesOutstanding = {
-        'SPY': 0, // ETF doesn't have a simple shares outstanding
-        'AAPL': 16.5, // Billions
-        'TSLA': 3.2,
-        'MSFT': 7.5,
-        'AMZN': 10.2,
-        'GOOGL': 12.8,
-        'META': 2.5,
-      };
-      
-      if (symbol === 'SPY') {
-        return 40300000000000; // ~ 40.3T for S&P 500
-      }
-      
-      return (sharesOutstanding[symbol] || 1) * price * 1000000000;
-    }
-    
-    // Helper function to format large numbers
-    function formatNumber(num) {
-      if (num >= 1000000000) {
-        return (num / 1000000000).toFixed(1) + 'B';
-      }
-      if (num >= 1000000) {
-        return (num / 1000000).toFixed(1) + 'M';
-      }
-      if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'K';
-      }
-      return num;
-    }
-    
-    // Helper function to format currency
-    function formatCurrency(num) {
-      if (num >= 1000000000000) {
-        return '$' + (num / 1000000000000).toFixed(1) + 'T';
-      }
-      if (num >= 1000000000) {
-        return '$' + (num / 1000000000).toFixed(1) + 'B';
-      }
-      return '$' + (num / 1000000).toFixed(1) + 'M';
-    }
-    
-    // Demo data generator
-    function generateCandlestickData(days = 30, startPrice = 100) {
+    function generateCandlestickData(units = 30, startPrice = 100, isMinutes = false) {
       const data = [];
-      let price = startPrice; // Use local variable 'price' to avoid conflict
+      let price = startPrice;
       
       const today = new Date();
       
-      for (let i = days; i >= 0; i--) {
+      for (let i = units; i >= 0; i--) {
         const date = new Date(today);
-        date.setDate(today.getDate() - i);
+        if (isMinutes) {
+          date.setMinutes(today.getMinutes() - i);
+        } else {
+          date.setDate(today.getDate() - i);
+        }
         
-        // Random daily fluctuation
-        const volatility = 0.02; // 2%
+        const volatility = 0.02;
         const changePercent = (Math.random() * volatility * 2) - volatility;
         
-        // Calculate OHLC values
         const open = price;
         const close = open * (1 + changePercent);
         const high = Math.max(open, close) * (1 + Math.random() * 0.01);
@@ -634,13 +592,12 @@
           y: [open.toFixed(2), high.toFixed(2), low.toFixed(2), close.toFixed(2)]
         });
         
-        price = close; // Update local price for next iteration
+        price = close;
       }
       
       return data;
     }
 
-    // Function to load user balance
     function loadUserBalance() {
         fetch('/api/portfolio')
             .then(response => response.json())
@@ -658,10 +615,8 @@
             });
     }
 
-    // Function to handle trade execution
     function handleTrade(action) {
         const quantity = parseFloat(document.getElementById('quantity').value);
-        // Ensure currentStockPrice is the most up-to-date price for the selected stock
         const priceString = document.getElementById('current-price').textContent.replace('$', '');
         const price = parseFloat(priceString);
 
@@ -684,16 +639,14 @@
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // Include CSRF token if your app uses them
             },
             body: JSON.stringify(tradeData)
         })
         .then(response => response.json())
         .then(result => {
-            alert(result.message); // Simple feedback
+            alert(result.message);
             if (result.success) {
-                loadUserBalance(); // Refresh balance after successful trade
-                // Optionally, refresh portfolio holdings if displayed on this page
+                loadUserBalance();
             }
         })
         .catch(error => {
@@ -702,7 +655,6 @@
         });
     }
     
-    // Filter stocks by search input
     document.getElementById('stock-search').addEventListener('input', function() {
       const searchTerm = this.value.toLowerCase();
       document.querySelectorAll('.stock-item').forEach(item => {
@@ -717,7 +669,6 @@
       });
     });
     
-    // Initialize the page on load
     initializePage();
   });
 </script>
