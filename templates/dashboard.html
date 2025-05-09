@@ -14,7 +14,7 @@
         <div>
           <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Aktuelles Guthaben:</p>
           <p class="text-xl font-pixel text-game-green dark:text-game-green mt-2">
-            ${{ "%.2f"|format(g.user.balance if g.user.balance is not none else 0) }}
+            €{{ "%.2f"|format(g.user.balance if g.user.balance is not none else 0) }}
           </p>
         </div>
         <div>
@@ -30,7 +30,7 @@
         <div>
           <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Gewinn/Verlust:</p>
           <p class="text-lg font-pixel {{ 'text-game-green' if g.user.profit_loss >= 0 else 'text-game-red' }} mt-2">
-            ${{ "%.2f"|format(g.user.profit_loss) }}
+            €{{ "%.2f"|format(g.user.profit_loss) }}
           </p>
         </div>
       </div>

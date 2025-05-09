@@ -76,7 +76,12 @@ def api_stock_data():
     end_date = datetime.now().strftime('%Y-%m-%d')
     days = 90  # Default to 3 months
     
-    if timeframe == '1W':
+    if timeframe == '1MIN':
+        # Spezialbehandlung für 1MIN Zeitrahmen
+        # Verwende einen kürzeren Zeitraum für Minutendaten
+        days = 2  # Zwei Tage für Minutendaten
+        interval = '1m'  # Minutenintervall für Daten
+    elif timeframe == '1W':
         days = 7
     elif timeframe == '1M':
         days = 30
@@ -92,8 +97,12 @@ def api_stock_data():
     start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
     
     try:
-        # Get real stock data
-        df = stock_data.get_stock_data(symbol, start_date, end_date)
+        # Get real stock data - Alpha Vantage liefert USD-Werte für US-Aktien
+        if timeframe == '1MIN':
+            # Für Minutendaten spezielle Parameter übergeben
+            df = stock_data.get_intraday_data(symbol, interval=interval)
+        else:
+            df = stock_data.get_stock_data(symbol, start_date, end_date)
         
         # If no data found, try demo data
         if df.empty:
@@ -103,17 +112,18 @@ def api_stock_data():
         data = []
         for index, row in df.iterrows():
             data.append({
-                'date': index.strftime('%Y-%m-%d'),
-                'open': float(row['Open']),
-                'high': float(row['High']),
-                'low': float(row['Low']),
-                'close': float(row['Close']),
-                'volume': int(row['Volume'])
+                'date': index.strftime('%Y-%m-%d') if timeframe != '1MIN' else index.strftime('%Y-%m-%dT%H:%M:%S'),
+                'open': float(row['Open']),      # Preis in USD
+                'high': float(row['High']),      # Preis in USD
+                'low': float(row['Low']),        # Preis in USD
+                'close': float(row['Close']),    # Preis in USD
+                'volume': int(row['Volume']),
+                'currency': 'USD'  # Explizit die Währung angeben
             })
         
         return jsonify(data)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': str(e), 'currency': 'USD'}), 500
 
 @app.route('/api/trade/<symbol>/')
 @login_required
