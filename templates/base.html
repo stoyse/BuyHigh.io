@@ -1,56 +1,175 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="{% if darkmode %}dark{% endif %}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>{% block title %}Flask Auth App{% endblock %}</title>
-    <!-- Simple styling, consider using Bootstrap or another CSS framework -->
+    <title>{% block title %}BuyHigh.io{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+    
+    <!-- Google Fonts - Pixelated Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          fontSize: {
+            'xxs': '0.625rem',
+            'xs': '0.75rem',
+            'sm': '0.875rem',
+            'base': '1rem',
+            'lg': '1.125rem',
+            'xl': '1.25rem',
+            '2xl': '1.5rem',
+            '3xl': '1.875rem',
+            '4xl': '2.25rem',
+          },
+          extend: {
+            colors: {
+              primary: {
+                light: '#6d28d9', // vibrant purple
+                dark: '#8b5cf6', // lighter purple for dark mode
+              },
+              secondary: {
+                light: '#0ea5e9', // bright blue
+                dark: '#38bdf8', // sky blue for dark mode
+              },
+              game: {
+                green: '#10b981', // emerald-500
+                red: '#ef4444',   // red-500
+                gold: '#f59e0b',  // amber-500
+                blue: '#3b82f6',  // blue-500
+                pink: '#ec4899',  // pink-500
+              }
+            },
+            fontFamily: {
+              'pixel': ['"Press Start 2P"', 'cursive', 'sans-serif'],
+            },
+            boxShadow: {
+              'pixel': '4px 4px 0px 0px rgba(0,0,0,0.2)',
+              'pixel-lg': '6px 6px 0px 0px rgba(0,0,0,0.2)',
+              'pixel-xl': '8px 8px 0px 0px rgba(0,0,0,0.2)',
+            }
+          }
+        }
+      }
+    </script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
-        nav { background-color: #333; padding: 10px 0; text-align: center; margin-bottom: 20px; }
-        nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
-        nav a:hover { text-decoration: underline; }
-        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1, h2 { color: #333; }
-        .flash-messages { list-style: none; padding: 0; }
-        .flash-messages li { padding: 10px; margin-bottom: 10px; border-radius: 4px; }
-        .flash-messages .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .flash-messages .danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .flash-messages .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
-        label { display: block; margin-top: 10px; }
-        input[type="text"], input[type="password"], input[type="email"] {
-            width: calc(100% - 22px); padding: 10px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;
-        }
-        input[type="submit"] {
-            background-color: #5cb85c; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 15px;
-        }
-        input[type="submit"]:hover { background-color: #4cae4c; }
-        .user-info { margin-top: 20px; padding: 10px; background-color: #e9ecef; border-radius: 4px; }
+      /* Fallback Font und wichtige Grundstile */
+      body {
+        font-family: sans-serif;
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .font-pixel {
+        font-family: 'Press Start 2P', cursive, sans-serif;
+      }
+      
+      /* Pixel Border Utility Classes */
+      .pixel-border {
+        border-style: solid;
+        border-width: 4px;
+        image-rendering: pixelated;
+      }
+      
+      /* Pixelated Progress Bars */
+      .progress-bar {
+        height: 20px;
+        background-color: #e5e7eb;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        background-color: #10b981;
+        transition: width 0.5s;
+      }
+      
+      /* Custom Outline Button */
+      .btn-pixel {
+        border: 3px solid currentColor;
+        box-shadow: 3px 3px 0 0 currentColor;
+        transition: all 0.1s;
+        position: relative;
+        top: 0;
+        left: 0;
+      }
+      .btn-pixel:active {
+        box-shadow: 0px 0px 0 0 currentColor;
+        top: 3px;
+        left: 3px;
+      }
     </style>
   </head>
-  <body>
-    <nav>
-      <a href="{{ url_for('index') }}">Home</a>
-      {% if g.user %}
-        <span>Welcome, {{ g.user.username }}!</span>
-        <a href="{{ url_for('logout') }}">Logout</a>
-      {% else %}
-        <a href="{{ url_for('login') }}">Login</a>
-        <a href="{{ url_for('register') }}">Register</a>
-      {% endif %}
+  <body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+    <nav class="bg-white dark:bg-gray-800 border-b-4 border-primary-light dark:border-primary-dark">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <a href="{{ url_for('index') }}" class="flex-shrink-0 flex items-center font-pixel text-primary-light dark:text-primary-dark text-lg">
+              BuyHigh.io
+            </a>
+            <div class="ml-10 flex items-baseline space-x-6">
+              <a href="{{ url_for('index') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Home</a>
+              {% if g.user %}
+              <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
+              <a href="{{ url_for('trade') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Trade</a>
+              <a href="{{ url_for('settings') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Settings</a>
+              {% endif %}
+            </div>
+          </div>
+          <div class="flex items-center">
+            {% if g.user %}
+              <span class="text-sm font-pixel mr-4">Hi, {{ g.user.username }}!</span>
+              <a href="{{ url_for('logout') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-red text-white hover:bg-red-700">Logout</a>
+            {% else %}
+              <a href="{{ url_for('login') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-blue text-white mr-2">Login</a>
+              <a href="{{ url_for('register') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-green text-white">Register</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
     </nav>
     
-    <div class="container">
+    <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <ul class="flash-messages">
-          {% for category, message in messages %}
-            <li class="{{ category }}">{{ message }}</li>
-          {% endfor %}
-          </ul>
+          <div class="mb-6">
+            {% for category, message in messages %}
+              {% set alert_class = {
+                'success': 'bg-game-green border-green-700 text-white',
+                'danger': 'bg-game-red border-red-700 text-white',
+                'info': 'bg-game-blue border-blue-700 text-white',
+                'warning': 'bg-yellow-100 border-yellow-500 text-yellow-700'
+              } %}
+              <div class="{{ alert_class.get(category, 'bg-gray-100 border-gray-500 text-gray-700 dark:bg-gray-800 dark:text-gray-100') }} px-4 py-3 rounded relative border-b-4 shadow-pixel mb-4" role="alert">
+                <span class="block sm:inline font-pixel text-sm">{{ message }}</span>
+              </div>
+            {% endfor %}
+          </div>
         {% endif %}
       {% endwith %}
-      {% block content %}{% endblock %}
+      
+      <main class="bg-white dark:bg-gray-800 shadow-lg rounded border-4 border-gray-300 dark:border-gray-700 p-6">
+        {% block content %}{% endblock %}
+      </main>
     </div>
+    
+    <footer class="bg-white dark:bg-gray-800 border-t-4 border-primary-light dark:border-primary-dark mt-auto py-4">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500 dark:text-gray-400 text-sm font-pixel">
+        © 2023 BuyHigh.io - Buy High, Sell Low
+      </div>
+    </footer>
   </body>
 </html>

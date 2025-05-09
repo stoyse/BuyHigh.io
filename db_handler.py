@@ -99,6 +99,32 @@ def update_last_login(user_id):
     conn.commit()
     conn.close()
 
+def update_user_theme(user_id, theme):
+    """Updates the theme for a given user."""
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE users SET theme = ? WHERE id = ?", (theme, user_id))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(f"Database error updating theme: {e}")
+        return False
+    finally:
+        conn.close()
+
+def update_user_password(user_id, new_password_hash):
+    """Updates the password hash for a given user."""
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_password_hash, user_id))
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        print(f"Database error updating password: {e}")
+        return False
+    finally:
+        conn.close()
+
 # Initialize the database if the script is run directly (optional, app.py can handle it)
 if __name__ == '__main__':
     init_db()

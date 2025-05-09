@@ -1,0 +1,40 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="fixed top-4 right-4 z-50 w-full max-w-sm space-y-4">
+      {% for category, message in messages %}
+        {% if category == 'success' %}
+          <div class="flex items-center p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-100 dark:bg-green-200 dark:text-green-800" role="alert">
+            <svg class="flex-shrink-0 w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 0 0-1.414 0L9 11.586 6.707 9.293a1 1 0 1 0-1.414 1.414l3 3a1 1 0 0 0 1.414 0l7-7a1 1 0 0 0 0-1.414Z"/></svg>
+            <span class="sr-only">Success</span>
+            <div>{{ message }}</div>
+          </div>
+        {% elif category == 'error' %}
+          <div class="flex items-center p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-100 dark:bg-red-200 dark:text-red-800" role="alert">
+            <svg class="flex-shrink-0 w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path d="M8.257 3.099c.366-.446.985-.533 1.43-.167a1 1 0 0 1 .166 1.43L5.414 10l4.439 5.638a1 1 0 1 1-1.596 1.232L3.586 10l4.671-6.17Z"/></svg>
+            <span class="sr-only">Error</span>
+            <div>{{ message }}</div>
+          </div>
+        {% elif category == 'info' %}
+          <div class="flex items-center p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-100 dark:bg-blue-200 dark:text-blue-800" role="alert">
+            <svg class="flex-shrink-0 w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path d="M18 10A8 8 0 1 1 2 10a8 8 0 0 1 16 0ZM9 9a1 1 0 0 0 2 0V7a1 1 0 0 0-2 0v2Zm2 4a1 1 0 1 0-2 0 1 1 0 0 0 2 0Z"/></svg>
+            <span class="sr-only">Info</span>
+            <div>{{ message }}</div>
+          </div>
+        {% elif category == 'warning' %}
+          <div class="flex items-center p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-100 dark:bg-yellow-200 dark:text-yellow-800" role="alert">
+            <svg class="flex-shrink-0 w-4 h-4 me-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path d="M8.257 3.099c.366-.446.985-.533 1.43-.167a1 1 0 0 1 .166 1.43L5.414 10l4.439 5.638a1 1 0 1 1-1.596 1.232L3.586 10l4.671-6.17Z"/></svg>
+            <span class="sr-only">Warning</span>
+            <div>{{ message }}</div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+{% if get_flashed_messages() %}
+  <script>
+    setTimeout(() => {
+      document.querySelector('.fixed').remove();
+    }, 5000);
+  </script>
+{% endif %}

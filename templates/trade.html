@@ -1,0 +1,628 @@
+{% extends 'base.html' %}
+
+{% block title %}Trade - BuyHigh.io{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-6 text-center">AKTIEN-ARENA</h1>
+
+  <div class="flex flex-col lg:flex-row gap-6">
+    <!-- Linke Spalte: Aktienliste und Suche -->
+    <div class="w-full lg:w-1/3 bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-4">
+      <!-- Suchleiste -->
+      <div class="mb-4 relative">
+        <label for="stock-search" class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1 block">SUCHE:</label>
+        <input type="search" id="stock-search" placeholder="z.B. AAPL, S&P 500..." 
+               class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white focus:border-game-blue focus:outline-none">
+      </div>
+
+      <!-- Aktienliste -->
+      <div id="stock-list" class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+        <!-- Aktie 1 -->
+        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="SPY" data-name="S&P 500 SPDR ETF" data-price="450.05" data-change="+0.50">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">S&P 500 ETF</p>
+              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">SPY</p>
+            </div>
+            <div class="text-right">
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$450.05</p>
+              <p class="font-pixel text-xxs text-game-green">+0.50%</p>
+            </div>
+          </div>
+          <!-- Miniature pixel graph -->
+          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
+            <div class="h-full flex items-end">
+              <div class="w-1/6 h-[30%] bg-game-green"></div>
+              <div class="w-1/6 h-[50%] bg-game-green"></div>
+              <div class="w-1/6 h-[40%] bg-game-green"></div>
+              <div class="w-1/6 h-[70%] bg-game-green"></div>
+              <div class="w-1/6 h-[60%] bg-game-green"></div>
+              <div class="w-1/6 h-[80%] bg-game-green"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Aktie 2 -->
+        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="AAPL" data-name="Apple Inc." data-price="175.20" data-change="-0.20">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Apple Inc.</p>
+              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">AAPL</p>
+            </div>
+            <div class="text-right">
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$175.20</p>
+              <p class="font-pixel text-xxs text-game-red">-0.20%</p>
+            </div>
+          </div>
+          <!-- Miniature pixel graph -->
+          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
+            <div class="h-full flex items-end">
+              <div class="w-1/6 h-[70%] bg-game-red"></div>
+              <div class="w-1/6 h-[60%] bg-game-red"></div>
+              <div class="w-1/6 h-[80%] bg-game-red"></div>
+              <div class="w-1/6 h-[50%] bg-game-red"></div>
+              <div class="w-1/6 h-[40%] bg-game-red"></div>
+              <div class="w-1/6 h-[30%] bg-game-red"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Aktie 3 -->
+        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="TSLA" data-name="Tesla Inc." data-price="250.75" data-change="+1.20">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Tesla Inc.</p>
+              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">TSLA</p>
+            </div>
+            <div class="text-right">
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$250.75</p>
+              <p class="font-pixel text-xxs text-game-green">+1.20%</p>
+            </div>
+          </div>
+          <!-- Miniature pixel graph -->
+          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
+            <div class="h-full flex items-end">
+              <div class="w-1/6 h-[20%] bg-game-green"></div>
+              <div class="w-1/6 h-[40%] bg-game-green"></div>
+              <div class="w-1/6 h-[30%] bg-game-green"></div>
+              <div class="w-1/6 h-[60%] bg-game-green"></div>
+              <div class="w-1/6 h-[70%] bg-game-green"></div>
+              <div class="w-1/6 h-[90%] bg-game-green"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Weitere Aktien -->
+        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="MSFT" data-name="Microsoft Corporation" data-price="330.10" data-change="+0.85">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Microsoft Corp.</p>
+              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">MSFT</p>
+            </div>
+            <div class="text-right">
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$330.10</p>
+              <p class="font-pixel text-xxs text-game-green">+0.85%</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="AMZN" data-name="Amazon.com Inc." data-price="130.50" data-change="-1.10">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Amazon.com Inc.</p>
+              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">AMZN</p>
+            </div>
+            <div class="text-right">
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$130.50</p>
+              <p class="font-pixel text-xxs text-game-red">-1.10%</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="GOOGL" data-name="Alphabet Inc." data-price="140.20" data-change="+0.65">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Alphabet Inc.</p>
+              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">GOOGL</p>
+            </div>
+            <div class="text-right">
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$140.20</p>
+              <p class="font-pixel text-xxs text-game-green">+0.65%</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="META" data-name="Meta Platforms Inc." data-price="295.40" data-change="+1.50">
+          <div class="flex justify-between items-center">
+            <div>
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Meta Platforms</p>
+              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">META</p>
+            </div>
+            <div class="text-right">
+              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$295.40</p>
+              <p class="font-pixel text-xxs text-game-green">+1.50%</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rechte Spalte: Graph und Handelsaktionen -->
+    <div class="w-full lg:w-2/3 bg-white dark:bg-gray-800 shadow-pixel border-4 border-primary-light rounded-lg p-4">
+      <div class="mb-4">
+        <h2 id="stock-name" class="text-xl font-pixel text-primary-light dark:text-primary-dark">S&P 500 ETF (SPY)</h2>
+        <p id="stock-price" class="font-pixel text-xs text-gray-600 dark:text-gray-400">Preis: $450.05 (+0.50%)</p>
+      </div>
+      
+      <!-- Candlestick Chart Container -->
+      <div id="candlestick-chart" class="bg-gray-100 dark:bg-gray-700 h-64 md:h-80 rounded border-2 border-gray-200 dark:border-gray-600 mb-6 overflow-hidden relative">
+        <!-- Chart will be rendered here -->
+      </div>
+
+      <!-- Timeframe Selection -->
+      <div class="mb-6 flex flex-wrap gap-2 justify-center">
+        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="1W">1W</button>
+        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="1M">1M</button>
+        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-primary-light dark:bg-primary-dark text-white rounded border-2 border-primary-light dark:border-primary-dark" data-timeframe="3M">3M</button>
+        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="6M">6M</button>
+        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="1Y">1Y</button>
+        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="ALL">ALL</button>
+      </div>
+
+      <!-- Handelsaktionen -->
+      <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-pixel text-primary-light dark:text-primary-dark mb-4">TRADE AUSFÜHREN</h3>
+        <form class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="quantity" class="block text-xs font-pixel text-gray-700 dark:text-gray-300 mb-1">MENGE:</label>
+              <input type="number" id="quantity" name="quantity" value="1" min="1"
+                     class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white">
+            </div>
+            <div>
+              <label for="price" class="block text-xs font-pixel text-gray-700 dark:text-gray-300 mb-1">PREIS:</label>
+              <div id="current-price" class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white">
+                $450.05
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">TOTAL:</p>
+              <p id="total-price" class="text-lg font-pixel text-primary-light dark:text-primary-dark">$450.05</p>
+            </div>
+            <div>
+              <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">MÖGLICHER GEWINN:</p>
+              <div class="flex space-x-2">
+                <span id="potential-gain" class="text-xs font-pixel text-game-green">+$4.50</span>
+                <span id="potential-gain-percent" class="text-xs font-pixel text-game-green">(+1%)</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="flex space-x-4 pt-2">
+            <button type="submit" name="action" value="buy"
+                    class="flex-1 py-3 px-4 bg-game-green border-b-4 border-green-700 text-white font-pixel text-sm rounded hover:bg-green-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
+              KAUFEN
+            </button>
+            <button type="submit" name="action" value="sell"
+                    class="flex-1 py-3 px-4 bg-game-red border-b-4 border-red-700 text-white font-pixel text-sm rounded hover:bg-red-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
+              VERKAUFEN
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      <!-- Game-Inspired Stats -->
+      <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div class="bg-gray-100 dark:bg-gray-900 p-2 rounded border-2 border-gray-200 dark:border-gray-700 text-center">
+          <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">VOLUME</p>
+          <p id="stock-volume" class="font-pixel text-xs text-gray-700 dark:text-gray-300">1.2M</p>
+        </div>
+        <div class="bg-gray-100 dark:bg-gray-900 p-2 rounded border-2 border-gray-200 dark:border-gray-700 text-center">
+          <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">HIGH</p>
+          <p id="stock-high" class="font-pixel text-xs text-gray-700 dark:text-gray-300">$452.75</p>
+        </div>
+        <div class="bg-gray-100 dark:bg-gray-900 p-2 rounded border-2 border-gray-200 dark:border-gray-700 text-center">
+          <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">LOW</p>
+          <p id="stock-low" class="font-pixel text-xs text-gray-700 dark:text-gray-300">$448.25</p>
+        </div>
+        <div class="bg-gray-100 dark:bg-gray-900 p-2 rounded border-2 border-gray-200 dark:border-gray-700 text-center">
+          <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">MARKET CAP</p>
+          <p id="stock-market-cap" class="font-pixel text-xs text-gray-700 dark:text-gray-300">$40.3T</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ApexCharts -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Global variables
+    let currentSymbol = 'SPY';
+    let currentTimeframe = '3M';
+    let chart = null;
+    
+    // Initialize the page
+    function initializePage() {
+      // Set up chart
+      setupChart();
+      
+      // Set up event listeners for stock items
+      document.querySelectorAll('.stock-item').forEach(item => {
+        item.addEventListener('click', function() {
+          const symbol = this.getAttribute('data-symbol');
+          const name = this.getAttribute('data-name');
+          const price = this.getAttribute('data-price');
+          const change = this.getAttribute('data-change');
+          
+          // Update current symbol
+          currentSymbol = symbol;
+          
+          // Update stock info in UI
+          document.getElementById('stock-name').textContent = `${name} (${symbol})`;
+          document.getElementById('stock-price').textContent = `Preis: $${price} (${change}%)`;
+          document.getElementById('current-price').textContent = `$${price}`;
+          
+          // Update total based on quantity
+          updateTotalPrice();
+          
+          // Load new stock data
+          loadStockData(symbol, currentTimeframe);
+          
+          // Highlight selected stock
+          document.querySelectorAll('.stock-item').forEach(s => {
+            s.classList.remove('border-primary-light', 'dark:border-primary-dark', 'border-2');
+            s.classList.add('border-gray-200', 'dark:border-gray-700', 'border-2');
+          });
+          this.classList.remove('border-gray-200', 'dark:border-gray-700');
+          this.classList.add('border-primary-light', 'dark:border-primary-dark', 'border-2');
+        });
+      });
+      
+      // Set up event listeners for timeframe buttons
+      document.querySelectorAll('.timeframe-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          // Remove active class from all buttons
+          document.querySelectorAll('.timeframe-btn').forEach(btn => {
+            btn.classList.remove('bg-primary-light', 'dark:bg-primary-dark', 'text-white');
+            btn.classList.add('bg-gray-200', 'dark:bg-gray-700');
+          });
+          
+          // Add active class to clicked button
+          this.classList.remove('bg-gray-200', 'dark:bg-gray-700');
+          this.classList.add('bg-primary-light', 'dark:bg-primary-dark', 'text-white');
+          
+          // Get timeframe value
+          const timeframe = this.getAttribute('data-timeframe');
+          currentTimeframe = timeframe;
+          
+          // Load data for current symbol and new timeframe
+          loadStockData(currentSymbol, timeframe);
+        });
+      });
+      
+      // Set up event listeners for quantity input
+      document.getElementById('quantity').addEventListener('input', updateTotalPrice);
+      
+      // Select first stock item by default
+      document.querySelector('.stock-item').click();
+    }
+    
+    // Update total price based on quantity and current price
+    function updateTotalPrice() {
+      const quantity = parseFloat(document.getElementById('quantity').value);
+      const price = parseFloat(document.getElementById('current-price').textContent.replace('$', ''));
+      const total = quantity * price;
+      
+      document.getElementById('total-price').textContent = `$${total.toFixed(2)}`;
+      
+      // Update potential gain (fixed at 1% for now, could be dynamic)
+      const potentialGain = total * 0.01;
+      document.getElementById('potential-gain').textContent = `+$${potentialGain.toFixed(2)}`;
+      document.getElementById('potential-gain-percent').textContent = `(+1%)`;
+    }
+    
+    // Set up candlestick chart
+    function setupChart() {
+      const options = {
+        series: [{
+          name: 'S&P 500',
+          data: [] // Empty data initially
+        }],
+        chart: {
+          type: 'candlestick',
+          height: 350,
+          fontFamily: '"Press Start 2P", cursive',
+          toolbar: {
+            show: true,
+            tools: {
+              download: true,
+              selection: false,
+              zoom: false,
+              zoomin: false,
+              zoomout: false,
+              pan: false,
+              reset: false
+            },
+          },
+          animations: {
+            enabled: true,
+            easing: 'easeinout',
+            speed: 800
+          },
+          background: 'transparent'
+        },
+        theme: {
+          mode: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+          palette: 'palette1'
+        },
+        xaxis: {
+          type: 'datetime',
+          labels: {
+            style: {
+              fontSize: '8px',
+              fontFamily: '"Press Start 2P", cursive',
+            }
+          }
+        },
+        yaxis: {
+          tooltip: {
+            enabled: true
+          },
+          labels: {
+            style: {
+              fontSize: '8px',
+              fontFamily: '"Press Start 2P", cursive',
+            }
+          }
+        },
+        tooltip: {
+          custom: function({ seriesIndex, dataPointIndex, w }) {
+            const o = w.globals.seriesCandleO[seriesIndex][dataPointIndex];
+            const h = w.globals.seriesCandleH[seriesIndex][dataPointIndex];
+            const l = w.globals.seriesCandleL[seriesIndex][dataPointIndex];
+            const c = w.globals.seriesCandleC[seriesIndex][dataPointIndex];
+            const date = new Date(w.globals.seriesX[seriesIndex][dataPointIndex]).toLocaleDateString();
+            
+            return `
+              <div class="px-2 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm">
+                <div class="text-xs font-pixel mb-1">${date}</div>
+                <div class="text-xxs font-pixel">O: <span class="text-gray-700 dark:text-gray-300">$${o}</span></div>
+                <div class="text-xxs font-pixel">H: <span class="text-gray-700 dark:text-gray-300">$${h}</span></div>
+                <div class="text-xxs font-pixel">L: <span class="text-gray-700 dark:text-gray-300">$${l}</span></div>
+                <div class="text-xxs font-pixel">C: <span class="text-gray-700 dark:text-gray-300">$${c}</span></div>
+              </div>
+            `;
+          }
+        },
+        plotOptions: {
+          candlestick: {
+            colors: {
+              upward: '#10b981', // game-green
+              downward: '#ef4444' // game-red
+            },
+            wick: {
+              useFillColor: true,
+            }
+          }
+        }
+      };
+      
+      // Create the chart
+      chart = new ApexCharts(document.querySelector("#candlestick-chart"), options);
+      chart.render();
+    }
+    
+    // Function to load stock data from API
+    function loadStockData(symbol, timeframe) {
+      // Show loading state
+      document.getElementById('candlestick-chart').classList.add('opacity-50');
+      
+      // Try to fetch real data from API
+      fetch(`/api/stock-data?symbol=${symbol}&timeframe=${timeframe}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          
+          // Update chart with real data
+          const chartData = data.map(item => ({
+            x: new Date(item.date),
+            y: [
+              parseFloat(item.open).toFixed(2), 
+              parseFloat(item.high).toFixed(2), 
+              parseFloat(item.low).toFixed(2), 
+              parseFloat(item.close).toFixed(2)
+            ]
+          }));
+          
+          chart.updateSeries([{
+            name: symbol,
+            data: chartData
+          }]);
+          
+          // Update stock stats
+          if (data.length > 0) {
+            const lastDataPoint = data[data.length - 1];
+            document.getElementById('stock-high').textContent = `$${parseFloat(lastDataPoint.high).toFixed(2)}`;
+            document.getElementById('stock-low').textContent = `$${parseFloat(lastDataPoint.low).toFixed(2)}`;
+            document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
+            
+            // Calculate market cap (simplified for demo)
+            const marketCap = calculateMarketCap(symbol, parseFloat(lastDataPoint.close));
+            document.getElementById('stock-market-cap').textContent = formatCurrency(marketCap);
+          }
+          
+          // Remove loading state
+          document.getElementById('candlestick-chart').classList.remove('opacity-50');
+        })
+        .catch(error => {
+          console.error('Error fetching stock data:', error);
+          
+          // Fallback to demo data
+          useDemoData(symbol, timeframe);
+          
+          // Remove loading state
+          document.getElementById('candlestick-chart').classList.remove('opacity-50');
+        });
+    }
+    
+    // Fallback to demo data if API fails
+    function useDemoData(symbol, timeframe) {
+      // Generate demo data
+      const days = getTimeframeDays(timeframe);
+      const startPrice = getStartPrice(symbol);
+      const demoData = generateCandlestickData(days, startPrice);
+      
+      // Update chart
+      chart.updateSeries([{
+        name: symbol,
+        data: demoData
+      }]);
+      
+      // Update stats with demo data
+      const lastData = demoData[demoData.length - 1];
+      document.getElementById('stock-high').textContent = `$${Math.max(...lastData.y).toFixed(2)}`;
+      document.getElementById('stock-low').textContent = `$${Math.min(...lastData.y).toFixed(2)}`;
+      document.getElementById('stock-volume').textContent = formatNumber(Math.floor(Math.random() * 10000000 + 500000));
+      
+      // Calculate market cap (simplified for demo)
+      const marketCap = calculateMarketCap(symbol, parseFloat(lastData.y[3]));
+      document.getElementById('stock-market-cap').textContent = formatCurrency(marketCap);
+    }
+    
+    // Helper function to determine days based on timeframe
+    function getTimeframeDays(timeframe) {
+      switch (timeframe) {
+        case '1W': return 7;
+        case '1M': return 30;
+        case '3M': return 90;
+        case '6M': return 180;
+        case '1Y': return 365;
+        case 'ALL': return 1825; // 5 years
+        default: return 90;
+      }
+    }
+    
+    // Helper function to determine start price based on symbol
+    function getStartPrice(symbol) {
+      switch (symbol) {
+        case 'SPY': return 450;
+        case 'AAPL': return 175;
+        case 'TSLA': return 250;
+        case 'MSFT': return 330;
+        case 'AMZN': return 130;
+        case 'GOOGL': return 140;
+        case 'META': return 295;
+        default: return 100;
+      }
+    }
+    
+    // Helper function to calculate market cap (simplified)
+    function calculateMarketCap(symbol, price) {
+      const sharesOutstanding = {
+        'SPY': 0, // ETF doesn't have a simple shares outstanding
+        'AAPL': 16.5, // Billions
+        'TSLA': 3.2,
+        'MSFT': 7.5,
+        'AMZN': 10.2,
+        'GOOGL': 12.8,
+        'META': 2.5,
+      };
+      
+      if (symbol === 'SPY') {
+        return 40300000000000; // ~ 40.3T for S&P 500
+      }
+      
+      return (sharesOutstanding[symbol] || 1) * price * 1000000000;
+    }
+    
+    // Helper function to format large numbers
+    function formatNumber(num) {
+      if (num >= 1000000000) {
+        return (num / 1000000000).toFixed(1) + 'B';
+      }
+      if (num >= 1000000) {
+        return (num / 1000000).toFixed(1) + 'M';
+      }
+      if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K';
+      }
+      return num;
+    }
+    
+    // Helper function to format currency
+    function formatCurrency(num) {
+      if (num >= 1000000000000) {
+        return '$' + (num / 1000000000000).toFixed(1) + 'T';
+      }
+      if (num >= 1000000000) {
+        return '$' + (num / 1000000000).toFixed(1) + 'B';
+      }
+      return '$' + (num / 1000000).toFixed(1) + 'M';
+    }
+    
+    // Demo data generator
+    function generateCandlestickData(days = 30, startPrice = 100) {
+      const data = [];
+      let currentPrice = startPrice;
+      
+      const today = new Date();
+      
+      for (let i = days; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        
+        // Random daily fluctuation
+        const volatility = 0.02; // 2%
+        const changePercent = (Math.random() * volatility * 2) - volatility;
+        
+        // Calculate OHLC values
+        const open = currentPrice;
+        const close = open * (1 + changePercent);
+        const high = Math.max(open, close) * (1 + Math.random() * 0.01);
+        const low = Math.min(open, close) * (1 - Math.random() * 0.01);
+        
+        data.push({
+          x: date,
+          y: [open.toFixed(2), high.toFixed(2), low.toFixed(2), close.toFixed(2)]
+        });
+        
+        currentPrice = close;
+      }
+      
+      return data;
+    }
+    
+    // Filter stocks by search input
+    document.getElementById('stock-search').addEventListener('input', function() {
+      const searchTerm = this.value.toLowerCase();
+      document.querySelectorAll('.stock-item').forEach(item => {
+        const symbol = item.getAttribute('data-symbol').toLowerCase();
+        const name = item.getAttribute('data-name').toLowerCase();
+        
+        if (symbol.includes(searchTerm) || name.includes(searchTerm)) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+    
+    // Initialize the page on load
+    initializePage();
+  });
+</script>
+{% endblock %}

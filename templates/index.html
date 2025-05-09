@@ -1,23 +1,122 @@
 {% extends 'base.html' %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Home - BuyHigh.io{% endblock %}
 
 {% block content %}
-  <h1>Welcome to BuyHigh.io</h1>
+  <div class="text-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Welcome to BuyHigh.io</h1>
+    <p class="mt-2 text-gray-600 dark:text-gray-400">Your home for questionable investment decisions</p>
+  </div>
+
   {% if g.user %}
-    <div class="user-info">
-        <p>Hello, <strong>{{ g.user.username }}</strong>!</p>
-        <p>Your current balance is: ${{ "%.2f"|format(g.user.balance) }}</p>
-        <p>Your mood pet: {{ g.user.mood_pet }} (Energy: {{ g.user.pet_energy }})</p>
-        <p>Meme mode: {% if g.user.is_meme_mode %}Enabled{% else %}Disabled{% endif %}</p>
-        <p>Email: {{ g.user.email }} {% if g.user.email_verified %}(Verified){% else %}(Not Verified){% endif %}</p>
-        <p>Theme: {{ g.user.theme }}</p>
-        <p>Total Trades: {{ g.user.total_trades }}</p>
-        <p>Profit/Loss: ${{ "%.2f"|format(g.user.profit_loss) }}</p>
-        <p>Member since: {{ g.user.created_at.strftime('%Y-%m-%d %H:%M:%S') if g.user.created_at else 'N/A' }}</p>
-        <p>Last login: {{ g.user.last_login.strftime('%Y-%m-%d %H:%M:%S') if g.user.last_login else 'Never' }}</p>
+    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg shadow p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- User Info -->
+        <div class="space-y-4">
+          <div class="flex items-center">
+            <div class="bg-indigo-100 dark:bg-indigo-800 p-3 rounded-full">
+              <svg class="h-6 w-6 text-indigo-600 dark:text-indigo-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <h2 class="ml-3 text-xl font-medium text-gray-900 dark:text-gray-100">
+              Hello, <span class="font-bold">{{ g.user.username }}</span>!
+            </h2>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="bg-green-100 dark:bg-green-800 p-3 rounded-full">
+              <svg class="h-6 w-6 text-green-600 dark:text-green-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p class="ml-3 text-gray-700 dark:text-gray-300">
+              Your current balance: <span class="font-semibold text-green-600 dark:text-green-400">${{ "%.2f"|format(g.user.balance) }}</span>
+            </p>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="bg-yellow-100 dark:bg-yellow-800 p-3 rounded-full">
+              <svg class="h-6 w-6 text-yellow-600 dark:text-yellow-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p class="ml-3 text-gray-700 dark:text-gray-300">
+              Your mood pet: <span class="font-semibold">{{ g.user.mood_pet }}</span> (Energy: <span class="font-semibold">{{ g.user.pet_energy }}</span>)
+            </p>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="bg-purple-100 dark:bg-purple-800 p-3 rounded-full">
+              <svg class="h-6 w-6 text-purple-600 dark:text-purple-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            </div>
+            <p class="ml-3 text-gray-700 dark:text-gray-300">
+              Meme mode: <span class="font-semibold">{% if g.user.is_meme_mode %}Enabled{% else %}Disabled{% endif %}</span>
+            </p>
+          </div>
+        </div>
+        
+        <!-- Stats and Activity -->
+        <div class="space-y-4">
+          <div class="flex items-center">
+            <div class="bg-blue-100 dark:bg-blue-800 p-3 rounded-full">
+              <svg class="h-6 w-6 text-blue-600 dark:text-blue-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <p class="ml-3 text-gray-700 dark:text-gray-300">
+              Total Trades: <span class="font-semibold">{{ g.user.total_trades }}</span>
+            </p>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="bg-{{ 'red' if g.user.profit_loss < 0 else 'green' }}-100 dark:bg-{{ 'red' if g.user.profit_loss < 0 else 'green' }}-800 p-3 rounded-full">
+              <svg class="h-6 w-6 text-{{ 'red' if g.user.profit_loss < 0 else 'green' }}-600 dark:text-{{ 'red' if g.user.profit_loss < 0 else 'green' }}-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+            </div>
+            <p class="ml-3 text-gray-700 dark:text-gray-300">
+              Profit/Loss: <span class="font-semibold text-{{ 'red' if g.user.profit_loss < 0 else 'green' }}-600 dark:text-{{ 'red' if g.user.profit_loss < 0 else 'green' }}-400">${{ "%.2f"|format(g.user.profit_loss) }}</span>
+            </p>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-full">
+              <svg class="h-6 w-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p class="ml-3 text-gray-700 dark:text-gray-300">
+              Member since: <span class="font-semibold">{{ g.user.created_at.strftime('%Y-%m-%d %H:%M:%S') if g.user.created_at else 'N/A' }}</span>
+            </p>
+          </div>
+          
+          <div class="flex items-center">
+            <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-full">
+              <svg class="h-6 w-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <p class="ml-3 text-gray-700 dark:text-gray-300">
+              Last login: <span class="font-semibold">{{ g.user.last_login.strftime('%Y-%m-%d %H:%M:%S') if g.user.last_login else 'Never' }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   {% else %}
-    <p>Please <a href="{{ url_for('login') }}">log in</a> or <a href="{{ url_for('register') }}">register</a> to continue.</p>
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 text-center">
+      <p class="text-lg text-gray-700 dark:text-gray-300 mb-4">Please log in or register to continue your journey to financial questionability.</p>
+      <div class="flex justify-center space-x-4">
+        <a href="{{ url_for('login') }}" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600">
+          Login
+        </a>
+        <a href="{{ url_for('register') }}" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
+          Register
+        </a>
+      </div>
+    </div>
   {% endif %}
 {% endblock %}
