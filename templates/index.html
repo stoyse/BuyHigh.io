@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+  <h1>Welcome to BuyHigh.io</h1>
+  {% if g.user %}
+    <div class="user-info">
+        <p>Hello, <strong>{{ g.user.username }}</strong>!</p>
+        <p>Your current balance is: ${{ "%.2f"|format(g.user.balance) }}</p>
+        <p>Your mood pet: {{ g.user.mood_pet }} (Energy: {{ g.user.pet_energy }})</p>
+        <p>Meme mode: {% if g.user.is_meme_mode %}Enabled{% else %}Disabled{% endif %}</p>
+        <p>Email: {{ g.user.email }} {% if g.user.email_verified %}(Verified){% else %}(Not Verified){% endif %}</p>
+        <p>Theme: {{ g.user.theme }}</p>
+        <p>Total Trades: {{ g.user.total_trades }}</p>
+        <p>Profit/Loss: ${{ "%.2f"|format(g.user.profit_loss) }}</p>
+        <p>Member since: {{ g.user.created_at.strftime('%Y-%m-%d %H:%M:%S') if g.user.created_at else 'N/A' }}</p>
+        <p>Last login: {{ g.user.last_login.strftime('%Y-%m-%d %H:%M:%S') if g.user.last_login else 'Never' }}</p>
+    </div>
+  {% else %}
+    <p>Please <a href="{{ url_for('login') }}">log in</a> or <a href="{{ url_for('register') }}">register</a> to continue.</p>
+  {% endif %}
+{% endblock %}
