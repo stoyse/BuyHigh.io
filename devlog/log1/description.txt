@@ -1,0 +1,2 @@
+“BuyHigh.io is a playful web app that teaches you how to trade stocks and crypto through gamification. You can register, manage your portfolio, trade assets, and level up your profile — all with pixel-art visuals and a mood pet that reflects your performance.
+The app is built with Flask and Python, uses SQLite for the database, and features live charts with ApexCharts. It’s fully themeable, has secure login, and makes learning the markets fun and interactive — no real money needed.”

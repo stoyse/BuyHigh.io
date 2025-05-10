@@ -1,5 +1,7 @@
 # BuyHigh.io – Feature Overview & Codebase Documentation
 
+https://hackatime-badge.hackclub.com/U08RM2BCLBU/BuyHigh.io
+
 ## Overview
 
 BuyHigh.io is a Flask-based web application for playful stock trading with gamification elements, pixel-art design, and user profiles. The app supports registration, login, portfolio management, stock trading (buy/sell), dashboard, settings (including theme), and API endpoints for AJAX/JS interactions.
