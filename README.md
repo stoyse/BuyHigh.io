@@ -1,6 +1,8 @@
 # BuyHigh.io – Feature Overview & Codebase Documentation
 
-https://hackatime-badge.hackclub.com/U08RM2BCLBU/BuyHigh.io
+![Hackatime Badge](https://hackatime-badge.hackclub.com/U08RM2BCLBU/BuyHigh.io)
+
+---
 
 ## Overview
 

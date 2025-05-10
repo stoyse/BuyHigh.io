@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, g, request, flash, redirect, url_f
 from utils import login_required
 import db_handler
 import logging  # Add logging import
+import stock_news
+from rich import print
 
 # Configure basic logging
 logging.basicConfig(level=logging.DEBUG)
@@ -68,6 +70,22 @@ def generate_dog_message(user, portfolio_data):
 def trade():
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     return render_template('trade.html', user=g.user, darkmode=dark_mode_active)
+
+@main_bp.route('/news')
+@login_required
+def news():  # Ändere den Funktionsnamen
+    dark_mode_active = g.user and g.user.get('theme') == 'dark'
+    news_data = stock_news.fetch_general_news("general")
+    print(f'[cyan]General news data:', news_data)
+    return render_template('news.html', user=g.user, darkmode=dark_mode_active, news_items=news_data)
+
+@main_bp.route('/news/<symbol>')
+@login_required
+def company_news(symbol):
+    dark_mode_active = g.user and g.user.get('theme') == 'dark'
+    news_data = stock_news.fetch_company_news(symbol, "2025-01-01", "2025-01-02")
+    print(f'[cyan]Symbol: {symbol} | News data:', news_data)
+    return render_template('news.html', user=g.user, darkmode=dark_mode_active, news_items=news_data)
 
 @main_bp.route('/settings', methods=['GET', 'POST'])
 @login_required

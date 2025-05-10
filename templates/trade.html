@@ -314,9 +314,18 @@
 
     <!-- Right Column: Graph and Trading Actions -->
     <div class="w-full lg:w-2/3 bg-white dark:bg-gray-800 shadow-pixel border-4 border-primary-light rounded-lg p-4">
-      <div class="mb-4">
-        <h2 id="stock-name" class="text-xl font-pixel text-primary-light dark:text-primary-dark">S&P 500 ETF (SPY)</h2>
-        <p id="stock-price" class="font-pixel text-xs text-gray-600 dark:text-gray-400">Price: $450.05 (+0.50%)</p>
+      <div class="mb-4 flex justify-between items-start">
+        <div>
+          <h2 id="stock-name" class="text-xl font-pixel text-primary-light dark:text-primary-dark">S&P 500 ETF (SPY)</h2>
+          <p id="stock-price" class="font-pixel text-xs text-gray-600 dark:text-gray-400">Price: $450.05 (+0.50%)</p>
+        </div>
+        <a id="news-button" href="{{ url_for('main.company_news', symbol='SPY') }}" 
+           class="px-3 py-2 bg-game-gold border-b-4 border-yellow-600 text-white font-pixel text-xs rounded hover:bg-yellow-500 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+          </svg>
+          NEWS
+        </a>
       </div>
       
       <!-- Candlestick Chart Container -->
@@ -418,6 +427,17 @@
   document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('stock-search');
     const stockItems = document.querySelectorAll('.stock-item');
+    const newsButton = document.getElementById('news-button');
+
+    // Update news button when a stock is clicked
+    stockItems.forEach(item => {
+      item.addEventListener('click', function() {
+        const symbol = this.getAttribute('data-symbol');
+        if (symbol) {
+          newsButton.href = `/news/${symbol}`;
+        }
+      });
+    });
 
     searchInput.addEventListener('input', function() {
       const query = this.value.trim().toLowerCase();

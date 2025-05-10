@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}News - BuyHigh.io{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-full">
+  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-6 text-center">MARKET NEWS</h1>
+
+  <!-- News Filter Section -->
+  <div class="mb-6 bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-4">
+    <div class="flex flex-wrap justify-between items-center">
+      <div class="mb-4 md:mb-0">
+        <h2 class="text-lg font-pixel text-game-blue dark:text-game-blue">Filter News</h2>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button class="category-filter font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-category="all">All</button>
+        <button class="category-filter font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-category="company">Company</button>
+        <button class="category-filter font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-category="market">Market</button>
+        <button class="category-filter font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-category="economy">Economy</button>
+      </div>
+      <div class="w-full md:w-auto mt-4 md:mt-0">
+        <input type="search" id="news-search" placeholder="Search news..."
+               class="w-full md:w-64 p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-xs dark:bg-gray-700 dark:text-white focus:border-game-blue focus:outline-none">
+      </div>
+    </div>
+  </div>
+
+  <!-- News List -->
+  <div class="space-y-6" id="news-container">
+    {% if news_items %}
+      {% for item in news_items %}
+        <div class="news-item bg-white dark:bg-gray-800 shadow-pixel border-4 border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden" data-category="{{ item.category }}">
+          <div class="flex flex-col md:flex-row">
+            {% if item.image %}
+              <div class="md:w-1/4 h-48 md:h-auto">
+                <img src="{{ item.image }}" alt="{{ item.headline }}" class="w-full h-full object-cover">
+              </div>
+            {% endif %}
+            <div class="p-6 {% if item.image %}md:w-3/4{% else %}w-full{% endif %}">
+              <div class="flex justify-between items-start mb-2">
+                <h2 class="text-lg font-pixel text-primary-light dark:text-primary-dark">{{ item.headline }}</h2>
+                {% if item.related %}
+                  <span class="px-2 py-1 bg-game-blue text-white text-xs font-pixel rounded-full">{{ item.related }}</span>
+                {% endif %}
+              </div>
+              
+              <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">{{ item.summary }}</p>
+              
+              <div class="flex flex-wrap justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+                <div class="space-x-2 mb-2 md:mb-0">
+                  <span class="font-pixel bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{{ item.category }}</span>
+                  <span class="font-pixel">{{ item.datetime|timestamp_to_date }}</span>
+                </div>
+                <div class="flex items-center">
+                  <span class="font-pixel mr-4">Source: {{ item.source }}</span>
+                  <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" 
+                     class="font-pixel text-game-green hover:underline inline-flex items-center">
+                    Read more
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-gray-200 dark:border-gray-700 rounded-lg p-6 text-center">
+        <p class="text-gray-700 dark:text-gray-300 font-pixel">No news items available at the moment.</p>
+      </div>
+    {% endif %}
+
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="hidden text-center py-8">
+      <div class="inline-block animate-pulse bg-gray-300 dark:bg-gray-700 w-24 h-6"></div>
+    </div>
+  </div>
+
+  <!-- Show more button -->
+  <div class="text-center mt-8">
+    <button id="load-more" class="bg-game-blue border-b-4 border-blue-700 text-white font-pixel text-sm px-8 py-3 rounded hover:bg-blue-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
+      LOAD MORE NEWS
+    </button>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
+    const categoryFilters = document.querySelectorAll('.category-filter');
+    const newsItems = document.querySelectorAll('.news-item');
+    const searchInput = document.getElementById('news-search');
+    
+    // Set "All" as active by default
+    document.querySelector('[data-category="all"]').classList.add('bg-primary-light', 'text-white', 'border-primary-light');
+    
+    // Category filter functionality
+    categoryFilters.forEach(filter => {
+      filter.addEventListener('click', function() {
+        // Remove active class from all filters
+        categoryFilters.forEach(f => {
+          f.classList.remove('bg-primary-light', 'text-white', 'border-primary-light', 
+                            'dark:bg-primary-dark', 'dark:border-primary-dark');
+          f.classList.add('bg-gray-200', 'dark:bg-gray-700', 'border-gray-300', 'dark:border-gray-600');
+        });
+        
+        // Add active class to clicked filter
+        this.classList.add('bg-primary-light', 'text-white', 'border-primary-light', 
+                          'dark:bg-primary-dark', 'dark:border-primary-dark');
+        this.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'border-gray-300', 'dark:border-gray-600');
+        
+        const category = this.getAttribute('data-category');
+        
+        // Show/hide news items based on category
+        newsItems.forEach(item => {
+          if (category === 'all' || item.getAttribute('data-category') === category) {
+            item.style.display = '';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    });
+    
+    // Search functionality
+    searchInput.addEventListener('input', function() {
+      const query = this.value.trim().toLowerCase();
+      
+      newsItems.forEach(item => {
+        const headline = item.querySelector('h2').textContent.toLowerCase();
+        const summary = item.querySelector('p').textContent.toLowerCase();
+        
+        if (headline.includes(query) || summary.includes(query)) {
+          item.style.display = '';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    });
+    
+    // Load more functionality (simulated for frontend demo)
+    const loadMoreBtn = document.getElementById('load-more');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    
+    loadMoreBtn.addEventListener('click', function() {
+      // Show loading indicator
+      loadingIndicator.classList.remove('hidden');
+      loadMoreBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      
+      // Simulate loading delay
+      setTimeout(() => {
+        // Hide loading indicator
+        loadingIndicator.classList.add('hidden');
+        loadMoreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        
+        // You would typically load more news here via AJAX
+        // For demo purposes, we'll just show an alert
+        alert('More news would be loaded here from the backend API');
+      }, 1500);
+    });
+  });
+</script>
+{% endblock %}

@@ -1,6 +1,6 @@
 # focus on education about financial markets with a fun and game like twist
 
-chat
+chat - websocket
 
 finnaceial news
 
