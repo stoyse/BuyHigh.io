@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentStockPrice = 0;
   let initialStockPrice = 0;
   let liveUpdateIntervalId = null;
-  const LIVE_UPDATE_INTERVAL_MS = 60000;
+  const LIVE_UPDATE_INTERVAL_MS = 60000; // 60 Sekunden
 
   // Verbesserte Logging-Funktion
   function logDebug(message, data = null) {
@@ -102,18 +102,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return response.json();
       })
       .then(data => {
-        if (data.error) {
-          throw new Error(data.error);
+        // Robust: Prüfe, ob data ein Array ist
+        if (!Array.isArray(data)) {
+          logDebug(`❌ API returned non-array data:`, data);
+          throw new Error(data && data.error ? data.error : 'API returned invalid data');
         }
-        
+
         logDebug(`✅ API Success: Received ${data.length} data points for ${symbol}`);
         
-        // Update chart without changing the buy price if preserveInitialPrice is true
-        if (preserveInitialPrice && initialStockPrice > 0) {
-          updateChartOnly(symbol, data);
-        } else {
-          updateChartAndStats(symbol, data);
-        }
+        // Immer updateChartAndStats aufrufen, damit die Candles aktualisiert werden!
+        updateChartAndStats(symbol, data);
         
         document.getElementById('candlestick-chart').classList.remove('opacity-50');
 
@@ -153,36 +151,83 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Neue Funktion: Aktualisiert nur das Chart ohne den Kaufpreis zu ändern
   function updateChartOnly(symbol, apiData) {
-    const chartData = apiData.map(item => ({
+    const maxPoints = 300;
+    // Filtere ungültige Candles heraus (inkl. Datumsprüfung)
+    const validData = apiData.filter(item => {
+      const dateObj = new Date(item.date);
+      return !isNaN(dateObj.getTime()) &&
+             item.open !== null && item.high !== null && item.low !== null && item.close !== null &&
+             isFinite(item.open) && isFinite(item.high) && isFinite(item.low) && isFinite(item.close);
+    });
+    const slicedData = validData.length > maxPoints ? validData.slice(-maxPoints) : validData;
+
+    const chartData = slicedData.map(item => ({
       x: new Date(item.date),
       y: [
-        parseFloat(item.open).toFixed(2), 
-        parseFloat(item.high).toFixed(2), 
-        parseFloat(item.low).toFixed(2), 
+        parseFloat(item.open).toFixed(2),
+        parseFloat(item.high).toFixed(2),
+        parseFloat(item.low).toFixed(2),
         parseFloat(item.close).toFixed(2)
       ]
     }));
-        
+
     chart.updateSeries([{
       name: symbol,
       data: chartData
     }]);
-    
-    if (apiData.length > 0) {
-      const lastDataPoint = apiData[apiData.length - 1];
-      
-      // Nur die Chart-bezogenen Elemente aktualisieren, nicht den Kaufpreis
+
+    if (slicedData.length > 0) {
+      const lastDataPoint = slicedData[slicedData.length - 1];
       document.getElementById('stock-high').textContent = `$${parseFloat(lastDataPoint.high).toFixed(2)}`;
       document.getElementById('stock-low').textContent = `$${parseFloat(lastDataPoint.low).toFixed(2)}`;
       document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
-      
-      const marketCap = calculateMarketCap(symbol, parseFloat(lastDataPoint.close));
-      document.getElementById('stock-market-cap').textContent = formatCurrency(marketCap);
-      
+      const marketCap = typeof calculateMarketCap === 'function' ? calculateMarketCap(symbol, parseFloat(lastDataPoint.close)) : 'N/A';
+      document.getElementById('stock-market-cap').textContent = typeof formatCurrency === 'function' ? formatCurrency(marketCap) : marketCap;
       logDebug(`📊 Chart updated for ${symbol}, using chartData close: $${parseFloat(lastDataPoint.close).toFixed(2)}, but keeping purchase price at $${currentStockPrice.toFixed(2)}`);
     }
   }
-  
+
+  // Funktion: Chart und Stats aktualisieren (wie updateChartOnly, aber setzt auch currentStockPrice)
+  function updateChartAndStats(symbol, apiData) {
+    const maxPoints = 300;
+    // Filtere ungültige Candles heraus (inkl. Datumsprüfung)
+    const validData = apiData.filter(item => {
+      const dateObj = new Date(item.date);
+      return !isNaN(dateObj.getTime()) &&
+             item.open !== null && item.high !== null && item.low !== null && item.close !== null &&
+             isFinite(item.open) && isFinite(item.high) && isFinite(item.low) && isFinite(item.close);
+    });
+    const slicedData = validData.length > maxPoints ? validData.slice(-maxPoints) : validData;
+
+    const chartData = slicedData.map(item => ({
+      x: new Date(item.date),
+      y: [
+        parseFloat(item.open).toFixed(2),
+        parseFloat(item.high).toFixed(2),
+        parseFloat(item.low).toFixed(2),
+        parseFloat(item.close).toFixed(2)
+      ]
+    }));
+
+    chart.updateSeries([{
+      name: symbol,
+      data: chartData
+    }]);
+
+    if (slicedData.length > 0) {
+      const lastDataPoint = slicedData[slicedData.length - 1];
+      currentStockPrice = parseFloat(lastDataPoint.close);
+      document.getElementById('current-price').textContent = `$${currentStockPrice.toFixed(2)}`;
+      document.getElementById('stock-high').textContent = `$${parseFloat(lastDataPoint.high).toFixed(2)}`;
+      document.getElementById('stock-low').textContent = `$${parseFloat(lastDataPoint.low).toFixed(2)}`;
+      document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
+      const marketCap = typeof calculateMarketCap === 'function' ? calculateMarketCap(symbol, currentStockPrice) : 'N/A';
+      document.getElementById('stock-market-cap').textContent = typeof formatCurrency === 'function' ? formatCurrency(marketCap) : marketCap;
+      updateTotalPrice();
+      logDebug(`📊 Chart and stats updated for ${symbol}, close: $${currentStockPrice.toFixed(2)}`);
+    }
+  }
+
   // Neue Funktion: Demo-Daten verwenden, aber den ursprünglichen Preis beibehalten
   function useDemoDataPreservePrice(symbol, timeframe) {
     const units = getTimeframeUnits(timeframe);
@@ -191,25 +236,39 @@ document.addEventListener('DOMContentLoaded', function() {
     
     logDebug(`📊 Generating demo data using startPrice: $${startPrice.toFixed(2)} for ${symbol}`);
     
-    const demoDataForChart = generateCandlestickData(units, startPrice, isMinutes);
+    const rawDemoData = generateCandlestickData(units, startPrice, isMinutes); // Dies gibt Rohdaten zurück
+    
+    // Mappe Rohdaten in das ApexCharts-Format
+    const apexChartFormattedDemoData = rawDemoData.map(item => ({
+      x: new Date(item.date),
+      y: [
+        parseFloat(item.open).toFixed(2),
+        parseFloat(item.high).toFixed(2),
+        parseFloat(item.low).toFixed(2),
+        parseFloat(item.close).toFixed(2)
+      ]
+    })).filter(item => { // Zusätzliche Filterung für Gültigkeit
+        const dateObj = new Date(item.x);
+        return !isNaN(dateObj.getTime()) &&
+               item.y.every(val => val !== null && isFinite(parseFloat(val)));
+    });
     
     chart.updateSeries([{
       name: symbol,
-      data: demoDataForChart
+      data: apexChartFormattedDemoData // Verwende die gemappten und gefilterten Daten
     }]);
     
-    if (demoDataForChart.length > 0) {
-      const lastDemoCandle = demoDataForChart[demoDataForChart.length - 1].y;
+    if (rawDemoData.length > 0) {
+      const lastRawDemoCandle = rawDemoData[rawDemoData.length - 1]; // Objekt mit .open, .high, etc.
       
-      // Behalte den Preis bei, aktualisiere nur das Chart
-      document.getElementById('stock-high').textContent = `$${parseFloat(lastDemoCandle[1]).toFixed(2)}`;
-      document.getElementById('stock-low').textContent = `$${parseFloat(lastDemoCandle[2]).toFixed(2)}`;
-      document.getElementById('stock-volume').textContent = formatNumber(Math.floor(Math.random() * (isMinutes ? 50000 : 10000000) + (isMinutes ? 1000 : 500000)));
+      document.getElementById('stock-high').textContent = `$${parseFloat(lastRawDemoCandle.high).toFixed(2)}`;
+      document.getElementById('stock-low').textContent = `$${parseFloat(lastRawDemoCandle.low).toFixed(2)}`;
+      document.getElementById('stock-volume').textContent = formatNumber(lastRawDemoCandle.volume);
       
-      const marketCap = calculateMarketCap(symbol, currentStockPrice);
-      document.getElementById('stock-market-cap').textContent = formatCurrency(marketCap);
+      const marketCap = typeof calculateMarketCap === 'function' ? calculateMarketCap(symbol, currentStockPrice) : 'N/A'; // currentStockPrice wird beibehalten
+      document.getElementById('stock-market-cap').textContent = typeof formatCurrency === 'function' ? formatCurrency(marketCap) : marketCap;
       
-      logDebug(`📊 Demo chart updated for ${symbol}, last close: $${parseFloat(lastDemoCandle[3]).toFixed(2)}, but keeping purchase price at $${currentStockPrice.toFixed(2)}`);
+      logDebug(`📊 Demo chart updated for ${symbol}, last close: $${parseFloat(lastRawDemoCandle.close).toFixed(2)}, but keeping purchase price at $${currentStockPrice.toFixed(2)}`);
     }
   }
   
@@ -338,6 +397,76 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Demo-Candlestick-Daten-Generator (einfaches Random-Walk-Modell)
+  function generateCandlestickData(units, startPrice, isMinutes) {
+    const data = [];
+    let price = startPrice;
+    if (!isFinite(price)) price = 100; // Fallback für ungültigen Startpreis
+
+    for (let i = 0; i < units; i++) {
+      const open = price;
+      const change = (Math.random() - 0.5) * (isMinutes ? 0.5 : 5); // Kleinere Änderungen für Minuten
+      let close = open + change;
+      // Sicherstellen, dass der Preis nicht negativ wird
+      if (close <= 0) close = open * (0.95 + Math.random() * 0.1); // kleiner positiver Wert relativ zu open
+
+      const high = Math.max(open, close) + Math.random() * (isMinutes ? 0.2 : 2);
+      const low = Math.min(open, close) - Math.random() * (isMinutes ? 0.2 : 2);
+      
+      // Sicherstellen, dass low <= open/close und high >= open/close
+      const finalLow = Math.min(low, open, close);
+      const finalHigh = Math.max(high, open, close);
+
+      const volume = Math.floor(Math.random() * (isMinutes ? 50000 : 10000000) + (isMinutes ? 1000 : 500000));
+      let date = new Date();
+      if (isMinutes) {
+        date.setMinutes(date.getMinutes() - (units - i - 1));
+      } else {
+        date.setDate(date.getDate() - (units - i - 1));
+      }
+      data.push({
+        date: date.toISOString(),
+        open: open,
+        high: finalHigh, // Verwende finalHigh
+        low: finalLow,   // Verwende finalLow
+        close: close,
+        volume: volume
+      });
+      price = close;
+    }
+    return data;
+  }
+
+  // Demo-Daten verwenden, wenn API nicht funktioniert
+  function useDemoData(symbol, timeframe) {
+    const units = getTimeframeUnits(timeframe);
+    const startPrice = initialStockPrice > 0 ? initialStockPrice : getStartPrice(symbol);
+    const isMinutes = timeframe === '1MIN';
+    logDebug(`📊 Generating fallback demo data for ${symbol} with startPrice $${startPrice.toFixed(2)}`);
+    const demoData = generateCandlestickData(units, startPrice, isMinutes);
+    updateChartAndStats(symbol, demoData);
+  }
+
+  // Dummy für getStartPrice, falls nicht vorhanden
+  function getStartPrice(symbol) {
+    const basePrice = {"SPY": 450, "AAPL": 170, "TSLA": 250, "MSFT": 330, "AMZN": 130, "GOOGL": 140, "META": 290};
+    return basePrice[symbol] || (100 + Math.random() * 400);
+  }
+
+  // Dummy-Funktionen für calculateMarketCap und formatCurrency, falls nicht vorhanden
+  function calculateMarketCap(symbol, price) {
+    const sharesOutstanding = {"SPY": 1e9, "AAPL": 15e9, "TSLA": 3e9, "MSFT": 7e9, "AMZN": 10e9, "GOOGL": 12e9, "META": 2.5e9};
+    return price * (sharesOutstanding[symbol] || 5e9); 
+  }
+
+  function formatCurrency(value) {
+    if (value === 'N/A' || !isFinite(value)) return 'N/A';
+    if (value >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+    return `$${value.toFixed(2)}`;
+  }
+
   // Initialize the page
   function initializePage() {
     setupChart();
@@ -398,8 +527,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         logDebug(`Timeframe changed to: ${timeframe}`);
 
-        // Load data for current symbol and new timeframe, aber behalte den Preis bei
-        loadStockData(currentSymbol, currentTimeframe, true);
+        // KORREKTUR: Beim Wechsel des Zeitrahmens preserveInitialPrice = false!
+        loadStockData(currentSymbol, currentTimeframe, false);
       });
     });
 

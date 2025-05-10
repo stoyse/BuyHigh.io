@@ -10,7 +10,7 @@
     <!-- Theme Settings Card -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
       <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Theme Settings</h2>
-      <form method="post" action="{{ url_for('settings') }}">
+      <form method="post" action="{{ url_for('main.settings') }}">
         <input type="hidden" name="form_type" value="theme_settings">
         <div class="space-y-4">
           <div>
@@ -39,7 +39,7 @@
     <!-- Change Password Card -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
       <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Change Password</h2>
-      <form method="post" action="{{ url_for('settings') }}">
+      <form method="post" action="{{ url_for('main.settings') }}">
         <input type="hidden" name="form_type" value="password_settings">
         <div class="space-y-4">
           <div>

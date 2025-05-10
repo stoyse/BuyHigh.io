@@ -5,3 +5,5 @@ chat
 finnaceial news
 
 market mood with ai
+
+dog

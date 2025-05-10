@@ -341,7 +341,7 @@
         
         <div class="mb-2">
             <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">YOUR BALANCE: 
-                <span id="user-balance" class="text-primary-light dark:text-primary-dark font-bold">€0.00</span>
+                <span id="user-balance" class="text-primary-light dark:text-primary-dark font-bold">€{{ "%.2f"|format(g.user.balance if g.user.balance is not none else 0) }}</span>
             </p>
         </div>
 

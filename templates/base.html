@@ -117,24 +117,24 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex items-center">
-            <a href="{{ url_for('index') }}" class="flex-shrink-0 flex items-center font-pixel text-primary-light dark:text-primary-dark text-lg">
+            <a href="{{ url_for('main.index') }}" class="flex-shrink-0 flex items-center font-pixel text-primary-light dark:text-primary-dark text-lg">
               BuyHigh.io
             </a>
             <div class="ml-10 flex items-baseline space-x-6">
               {% if g.user %}
-              <a href="{{ url_for('dashboard') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
-              <a href="{{ url_for('trade') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Trade</a>
-              <a href="{{ url_for('settings') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Settings</a>
+              <a href="{{ url_for('main.dashboard') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
+              <a href="{{ url_for('main.trade') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Trade</a>
+              <a href="{{ url_for('main.settings') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Settings</a>
               {% endif %}
             </div>
           </div>
           <div class="flex items-center">
             {% if g.user %}
               <span class="text-sm font-pixel mr-4">Hi, {{ g.user.username }}!</span>
-              <a href="{{ url_for('logout') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-red text-white hover:bg-red-700">Logout</a>
+              <a href="{{ url_for('auth.logout') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-red text-white hover:bg-red-700">Logout</a>
             {% else %}
-              <a href="{{ url_for('login') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-blue text-white mr-2">Login</a>
-              <a href="{{ url_for('register') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-green text-white">Register</a>
+              <a href="{{ url_for('auth.login') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-blue text-white mr-2">Login</a>
+              <a href="{{ url_for('auth.register') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-green text-white">Register</a>
             {% endif %}
           </div>
         </div>
