@@ -10,6 +10,58 @@ BuyHigh.io is a Flask-based web application for playful stock trading with gamif
 
 ---
 
+## Detailed Feature & Technology Matrix
+
+| Funktion | Beschreibung | Backend | Frontend | Datenbank | Externe Services |
+|----------|--------------|---------|----------|-----------|------------------|
+| **Benutzer-Registrierung** | Neues Benutzerkonto mit Username, Email, Passwort | Flask, Jinja2, bcrypt | HTML, Tailwind, JS | SQLite: users | - |
+| **Login/Logout** | Authentifizierung, Session-Handling | Flask, Jinja2, bcrypt | HTML, Tailwind, JS | SQLite: users | - |
+| **Google Login** | Login via Google OAuth | Flask, Firebase Auth | HTML, JS, Firebase UI | - | Firebase Auth |
+| **Passwort vergessen** | Passwort-Reset via Email | Flask, SMTP | HTML, JS | SQLite: users | SMTP-Server |
+| **Profilverwaltung** | Anzeigen & Bearbeiten von Profil, Username, Email | Flask | HTML, JS | SQLite: users | - |
+| **Passwort ändern** | Neues Passwort setzen | Flask, bcrypt | HTML, JS | SQLite: users | - |
+| **Account löschen** | Account & Daten löschen | Flask | HTML, JS | SQLite: users, transactions | - |
+| **Theme-Auswahl** | Light/Dark Mode pro User | Flask, Jinja2 | Tailwind, JS | SQLite: users | - |
+| **Dashboard** | Übersicht: Kontostand, Portfolio, Mood Pet, XP, Badges | Flask, Jinja2 | HTML, Tailwind, JS | SQLite: users, transactions, asset_types | - |
+| **Portfolio-Anzeige** | Liste aller gehaltenen Assets | Flask | HTML, JS | SQLite: transactions, asset_types | - |
+| **Stimmungs-Pet** | Visualisierung des Trading-Erfolgs | Flask | HTML, Tailwind, JS | SQLite: users | - |
+| **Meme Mode** | Aktivierung von Meme-Features | Flask | HTML, JS | SQLite: users | - |
+| **Level & XP** | Fortschrittssystem für User | Flask | HTML, JS | SQLite: users | - |
+| **Badges** | Freischaltbare Erfolge | Flask | HTML, JS | SQLite: users | - |
+| **Aktivitätsverlauf** | Letzte Trades anzeigen | Flask | HTML, JS | SQLite: transactions | - |
+| **Marktstimmung (Platzhalter)** | Künftige AI-basierte Marktstimmung | - | HTML | - | - |
+| **Handelsseite** | Aktienliste, Suche, Auswahl | Flask, Jinja2 | HTML, Tailwind, JS | SQLite: asset_types | - |
+| **Candlestick-Chart** | Interaktives Chart für gewähltes Asset | Flask API, Demo-Generator | ApexCharts, JS | - | ApexCharts, Alpha Vantage (optional) |
+| **Zeitrahmen-Auswahl** | Verschiedene Zeiträume für Chart | Flask API | JS | - | - |
+| **Live-Updates (1MIN)** | Chart aktualisiert sich minütlich | Flask API | JS | - | - |
+| **Kaufen/Verkaufen** | Kauf/Verkauf von Assets | Flask API | JS, HTML | SQLite: transactions, users | - |
+| **Kauf/Verkauf-Validierung** | Validierung von Menge, Preis, Saldo | Flask | JS | SQLite: users, transactions | - |
+| **Portfolio-Berechnung** | FIFO, Gewinn/Verlust, Gesamtwert | Flask | JS | SQLite: transactions | - |
+| **Marktstatistiken** | High, Low, Volumen, Market Cap | Flask API, Demo-Generator | JS | - | - |
+| **Chat-Raum-Liste** | Alle Chats des Users | Flask, Firebase | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
+| **Chat-Suche** | Chats nach Name filtern | Flask | JS | - | - |
+| **Chat erstellen** | Neuen Chat-Raum anlegen | Flask, Firebase | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
+| **Chat beitreten** | User zu Chat hinzufügen | Flask, Firebase | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
+| **Chat verlassen/löschen** | Chat verlassen oder löschen | Flask, Firebase | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
+| **Chat-Nachrichten** | Nachrichten senden/empfangen | Flask, Firebase, WebSocket | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
+| **Chat-Realtime** | Nachrichten in Echtzeit | Flask-SocketIO, Firebase | JS, WebSocket | Firebase RTDB, SQLite | Firebase RTDB |
+| **Fallback Chat-DB** | Automatischer Fallback auf SQLite | Flask | - | SQLite | - |
+| **General-Chat** | System-Chat, jeder User ist Mitglied | Flask, Firebase | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
+| **Chat-Migration** | Migration SQLite → Firebase | Flask CLI | - | SQLite, Firebase RTDB | Firebase RTDB |
+| **Chat-Reset** | Löscht alle Chats in Firebase | Flask CLI | - | Firebase RTDB | Firebase RTDB |
+| **API: /api/stock-data** | Preis-/Chartdaten für Symbol & Zeitraum | Flask API | JS | - | Alpha Vantage, Demo-Generator |
+| **API: /api/trade/buy/sell** | Kauf/Verkauf-Transaktion | Flask API | JS | SQLite: transactions, users | - |
+| **API: /api/portfolio** | Portfolio & Kontostand | Flask API | JS | SQLite: transactions, users | - |
+| **Management CLI** | setup, status, migrate, reset-firebase-chat | Flask CLI | - | SQLite, Firebase RTDB | Firebase RTDB |
+| **Fehlerseiten** | 404, 403, 500 etc. | Flask | HTML | - | - |
+| **Pixel-Art Themes** | Verschiedene Themes, Sidebar-Icons | Tailwind, CSS | HTML, JS | - | - |
+| **Stripe Integration (geplant)** | Echtgeld-Käufe für Spielgeld | - | - | - | Stripe (geplant) |
+| **Passkey Login (geplant)** | Login mit Passkey | - | - | - | - |
+| **Electron Support (geplant)** | Desktop-App | - | - | - | Electron (geplant) |
+| **Mehrsprachigkeit (geplant)** | Mehrere Sprachen | Flask Babel | HTML, JS | - | - |
+
+---
+
 ## Main Features & Pages
 
 ### 1. Authentication & User Management
