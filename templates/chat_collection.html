@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Meine Chats - BuyHigh.io{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-full">
+  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-6 text-center">MEINE CHATS</h1>
+
+  <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-4 mb-6">
+    <div class="flex flex-wrap justify-between items-center">
+      <div class="w-full md:w-2/3 mb-4 md:mb-0">
+        <label for="chat-search" class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1 block">CHAT SUCHEN:</label>
+        <input type="search" id="chat-search" placeholder="Chatnamen durchsuchen..." 
+               class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white focus:border-game-blue focus:outline-none"
+               oninput="searchChats()">
+      </div>
+      <div class="w-full md:w-auto">
+        <button onclick="location.href='/chat/new-chat'" 
+                class="w-full md:w-auto py-3 px-4 bg-game-green border-b-4 border-green-700 text-white font-pixel text-sm rounded hover:bg-green-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
+          NEUEN CHAT ERSTELLEN
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-gray-300 dark:border-gray-700 rounded-lg p-4">
+    {% if chat_rooms %}
+      <ul class="space-y-2 max-h-[500px] overflow-y-auto pr-1" id="chatList">
+        {% for chat in chat_rooms %}
+        <li class="chat-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" 
+            onclick="location.href='/chat/{{ chat.id }}'">
+          <div class="flex justify-between items-start">
+            <div class="flex-grow">
+              <p class="font-pixel text-sm text-gray-800 dark:text-gray-200 mb-1">{{ chat.name }}</p>
+              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400 line-clamp-1">
+                {% if chat.last_message %}
+                  {{ chat.last_message }}
+                {% else %}
+                  Keine Nachrichten
+                {% endif %}
+              </p>
+            </div>
+            <div class="text-right">
+              <p class="font-pixel text-xxs text-gray-400 dark:text-gray-500">
+                {% if chat.last_activity %}
+                  {{ chat.last_activity }}
+                {% endif %}
+              </p>
+            </div>
+          </div>
+          <!-- Decorative divider -->
+          <div class="w-full h-1 mt-2 bg-gray-100 dark:bg-gray-700"></div>
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="flex flex-col items-center justify-center py-12">
+        <svg class="w-16 h-16 text-gray-400 dark:text-gray-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+        <p class="font-pixel text-sm text-gray-600 dark:text-gray-400 text-center">Du hast noch keine Chats.</p>
+        <p class="font-pixel text-xs text-gray-500 dark:text-gray-500 text-center mt-2">Erstelle einen neuen Chat, um loszulegen!</p>
+        <button onclick="location.href='/new-chat'" 
+                class="mt-4 py-2 px-4 bg-game-gold border-b-4 border-yellow-600 text-white font-pixel text-xs rounded hover:bg-yellow-500 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
+          STARTEN
+        </button>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  function searchChats() {
+    const input = document.getElementById('chat-search');
+    const filter = input.value.toUpperCase();
+    const chatList = document.getElementById('chatList');
+    const chatItems = chatList.getElementsByClassName('chat-item');
+
+    for (let i = 0; i < chatItems.length; i++) {
+      const chatName = chatItems[i].querySelector('.font-pixel.text-sm');
+      const txtValue = chatName.textContent || chatName.innerText;
+      
+      if (txtValue.toUpperCase().indexOf(filter) > -1) {
+        chatItems[i].style.display = '';
+      } else {
+        chatItems[i].style.display = 'none';
+      }
+    }
+  }
+</script>
+{% endblock %}

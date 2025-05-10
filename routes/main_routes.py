@@ -133,3 +133,4 @@ def settings():
         return redirect(url_for('main.settings'))
 
     return render_template('settings.html', user=g.user, darkmode=dark_mode_active)
+

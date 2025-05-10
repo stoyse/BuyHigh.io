@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat - BuyHigh.io{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-full">
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark">
+      {{ chat.name }}
+    </h1>
+    <a href="/chat/{{ chat.id }}/settings" class="py-2 px-4 bg-game-blue text-white font-pixel rounded hover:bg-blue-600">
+      Chat Einstellungen
+    </a>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-6">
+    <!-- Chat Messages -->
+    <div id="chat-messages" class="max-h-[500px] overflow-y-auto space-y-4 mb-6 bg-gray-100 dark:bg-gray-700 p-4 rounded-lg border-2 border-gray-300 dark:border-gray-600">
+      <!-- Messages will be populated by JavaScript -->
+    </div>
+
+    <!-- Chat Input -->
+    <form id="chat-form" class="flex items-center space-x-4">
+      <input type="text" id="chat-input" placeholder="Type your message..." 
+             class="flex-1 p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white focus:border-game-blue focus:outline-none">
+      <button type="submit" 
+              class="px-4 py-2 bg-game-green border-b-4 border-green-700 text-white font-pixel text-sm rounded hover:bg-green-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
+        Send
+      </button>
+    </form>
+  </div>
+</div>
+
+{% for chat in chats %}
+  <div>
+    <p>Chat Name: {{ chat.name }}</p>
+    <p>Erstellt am: {{ chat.created_at|default('Unbekannt') }}</p>
+  </div>
+{% endfor %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessagesContainer = document.getElementById('chat-messages');
+    
+    const currentUserId = {{ user.id | default('null') }};
+    const currentUsername = "{{ user.username | default('You') }}";
+    const chatRoomId = String({{ chat_room_id | default(1) }}); // Sicherstellen, dass es ein String ist
+
+    // Establish WebSocket connection zum /chat Namespace
+    const socket = io(window.location.origin + '/chat');
+
+    socket.on('connect', () => {
+      console.log('Connected to chat server (General Chat).');
+      socket.emit('join', { room_id: chatRoomId });
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from chat server.');
+    });
+
+    socket.on('status', (data) => {
+      const statusDiv = document.createElement('div');
+      statusDiv.classList.add('text-center', 'text-xs', 'text-gray-500', 'dark:text-gray-400', 'italic', 'my-2');
+      statusDiv.textContent = data.msg;
+      chatMessagesContainer.appendChild(statusDiv);
+      scrollToBottom();
+    });
+
+    socket.on('error', (data) => {
+      const errorDiv = document.createElement('div');
+      errorDiv.classList.add('text-red-500', 'font-pixel', 'text-xs', 'p-2', 'text-center');
+      errorDiv.textContent = `Error: ${data.msg}`;
+      chatMessagesContainer.appendChild(errorDiv);
+      scrollToBottom();
+    });
+
+    function formatTimestamp(isoString) {
+      if (!isoString) return '';
+      try {
+        // Annahme: isoString ist im Format 'YYYY-MM-DDTHH:mm:ss.sssZ' oder 'YYYY-MM-DD HH:MM:SS' (aus DB)
+        // JavaScript Date kann ISO 8601 direkt parsen
+        const date = new Date(isoString.endsWith('Z') ? isoString : isoString.replace(' ', 'T') + 'Z');
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch (e) {
+        console.warn("Could not parse timestamp:", isoString, e);
+        // Fallback, falls die Konvertierung fehlschlägt
+        const parts = isoString.split(' '); // Für 'YYYY-MM-DD HH:MM:SS'
+        if (parts.length > 1 && parts[1].includes(':')) {
+            return parts[1].substring(0,5); // HH:MM
+        }
+        // Für ISO String 'YYYY-MM-DDTHH:MM:SS.sssZ'
+        const tParts = isoString.split('T');
+        if (tParts.length > 1 && tParts[1].includes(':')) {
+            return tParts[1].substring(0,5); // HH:MM
+        }
+        return isoString; // Gib den Originalstring zurück, wenn alles fehlschlägt
+      }
+    }
+
+    function addMessageToChat(messageData, isInitial = false) {
+      const messageDiv = document.createElement('div');
+      const isOwnMessage = messageData.user_id === currentUserId;
+      
+      messageDiv.classList.add('flex', 'items-start', 'space-x-3', 'py-2');
+      if (isOwnMessage) {
+        messageDiv.classList.add('justify-end');
+      }
+
+      const avatarInitial = messageData.username ? messageData.username.charAt(0).toUpperCase() : '?';
+      const avatarColor = isOwnMessage ? 'bg-game-blue' : 'bg-game-green';
+
+      let formattedTime = formatTimestamp(messageData.sent_at);
+
+      const innerHTML = `
+        ${!isOwnMessage ? `
+        <div class="w-8 h-8 ${avatarColor} rounded-full flex items-center justify-center text-white font-pixel text-xs flex-shrink-0">${avatarInitial}</div>
+        ` : ''}
+        <div class="flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}">
+          <div class="flex items-baseline space-x-2">
+            ${!isOwnMessage ? `<p class="font-pixel text-sm text-gray-800 dark:text-gray-200">${escapeHTML(messageData.username)}</p>` : ''}
+            <p class="font-pixel text-xs text-gray-500 dark:text-gray-400">${formattedTime}</p>
+          </div>
+          <div class="mt-1 p-2 rounded-lg max-w-xs md:max-w-md lg:max-w-lg break-words ${isOwnMessage ? 'bg-blue-500 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-100'}">
+            <p class="font-pixel text-sm">${escapeHTML(messageData.message_text)}</p>
+          </div>
+        </div>
+        ${isOwnMessage ? `
+        <div class="w-8 h-8 ${avatarColor} rounded-full flex items-center justify-center text-white font-pixel text-xs flex-shrink-0">${avatarInitial}</div>
+        ` : ''}
+      `;
+      
+      messageDiv.innerHTML = innerHTML;
+      chatMessagesContainer.appendChild(messageDiv);
+      
+      if (!isInitial) {
+        scrollToBottom();
+      }
+    }
+    
+    function escapeHTML(str) {
+      var p = document.createElement("p");
+      p.appendChild(document.createTextNode(str));
+      return p.innerHTML;
+    }
+
+    function scrollToBottom() {
+      chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+    }
+
+    const initialMessages = {{ initial_messages | tojson | safe }};
+    if (initialMessages && initialMessages.length > 0) {
+      // Format initial messages' timestamps
+      initialMessages.forEach(msg => {
+          // Die addMessageToChat Funktion sollte den Zeitstempel bereits formatieren
+          addMessageToChat(msg, true)
+      });
+      scrollToBottom();
+    } else {
+      const noMessagesDiv = document.createElement('div');
+      noMessagesDiv.classList.add('text-center', 'text-gray-500', 'dark:text-gray-400', 'italic', 'py-4');
+      noMessagesDiv.textContent = "No messages yet. Be the first to say something!";
+      chatMessagesContainer.appendChild(noMessagesDiv);
+    }
+
+    chatForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const messageText = chatInput.value.trim();
+      if (messageText && socket.connected) {
+        socket.emit('send_message', {
+          message_text: messageText,
+          chat_room_id: chatRoomId // chatRoomId ist bereits als String definiert
+        });
+        chatInput.value = '';
+      }
+    });
+
+    socket.on('new_message', function(data) {
+      // Sicherstellen, dass die Nachricht für diesen Raum ist (obwohl der Server dies bereits tun sollte)
+      if (String(data.chat_room_id) === chatRoomId) {
+        addMessageToChat(data);
+      }
+    });
+
+  });
+</script>
+{% endblock %}

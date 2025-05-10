@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, g
 import db_handler
 import auth as auth_module # Alias to avoid conflict with blueprint name
+from utils import login_required # Import login_required
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -72,6 +73,36 @@ def login():
 
     dark_mode_active = request.args.get('darkmode', 'False').lower() == 'true'
     return render_template('login.html', darkmode=dark_mode_active)
+
+@auth_bp.route('/delete_account', methods=['POST'])
+@login_required
+def delete_account():
+    if request.method == 'POST':
+        current_password = request.form.get('current_password_for_delete')
+
+        if not current_password:
+            flash('Passwort zur Bestätigung erforderlich.', 'danger')
+            return redirect(url_for('main.settings'))
+
+        if not g.user: # Should be caught by @login_required, but as a safeguard
+            flash('Benutzer nicht gefunden.', 'danger')
+            return redirect(url_for('auth.login'))
+
+        if not auth_module.check_password(g.user['password_hash'], current_password):
+            flash('Aktuelles Passwort ist nicht korrekt.', 'danger')
+            return redirect(url_for('main.settings'))
+
+        # Proceed with deletion
+        if db_handler.delete_user(g.user['id']):
+            session.clear() # Log out the user
+            flash('Ihr Konto wurde erfolgreich gelöscht.', 'success')
+            return redirect(url_for('main.index')) # Redirect to home or login page
+        else:
+            flash('Fehler beim Löschen des Kontos. Bitte versuchen Sie es später erneut.', 'danger')
+            return redirect(url_for('main.settings'))
+    
+    # GET request not allowed for this route directly, redirect to settings
+    return redirect(url_for('main.settings'))
 
 @auth_bp.route('/logout')
 def logout():

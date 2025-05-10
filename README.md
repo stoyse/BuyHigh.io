@@ -45,6 +45,7 @@ BuyHigh.io is a Flask-based web application for playful stock trading with gamif
 - **Settings (`/settings`)**
   - **Theme Selection:** Choose between light and dark mode for your account
   - **Change Password:** Update your account password with validation
+  - **Delete Account:** Permanently delete your account and all associated data (requires password confirmation).
 
 ---
 
@@ -131,6 +132,7 @@ BuyHigh.io is a Flask-based web application for playful stock trading with gamif
 - **settings.html**
   - Theme selection (light/dark) with immediate effect.
   - Change password form with validation and feedback.
+  - Delete account form with password confirmation.
 
 - **login.html / register.html**
   - Clean forms for authentication, with dark mode support.

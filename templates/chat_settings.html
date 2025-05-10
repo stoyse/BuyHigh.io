@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat Einstellungen - BuyHigh.io{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-full">
+  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-6 text-center">Chat Einstellungen: {{ chat.name }}</h1>
+  <form method="post" class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-6 max-w-xl mx-auto">
+    <h2 class="font-pixel text-lg mb-4">Mitglieder verwalten</h2>
+    <div class="mb-4">
+      <p class="font-pixel text-xs mb-2">Aktuelle Mitglieder:</p>
+      <ul class="mb-2">
+        {% for member in members %}
+          <li>
+            <label>
+              <input type="checkbox" name="remove_user" value="{{ member.id }}">
+              {{ member.username }}
+            </label>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="font-pixel text-xs mb-2">Weitere Nutzer hinzufügen:</p>
+      <ul>
+        {% for user in all_users %}
+          {% if user.id not in members|map(attribute='id')|list %}
+            <li>
+              <label>
+                <input type="checkbox" name="add_user" value="{{ user.id }}">
+                {{ user.username }}
+              </label>
+            </li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="mb-4">
+      <label class="font-pixel text-xs">
+        <input type="checkbox" name="members_can_invite" {% if chat.members_can_invite %}checked{% endif %}>
+        Mitglieder dürfen andere hinzufügen
+      </label>
+    </div>
+    {% if is_admin %}
+      <button type="submit" class="py-2 px-4 bg-game-green text-white font-pixel rounded hover:bg-green-600">Speichern</button>
+    {% else %}
+      <p class="font-pixel text-xs text-game-red">Nur der Chat-Admin kann Mitglieder verwalten.</p>
+    {% endif %}
+  </form>
+  {% if is_admin %}
+    <form method="post" action="{{ url_for('chat.delete_chat', chat_id=chat.id) }}" onsubmit="return confirm('Diesen Chat wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!');" class="mt-6 text-center">
+      <button type="submit" class="py-2 px-4 bg-game-red text-white font-pixel rounded hover:bg-red-700">Chat löschen</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

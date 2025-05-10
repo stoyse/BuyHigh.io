@@ -1,6 +1,6 @@
 bcrypt
-sqlite3
 pandas
 numpy
 requests
-beautifulsoup4
+flask-socketio
+gunicorn

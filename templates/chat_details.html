@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ chat.name }} - Chat - BuyHigh.io{% endblock %}
+
+{% block head_extra %}
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-full">
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark">{{ chat.name }}</h1>
+    <div class="flex gap-2">
+      <a href="{{ url_for('chat.chat_settings', chat_id=chat.id) }}"
+         class="px-3 py-2 bg-game-blue text-white font-pixel rounded text-xs hover:bg-blue-600 transition-colors">
+         Chat Einstellungen
+      </a>
+      <a href="{{ url_for('chat.chat_collection') }}" 
+         class="px-3 py-2 bg-gray-200 dark:bg-gray-700 rounded text-xs font-pixel hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+         ZURÜCK
+      </a>
+    </div>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-gray-300 dark:border-gray-700 rounded-lg p-4 flex flex-col h-[70vh]">
+    <!-- Chat-Nachrichtenbereich -->
+    <div id="message-container" class="flex-grow overflow-y-auto mb-4 p-2">
+      <!-- Initial messages are loaded here by Flask/Jinja -->
+      {% if initial_messages %}
+        {% for message in initial_messages %}
+          <div class="mb-4 {% if message.user_id == g.user.id %}text-right{% else %}text-left{% endif %}">
+            <div class="inline-block max-w-[70%] rounded-lg px-4 py-2 {% if message.user_id == g.user.id %}bg-game-blue text-white{% else %}bg-gray-200 dark:bg-gray-700{% endif %}">
+              <p class="font-pixel text-xs break-words">{{ message.message_text }}</p>
+            </div>
+            <div class="mt-1">
+              <span class="text-xxs font-pixel text-gray-500" data-timestamp="{{ message.sent_at }}">
+                {{ message.username }} • <span class="msg-time">{{ message.sent_at }}</span>
+              </span>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div id="no-messages-placeholder" class="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
+          <svg class="w-12 h-12 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          <p class="font-pixel text-sm text-center">Noch keine Nachrichten in diesem Chat.</p>
+          <p class="font-pixel text-xs text-center mt-2">Sei der/die Erste, der/die etwas schreibt!</p>
+        </div>
+      {% endif %}
+    </div>
+    
+    <!-- Nachrichteneingabe -->
+    <div class="border-t-2 border-gray-200 dark:border-gray-700 pt-4">
+      <form id="message-form" class="flex">
+        <input type="text" id="message-input" 
+               class="flex-grow p-3 border-2 border-gray-300 dark:border-gray-600 rounded-l font-pixel text-sm dark:bg-gray-700 dark:text-white focus:border-game-blue focus:outline-none"
+               placeholder="Nachricht eingeben...">
+        <button type="submit" 
+                class="px-4 bg-game-green border-b-4 border-green-700 text-white font-pixel text-sm rounded-r hover:bg-green-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
+          SENDEN
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[Frontend] DOMContentLoaded event fired.');
+
+  if (typeof io === 'undefined') {
+    console.error('[Frontend] CRITICAL: Socket.IO (io) is not defined. Ensure the library is loaded before this script.');
+    alert('Ein kritischer Fehler ist aufgetreten: Socket.IO konnte nicht geladen werden. Chat funktioniert nicht.');
+    return;
+  }
+
+  const messageForm = document.getElementById('message-form');
+  const messageInput = document.getElementById('message-input');
+  const messageContainer = document.getElementById('message-container');
+  const noMessagesPlaceholder = document.getElementById('no-messages-placeholder');
+
+  if (!messageForm) {
+    console.error('[Frontend] CRITICAL: Message form (ID: message-form) not found! Cannot attach submit listener. Page will reload on submit.');
+    return; 
+  } else {
+    console.log('[Frontend] Message form (ID: message-form) found.', messageForm);
+  }
+
+  if (!messageInput) {
+    console.warn('[Frontend] Message input (ID: message-input) not found.');
+  } else {
+    console.log('[Frontend] Message input (ID: message-input) found.', messageInput);
+  }
+
+  if (!messageContainer) {
+    console.warn('[Frontend] Message container (ID: message-container) not found.');
+  } else {
+    console.log('[Frontend] Message container (ID: message-container) found.', messageContainer);
+  }
+  
+  const currentUserId = {{ g.user.id | default('null') | tojson }};
+  const chatRoomId = '{{ chat.id }}'; 
+  console.log('[Frontend] currentUserId:', currentUserId, 'chatRoomId:', chatRoomId);
+
+  const socket = io(window.location.origin + '/chat');
+  console.log('[Frontend] SocketIO client initialized for /chat.');
+
+  socket.on('connect', () => {
+    console.log('[Frontend] Socket connected to /chat. Emitting join for room:', chatRoomId);
+    socket.emit('join', { room_id: chatRoomId });
+  });
+
+  socket.on('disconnect', () => {
+    console.log('[Frontend] Socket disconnected from /chat.');
+  });
+
+  socket.on('status', (data) => {
+    console.log('[Frontend] Socket status event:', data);
+    const statusDiv = document.createElement('div');
+    statusDiv.classList.add('text-center', 'text-xs', 'text-gray-500', 'dark:text-gray-400', 'italic', 'my-1');
+    statusDiv.textContent = data.msg;
+    if (messageContainer) messageContainer.appendChild(statusDiv);
+    scrollToBottom();
+  });
+  
+  socket.on('error', function(data) {
+    console.error('[Frontend] Socket error event:', data);
+    alert('Chat Fehler: ' + (data.msg || JSON.stringify(data)));
+  });
+
+  function formatTimestampForDisplay(isoString) {
+    if (!isoString) return '';
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      console.warn("Zeitstempel konnte nicht formatiert werden:", isoString, e);
+      const parts = isoString.split('T');
+      if (parts.length > 1) {
+        const timePart = parts[1].split('.')[0];
+        return timePart.substring(0,5);
+      }
+      return isoString;
+    }
+  }
+
+  function appendMessageToUI(msgData) {
+    if (noMessagesPlaceholder) {
+        noMessagesPlaceholder.style.display = 'none';
+    }
+
+    const messageDiv = document.createElement('div');
+    const isOwnMessage = msgData.user_id === currentUserId;
+    
+    messageDiv.classList.add('mb-4');
+    if (isOwnMessage) {
+      messageDiv.classList.add('text-right');
+    } else {
+      messageDiv.classList.add('text-left');
+    }
+
+    const bubbleClasses = ['inline-block', 'max-w-[70%]', 'rounded-lg', 'px-4', 'py-2'];
+    if (isOwnMessage) {
+      bubbleClasses.push('bg-game-blue', 'text-white');
+    } else {
+      bubbleClasses.push('bg-gray-200', 'dark:bg-gray-700');
+    }
+    
+    const formattedTime = formatTimestampForDisplay(msgData.sent_at);
+
+    messageDiv.innerHTML = `
+      <div class="${bubbleClasses.join(' ')}">
+        <p class="font-pixel text-xs break-words">${escapeHTML(msgData.message_text)}</p>
+      </div>
+      <div class="mt-1">
+        <span class="text-xxs font-pixel text-gray-500">
+          ${escapeHTML(msgData.username)} • <span class="msg-time">${formattedTime}</span>
+        </span>
+      </div>
+    `;
+    if (messageContainer) messageContainer.appendChild(messageDiv);
+    scrollToBottom();
+  }
+
+  function escapeHTML(str) {
+    var p = document.createElement("p");
+    p.appendChild(document.createTextNode(str));
+    return p.innerHTML;
+  }
+
+  function scrollToBottom() {
+    if (messageContainer) {
+      messageContainer.scrollTop = messageContainer.scrollHeight;
+    }
+  }
+
+  scrollToBottom();
+  
+  document.querySelectorAll('.msg-time').forEach(el => {
+      const isoTimestamp = el.parentElement.getAttribute('data-timestamp');
+      if (isoTimestamp) {
+          el.textContent = formatTimestampForDisplay(isoTimestamp);
+      }
+  });
+
+  console.log('[Frontend] Attaching submit event listener to message form.');
+  messageForm.addEventListener('submit', function(e) {
+    console.log('[Frontend] Submit event triggered on message form.');
+    e.preventDefault(); 
+    console.log('[Frontend] Default form submission prevented.');
+    
+    const messageText = messageInput.value.trim();
+    if (!messageText) {
+      console.log('[Frontend] Message text is empty, not sending.');
+      return;
+    }
+    console.log('[Frontend] Message text to send:', messageText);
+
+    if (socket.connected) {
+      console.log('[Frontend] Socket is connected. Sending message via API POST.');
+      const apiUrl = `/chat/${chatRoomId}/messages`; 
+      console.log('[Frontend] API URL for POST:', apiUrl);
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ message_text: messageText })
+      })
+      .then(response => {
+        console.log('[Frontend] Received response from API POST. Status:', response.status, 'Ok:', response.ok);
+        if (response.ok) {
+          console.log('[Frontend] Message sent successfully via API POST.');
+          if(messageInput) messageInput.value = '';
+        } else {
+          response.text().then(text => {
+            console.error(`[Frontend] API POST Error: ${response.status} ${response.statusText}. Server response: ${text}`);
+            alert(`Fehler beim Senden der Nachricht (${response.status}): ${text || response.statusText}`);
+          }).catch(err => {
+            console.error(`[Frontend] API POST Error: ${response.status} ${response.statusText}. Could not parse error text:`, err);
+            alert(`Fehler beim Senden der Nachricht: ${response.status} ${response.statusText}`);
+          });
+        }
+      })
+      .catch(error => {
+        console.error('[Frontend] Network error or other issue during fetch POST:', error);
+        alert('Netzwerkfehler beim Senden der Nachricht. Bitte Server-Konsole und Netzwerk-Tab im Browser prüfen.');
+      });
+    } else {
+      console.warn('[Frontend] Socket not connected. Message not sent via API POST.');
+      alert("Nicht mit dem Chat-Server verbunden. Bitte versuchen Sie es später erneut.");
+    }
+  });
+  console.log('[Frontend] Submit event listener attached.');
+
+  socket.on('new_message', function(data) {
+    console.log('[Frontend] new_message socket event received:', data);
+    appendMessageToUI(data);
+  });
+
+  console.log('[Frontend] Chat details script fully loaded and initialized.');
+});
+</script>
+{% endblock %}

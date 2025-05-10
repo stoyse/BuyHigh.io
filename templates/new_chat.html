@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Neuen Chat erstellen - BuyHigh.io{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-full">
+  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-6 text-center">NEUEN CHAT ERSTELLEN</h1>
+
+  <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-6 max-w-md mx-auto">
+    <form method="post" action="{{ url_for('chat.new_chat') }}">
+      <div class="mb-6">
+        <label for="chat_name" class="block text-xs font-pixel text-gray-600 dark:text-gray-400 mb-2">CHATNAME:</label>
+        <input type="text" id="chat_name" name="chat_name" required
+               class="w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white focus:border-game-blue focus:outline-none">
+      </div>
+      
+      <div class="flex justify-center">
+        <button type="submit" 
+                class="py-3 px-6 bg-game-green border-b-4 border-green-700 text-white font-pixel text-sm rounded hover:bg-green-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
+          CHAT ERSTELLEN
+        </button>
+      </div>
+    </form>
+  </div>
+  
+  <div class="mt-4 text-center">
+    <a href="{{ url_for('chat.chat_collection') }}" class="font-pixel text-xs text-primary-light dark:text-primary-dark hover:underline">Zurück zur Chat-Übersicht</a>
+  </div>
+</div>
+{% endblock %}

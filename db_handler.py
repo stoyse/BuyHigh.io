@@ -79,9 +79,19 @@ def init_db():
     );
     """)
     
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat_room_participants (
+        chat_room_id INTEGER NOT NULL,
+        user_id INTEGER NOT NULL,
+        PRIMARY KEY (chat_room_id, user_id),
+        FOREIGN KEY (chat_room_id) REFERENCES chat_rooms(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    """)
+    
     conn.commit()
     conn.close()
-    print("Database initialized with users, asset_types, and transactions tables.")
+    print("Database initialized with users, asset_types, transactions, and chat_room_participants tables.")
 
 def add_user(username, email, password_hash):
     conn = get_db_connection()
@@ -91,6 +101,23 @@ def add_user(username, email, password_hash):
             (username, email, password_hash),
         )
         conn.commit()
+        user_id = conn.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
+        if user_id:
+            user_id = user_id[0]  # Extract the actual ID value
+            DEFAULT_CHAT_ROOM_ID = int(1)
+            # Check if the chat_room_participants entry already exists
+            existing_entry = conn.execute(
+                "SELECT 1 FROM chat_room_participants WHERE chat_room_id = ? AND user_id = ? AND chat_name = ?",
+                (DEFAULT_CHAT_ROOM_ID, user_id, "General"),
+            ).fetchone()
+            if not existing_entry:
+                conn.execute(
+                    "INSERT INTO chat_room_participants (chat_room_id, user_id, chat_name) VALUES (?, ?, ?)",
+                    (DEFAULT_CHAT_ROOM_ID, user_id, "General"),
+                )
+                conn.commit()
+            else:
+                return False  # Entry already exists
     except sqlite3.IntegrityError:
         return False  # Username or email already exists
     finally:
@@ -148,6 +175,95 @@ def update_user_password(user_id, new_password_hash):
         return False
     finally:
         conn.close()
+
+def delete_user(user_id):
+    """Deletes a user and all their associated data."""
+    conn = get_db_connection()
+    try:
+        conn.execute("BEGIN TRANSACTION")
+        # Delete associated transactions first due to potential FK constraints
+        conn.execute("DELETE FROM transactions WHERE user_id = ?", (user_id,))
+        
+        # Delete the user
+        cursor = conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        
+        conn.commit()
+        return cursor.rowcount > 0  # Returns True if a row was deleted
+    except sqlite3.Error as e:
+        if conn:
+            conn.rollback()
+        print(f"Database error deleting user: {e}")
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+def get_chat_room(chat_id):
+    conn = get_db_connection()
+    chat = conn.execute("SELECT * FROM chat_rooms WHERE id = ?", (chat_id,)).fetchone()
+    conn.close()
+    return chat
+
+def get_chat_members(chat_id):
+    conn = get_db_connection()
+    rows = conn.execute("""
+        SELECT u.id, u.username FROM chat_room_participants crp
+        JOIN users u ON crp.user_id = u.id
+        WHERE crp.chat_room_id = ?
+    """, (chat_id,)).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+def add_chat_member(chat_id, user_id):
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO chat_room_participants (chat_room_id, user_id, chat_name) VALUES (?, ?, ?)",
+            (chat_id, user_id, "General"),
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error adding chat member: {e}")
+        return False
+    finally:
+        conn.close()
+
+def remove_chat_member(chat_id, user_id):
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "DELETE FROM chat_room_participants WHERE chat_room_id = ? AND user_id = ?",
+            (chat_id, user_id),
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error removing chat member: {e}")
+        return False
+    finally:
+        conn.close()
+
+def set_members_can_invite(chat_id, value):
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE chat_rooms SET members_can_invite = ? WHERE id = ?",
+            (1 if value else 0, chat_id),
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error updating members_can_invite: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_all_users():
+    conn = get_db_connection()
+    users = conn.execute("SELECT id, username FROM users").fetchall()
+    conn.close()
+    return [dict(row) for row in users]
 
 # Initialize the database if the script is run directly (optional, app.py can handle it)
 if __name__ == '__main__':
