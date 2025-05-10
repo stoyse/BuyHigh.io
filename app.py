@@ -305,7 +305,6 @@ def logout():
     return redirect(url_for('login'))
 
 
-
 if __name__ == '__main__':
     # db_handler.py now ensures the 'database' directory exists
     app.run(debug=True)

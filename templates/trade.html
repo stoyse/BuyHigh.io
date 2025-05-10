@@ -3,22 +3,22 @@
 {% block title %}Trade - BuyHigh.io{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-6">
-  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-6 text-center">AKTIEN-ARENA</h1>
+<div class="container mx-auto px-4 py-6 max-w-full">
+  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-6 text-center">STOCK ARENA</h1>
 
   <div class="flex flex-col lg:flex-row gap-6">
-    <!-- Linke Spalte: Aktienliste und Suche -->
+    <!-- Left Column: Stock List and Search -->
     <div class="w-full lg:w-1/3 bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-4">
-      <!-- Suchleiste -->
+      <!-- Search Bar -->
       <div class="mb-4 relative">
-        <label for="stock-search" class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1 block">SUCHE:</label>
-        <input type="search" id="stock-search" placeholder="z.B. AAPL, S&P 500..." 
+        <label for="stock-search" class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1 block">SEARCH:</label>
+        <input type="search" id="stock-search" placeholder="e.g., AAPL, S&P 500..." 
                class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white focus:border-game-blue focus:outline-none">
       </div>
 
-      <!-- Aktienliste -->
+      <!-- Stock List -->
       <div id="stock-list" class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-        <!-- Aktie 1 -->
+        <!-- Stock 1 -->
         <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="SPY" data-name="S&P 500 SPDR ETF" data-price="450.05" data-change="+0.50">
           <div class="flex justify-between items-center">
             <div>
@@ -43,7 +43,7 @@
           </div>
         </div>
         
-        <!-- Aktie 2 -->
+        <!-- Stock 2 -->
         <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="AAPL" data-name="Apple Inc." data-price="175.20" data-change="-0.20">
           <div class="flex justify-between items-center">
             <div>
@@ -68,7 +68,7 @@
           </div>
         </div>
         
-        <!-- Aktie 3 -->
+        <!-- Stock 3 -->
         <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="TSLA" data-name="Tesla Inc." data-price="250.75" data-change="+1.20">
           <div class="flex justify-between items-center">
             <div>
@@ -193,7 +193,7 @@
           </div>
         </div>
 
-        <!-- Versteckte Aktien/Indizes (nur sichtbar bei Suche) -->
+        <!-- Hidden Stocks/Indices (only visible during search) -->
         <div class="stock-item hidden p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors"
              data-symbol="NVDA" data-name="NVIDIA Corporation" data-price="900.00" data-change="+2.10">
           <div class="flex justify-between items-center">
@@ -312,11 +312,11 @@
       </div>
     </div>
 
-    <!-- Rechte Spalte: Graph und Handelsaktionen -->
+    <!-- Right Column: Graph and Trading Actions -->
     <div class="w-full lg:w-2/3 bg-white dark:bg-gray-800 shadow-pixel border-4 border-primary-light rounded-lg p-4">
       <div class="mb-4">
         <h2 id="stock-name" class="text-xl font-pixel text-primary-light dark:text-primary-dark">S&P 500 ETF (SPY)</h2>
-        <p id="stock-price" class="font-pixel text-xs text-gray-600 dark:text-gray-400">Preis: $450.05 (+0.50%)</p>
+        <p id="stock-price" class="font-pixel text-xs text-gray-600 dark:text-gray-400">Price: $450.05 (+0.50%)</p>
       </div>
       
       <!-- Candlestick Chart Container -->
@@ -335,12 +335,12 @@
         <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="ALL">ALL</button>
       </div>
 
-      <!-- Handelsaktionen -->
+      <!-- Trading Actions -->
       <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700">
-        <h3 class="text-lg font-pixel text-primary-light dark:text-primary-dark mb-4">TRADE AUSFÜHREN</h3>
+        <h3 class="text-lg font-pixel text-primary-light dark:text-primary-dark mb-4">EXECUTE TRADE</h3>
         
         <div class="mb-2">
-            <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">DEIN GUTHABEN: 
+            <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">YOUR BALANCE: 
                 <span id="user-balance" class="text-primary-light dark:text-primary-dark font-bold">€0.00</span>
             </p>
         </div>
@@ -348,12 +348,12 @@
         <form id="trade-form" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="quantity" class="block text-xs font-pixel text-gray-700 dark:text-gray-300 mb-1">MENGE:</label>
+              <label for="quantity" class="block text-xs font-pixel text-gray-700 dark:text-gray-300 mb-1">QUANTITY:</label>
               <input type="number" id="quantity" name="quantity" value="1" min="1"
                      class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div>
-              <label for="price" class="block text-xs font-pixel text-gray-700 dark:text-gray-300 mb-1">PREIS:</label>
+              <label for="price" class="block text-xs font-pixel text-gray-700 dark:text-gray-300 mb-1">PRICE:</label>
               <div id="current-price" class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white">
                 $450.05
               </div>
@@ -366,7 +366,7 @@
               <p id="total-price" class="text-lg font-pixel text-primary-light dark:text-primary-dark">$450.05</p>
             </div>
             <div>
-              <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">MÖGLICHER GEWINN:</p>
+              <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">POTENTIAL GAIN:</p>
               <div class="flex space-x-2">
                 <span id="potential-gain" class="text-xs font-pixel text-game-green">+$4.50</span>
                 <span id="potential-gain-percent" class="text-xs font-pixel text-game-green">(+1%)</span>
@@ -377,11 +377,11 @@
           <div class="flex space-x-4 pt-2">
             <button type="button" id="buy-button"
                     class="flex-1 py-3 px-4 bg-game-green border-b-4 border-green-700 text-white font-pixel text-sm rounded hover:bg-green-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
-              KAUFEN
+              BUY
             </button>
             <button type="button" id="sell-button"
                     class="flex-1 py-3 px-4 bg-game-red border-b-4 border-red-700 text-white font-pixel text-sm rounded hover:bg-red-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
-              VERKAUFEN
+              SELL
             </button>
           </div>
         </form>
@@ -410,11 +410,11 @@
   </div>
 </div>
 
-<!-- ApexCharts zuerst laden, dann trade.js -->
+<!-- ApexCharts first, then trade.js -->
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script src="/static/js/trade.js"></script>
 <script>
-  // Suchfunktion für die Aktienliste
+  // Search functionality for the stock list
   document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('stock-search');
     const stockItems = document.querySelectorAll('.stock-item');
@@ -424,18 +424,18 @@
       stockItems.forEach(item => {
         const name = item.getAttribute('data-name')?.toLowerCase() || '';
         const symbol = item.getAttribute('data-symbol')?.toLowerCase() || '';
-        // Zeige Item, wenn Suche passt, sonst verstecken
+        // Show item if search matches, otherwise hide
         if (query && (name.includes(query) || symbol.includes(query))) {
           item.classList.remove('hidden');
           item.style.display = '';
         } else if (!query && !item.classList.contains('hidden')) {
-          // Standard: sichtbare Items bleiben sichtbar
+          // Default: visible items remain visible
           item.style.display = '';
         } else if (!query && item.classList.contains('hidden')) {
-          // Standard: versteckte Items bleiben versteckt
+          // Default: hidden items remain hidden
           item.style.display = 'none';
         } else {
-          // Wenn Suche nicht passt, verstecke das Item
+          // If search doesn't match, hide the item
           item.style.display = 'none';
         }
       });

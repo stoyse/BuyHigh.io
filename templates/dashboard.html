@@ -3,22 +3,22 @@
 {% block title %}Dashboard - BuyHigh.io{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-8 text-center">DEIN DASHBOARD</h1>
+<div class="container mx-auto px-4 py-8 max-w-full">
+  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-8 text-center">YOUR DASHBOARD</h1>
 
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <!-- Account Overview Card -->
     <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-green rounded-lg p-6">
-      <h2 class="text-lg font-pixel text-game-green dark:text-game-green mb-6 text-center">Kontoübersicht</h2>
+      <h2 class="text-lg font-pixel text-game-green dark:text-game-green mb-6 text-center">Account Overview</h2>
       <div class="space-y-5">
         <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Aktuelles Guthaben:</p>
+          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Current Balance:</p>
           <p class="text-xl font-pixel text-game-green dark:text-game-green mt-2">
             €{{ "%.2f"|format(g.user.balance if g.user.balance is not none else 0) }}
           </p>
         </div>
         <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Gesamte Trades:</p>
+          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Total Trades:</p>
           <div class="mt-2 flex items-center">
             <p class="text-lg font-pixel text-gray-700 dark:text-gray-300">{{ g.user.total_trades }}</p>
             <div class="ml-4 bg-gray-200 dark:bg-gray-700 h-4 w-full rounded-sm">
@@ -28,7 +28,7 @@
           <p class="text-xxs font-pixel text-gray-500 dark:text-gray-500 mt-1">Level Progress</p>
         </div>
         <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Gewinn/Verlust:</p>
+          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Profit/Loss:</p>
           <p class="text-lg font-pixel {{ 'text-game-green' if g.user.profit_loss >= 0 else 'text-game-red' }} mt-2">
             €{{ "%.2f"|format(g.user.profit_loss) }}
           </p>
@@ -38,14 +38,14 @@
 
     <!-- Pet Companion Card -->
     <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-gold rounded-lg p-6">
-      <h2 class="text-lg font-pixel text-game-gold dark:text-game-gold mb-6 text-center">Dein Begleiter</h2>
+      <h2 class="text-lg font-pixel text-game-gold dark:text-game-gold mb-6 text-center">Your Companion</h2>
       <div class="space-y-5">
         <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Stimmungs-Haustier:</p>
+          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Mood Pet:</p>
           <p class="text-lg font-pixel text-gray-700 dark:text-gray-300 mt-2">{{ g.user.mood_pet }}</p>
         </div>
         <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Energie:</p>
+          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Energy:</p>
           <div class="mt-2">
             <div class="flex justify-between mb-1">
               <span class="text-sm font-pixel">{{ g.user.pet_energy }}/100</span>
@@ -56,7 +56,7 @@
           </div>
         </div>
         <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Meme-Modus:</p>
+          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Meme Mode:</p>
           <div class="mt-2 flex items-center">
             <span class="relative inline-block w-12 h-6 rounded-full bg-gray-300 dark:bg-gray-700 mr-3 {% if g.user.is_meme_mode %}bg-game-pink{% endif %}">
               <span class="absolute inset-0 flex items-center justify-{% if g.user.is_meme_mode %}end{% else %}start{% endif %}">
@@ -64,7 +64,7 @@
               </span>
             </span>
             <p class="text-sm font-pixel text-gray-700 dark:text-gray-300">
-              {% if g.user.is_meme_mode %}AKTIVIERT{% else %}DEAKTIVIERT{% endif %}
+              {% if g.user.is_meme_mode %}ENABLED{% else %}DISABLED{% endif %}
             </p>
           </div>
         </div>
@@ -80,7 +80,7 @@
             <div class="p-2 border-b-2 border-gray-200 dark:border-gray-700">
               <div class="flex justify-between items-center">
                 <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">{{ item.symbol }}</p>
-                <p class="font-pixel text-xs text-gray-600 dark:text-gray-400">{{ "%.2f"|format(item.quantity) }} Einheiten</p>
+                <p class="font-pixel text-xs text-gray-600 dark:text-gray-400">{{ "%.2f"|format(item.quantity) }} Units</p>
               </div>
               <p class="font-pixel text-xxs text-gray-500 dark:text-gray-500">{{ item.type }}</p>
             </div>
@@ -88,55 +88,54 @@
         </div>
       {% elif portfolio_data and not portfolio_data.success %}
         <div class="flex justify-center items-center h-32">
-          <p class="text-xs font-pixel text-game-red text-center">Fehler beim Laden des Portfolios:<br>{{ portfolio_data.message }}</p>
+          <p class="text-xs font-pixel text-game-red text-center">Error loading portfolio:<br>{{ portfolio_data.message }}</p>
         </div>
       {% else %}
         <div class="flex justify-center items-center h-32">
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 text-center">Dein Portfolio ist leer.</p>
+          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 text-center">Your portfolio is empty.</p>
         </div>
       {% endif %}
       <!-- Placeholder for portfolio pixel art -->
       <div class="mt-4 bg-gray-100 dark:bg-gray-700 h-24 flex items-center justify-center rounded">
-        <p class="font-pixel text-sm text-gray-500 dark:text-gray-400">[ PIXEL ART HIER ]</p>
+        <p class="font-pixel text-sm text-gray-500 dark:text-gray-400">[ PIXEL ART HERE ]</p>
       </div>
     </div>
 
-    <!-- Market Mood Card (Placeholder) -->
+    <!-- Market Mood Card with Dog Message Component -->
     <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-pink rounded-lg p-6">
-      <h2 class="text-lg font-pixel text-game-pink dark:text-game-pink mb-6 text-center">Marktstimmung</h2>
-      <div class="flex justify-center items-center h-32">
-        <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 text-center">Einblicke in die Marktstimmung kommen bald!</p>
-      </div>
-      <!-- Placeholder for market mood pixel art -->
-      <div class="mt-4 bg-gray-100 dark:bg-gray-700 h-32 flex items-center justify-center rounded">
-        <p class="font-pixel text-sm text-gray-500 dark:text-gray-400">[ PIXEL ART HIER ]</p>
-      </div>
+      <h2 class="text-lg font-pixel text-game-pink dark:text-game-pink mb-6 text-center">Market Mood</h2>
+
+      
+      <!-- Including the dog message component -->
+      {% with dog_message=dog_message|default('Hello! I am your market companion!') %}
+        {% include 'components/dog_message_component.html' %}
+      {% endwith %}
     </div>
     
     <!-- Recent Activity Card -->
     <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-red rounded-lg p-6 md:col-span-2 lg:col-span-1">
-      <h2 class="text-lg font-pixel text-game-red dark:text-game-red mb-6 text-center">Letzte Aktivitäten</h2>
-      <div class="space-y-3 h-40 overflow-y-auto pr-2">
+      <h2 class="text-lg font-pixel text-game-red dark:text-game-red mb-6 text-center">Recent Activities</h2>
+      <div class="space-y-3 h-56 overflow-y-auto pr-2">
         {% if recent_transactions %}
           {% for tx in recent_transactions %}
-            <div class="border-l-4 {{ 'border-game-green' if tx.transaction_type == 'buy' else 'border-game-red' }} pl-3 py-2">
-              <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">
-                {{ 'Gekauft' if tx.transaction_type == 'buy' else 'Verkauft' }}: {{ "%.0f"|format(tx.quantity) }} {{ tx.asset_symbol }} @ ${{ "%.2f"|format(tx.price_per_unit) }}
-              </p>
-              <p class="text-xxs font-pixel text-gray-500 dark:text-gray-400">
-                {{ tx.timestamp.split(' ')[0] }}
-              </p>
-            </div>
+        <div class="border-l-4 {{ 'border-game-green' if tx.transaction_type == 'buy' else 'border-game-red' }} pl-3 py-2">
+          <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">
+            {{ 'Bought' if tx.transaction_type == 'buy' else 'Sold' }}: {{ "%.0f"|format(tx.quantity) }} {{ tx.asset_symbol }} @ ${{ "%.2f"|format(tx.price_per_unit) }}
+          </p>
+          <p class="text-xxs font-pixel text-gray-500 dark:text-gray-400">
+            {{ tx.timestamp.split(' ')[0] }}
+          </p>
+        </div>
           {% endfor %}
         {% else %}
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 text-center">Keine kürzlichen Aktivitäten.</p>
+          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 text-center">No recent activities.</p>
         {% endif %}
       </div>
     </div>
 
     <!-- User Level Card -->
     <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-purple-500 rounded-lg p-6">
-      <h2 class="text-lg font-pixel text-purple-500 dark:text-purple-400 mb-6 text-center">Spielerstatus</h2>
+      <h2 class="text-lg font-pixel text-purple-500 dark:text-purple-400 mb-6 text-center">Player Status</h2>
       <div class="space-y-3">
         <div>
           <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1">Trader Level:</p>
@@ -149,10 +148,10 @@
         </div>
         <div>
           <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1">XP: 450/1000</p>
-          <div class="text-xxs font-pixel text-gray-500 dark:text-gray-400">+50 XP beim nächsten Trade!</div>
+          <div class="text-xxs font-pixel text-gray-500 dark:text-gray-400">+50 XP on the next trade!</div>
         </div>
         <div class="mt-6">
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1">Trader-Abzeichen:</p>
+          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1">Trader Badges:</p>
           <div class="flex space-x-2 mt-2">
             <div class="w-8 h-8 bg-yellow-100 border-2 border-yellow-500 rounded flex items-center justify-center" title="First Trade">
               <span class="font-pixel text-yellow-500 text-xs">T</span>

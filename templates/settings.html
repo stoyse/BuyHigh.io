@@ -3,33 +3,33 @@
 {% block title %}Settings - BuyHigh.io{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Einstellungen</h1>
+<div class="container mx-auto px-4 py-8 max-w-full">
+  <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Settings</h1>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
     <!-- Theme Settings Card -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
-      <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Theme-Einstellungen</h2>
+      <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Theme Settings</h2>
       <form method="post" action="{{ url_for('settings') }}">
         <input type="hidden" name="form_type" value="theme_settings">
         <div class="space-y-4">
           <div>
-            <p class="text-gray-700 dark:text-gray-300 mb-2">Wähle dein bevorzugtes Theme:</p>
+            <p class="text-gray-700 dark:text-gray-300 mb-2">Choose your preferred theme:</p>
             <div class="flex items-center space-x-6">
               <label class="flex items-center space-x-2 cursor-pointer">
                 <input type="radio" name="theme" value="light" class="form-radio h-5 w-5 text-indigo-600 dark:text-indigo-400" {% if g.user.theme == 'light' or not g.user.theme %}checked{% endif %}>
-                <span class="text-gray-700 dark:text-gray-300">Hell</span>
+                <span class="text-gray-700 dark:text-gray-300">Light</span>
               </label>
               <label class="flex items-center space-x-2 cursor-pointer">
                 <input type="radio" name="theme" value="dark" class="form-radio h-5 w-5 text-indigo-600 dark:text-indigo-400" {% if g.user.theme == 'dark' %}checked{% endif %}>
-                <span class="text-gray-700 dark:text-gray-300">Dunkel</span>
+                <span class="text-gray-700 dark:text-gray-300">Dark</span>
               </label>
             </div>
           </div>
           <div>
             <button type="submit"
                     class="py-2 px-4 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-colors">
-              Theme speichern
+              Save Theme
             </button>
           </div>
         </div>
@@ -38,29 +38,29 @@
 
     <!-- Change Password Card -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
-      <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Passwort ändern</h2>
+      <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Change Password</h2>
       <form method="post" action="{{ url_for('settings') }}">
         <input type="hidden" name="form_type" value="password_settings">
         <div class="space-y-4">
           <div>
-            <label for="current_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Aktuelles Passwort</label>
+            <label for="current_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Password</label>
             <input type="password" name="current_password" id="current_password" required
                    class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
           </div>
           <div>
-            <label for="new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Neues Passwort</label>
+            <label for="new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Password</label>
             <input type="password" name="new_password" id="new_password" required
                    class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
           </div>
           <div>
-            <label for="confirm_new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Neues Passwort bestätigen</label>
+            <label for="confirm_new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm New Password</label>
             <input type="password" name="confirm_new_password" id="confirm_new_password" required
                    class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
           </div>
           <div>
             <button type="submit"
                     class="py-2 px-4 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800 transition-colors">
-              Passwort ändern
+              Change Password
             </button>
           </div>
         </div>

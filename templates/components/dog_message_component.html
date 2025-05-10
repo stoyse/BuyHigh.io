@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dog with Message Bubble</title>
+    <style>
+        .pet-container {
+            position: relative;
+            width: 200px;
+            height: 250px;
+            margin: 20px;
+        }
+        
+        .speech-bubble {
+            position: absolute;
+            background-color: white;
+            border-radius: 20px;
+            padding: 15px;
+            width: 180px;
+            top: 0;
+            left: 10px;
+            border: 2px solid #333;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        
+        .speech-bubble:after {
+            content: "";
+            position: absolute;
+            bottom: -15px;
+            left: 50px;
+            border-width: 15px 15px 0;
+            border-style: solid;
+            border-color: white transparent;
+            display: block;
+            width: 0;
+        }
+        
+        .speech-bubble:before {
+            content: "";
+            position: absolute;
+            bottom: -18px;
+            left: 49px;
+            border-width: 16px 16px 0;
+            border-style: solid;
+            border-color: #333 transparent;
+            display: block;
+            width: 0;
+        }
+        
+        .pet-svg {
+            position: absolute;
+            bottom: 0;
+            width: 150px;
+            height: 150px;
+        }
+        
+        .message-text {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            font-size: 16px;
+            text-align: center;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="pet-container">
+        <div class="speech-bubble">
+            <p class="message-text" id="message" style="color: black;">{{ dog_message|default("Hello! I'm your market companion!") }}</p>
+        </div>
+        
+        <svg class="pet-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+            <!-- Background -->
+            <rect width="16" height="16" fill="#f0f0f0" opacity="0"/>
+            
+            <!-- Dog Body (Brown) -->
+            <rect x="4" y="6" width="8" height="5" fill="#8B4513"/>
+            
+            <!-- Head -->
+            <rect x="10" y="4" width="4" height="4" fill="#8B4513"/>
+            
+            <!-- Ears -->
+            <rect x="9" y="3" width="2" height="2" fill="#8B4513"/>
+            <rect x="13" y="3" width="2" height="2" fill="#8B4513"/>
+            
+            <!-- Snout -->
+            <rect x="12" y="6" width="3" height="2" fill="#D2B48C"/>
+            
+            <!-- Nose -->
+            <rect x="14" y="6" width="1" height="1" fill="#000000"/>
+            
+            <!-- Eyes -->
+            <rect x="11" y="5" width="1" height="1" fill="#000000"/>
+            <rect x="13" y="5" width="1" height="1" fill="#000000"/>
+            
+            <!-- Legs -->
+            <rect x="4" y="11" width="2" height="2" fill="#8B4513"/>
+            <rect x="10" y="11" width="2" height="2" fill="#8B4513"/>
+            
+            <!-- Tail -->
+            <rect x="2" y="7" width="2" height="2" fill="#8B4513"/>
+            
+            <!-- Collar -->
+            <rect x="10" y="8" width="2" height="1" fill="#FF0000"/>
+        </svg>
+    </div>
+
+    <script>
+        // Example function to update the message
+        function updateDogMessage(message) {
+            document.getElementById('message').textContent = message;
+        }
+        
+        // Example usage:
+        // updateDogMessage("Hello, I'm your pixel dog friend!");
+    </script>
+</body>
+</html>

@@ -1,6 +1,11 @@
 from flask import Blueprint, render_template, g, request, flash, redirect, url_for
 from utils import login_required
 import db_handler
+import logging  # Add logging import
+
+# Configure basic logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 main_bp = Blueprint('main', __name__)
 
@@ -16,17 +21,47 @@ def dashboard():
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     
     # Import transactions_handler locally to avoid potential circular imports at top level
-    # if transactions_handler itself might import something from app or routes in a complex setup.
-    # For now, direct import should be fine if transactions_handler is self-contained.
     import transactions_handler 
     portfolio_data = transactions_handler.show_user_portfolio(g.user['id'])
     recent_transactions_data = transactions_handler.get_recent_transactions(g.user['id'])
+    
+    # Generate a dog message based on portfolio or market conditions
+    dog_message = generate_dog_message(g.user, portfolio_data)
+    
+    # Debug output
+    logger.debug(f"Generated dog message: '{dog_message}'")
+    logger.debug(f"User data: {g.user}")
+    logger.debug(f"Portfolio data success: {portfolio_data.get('success', False)}")
     
     return render_template('dashboard.html', 
                            user=g.user, 
                            darkmode=dark_mode_active,
                            portfolio_data=portfolio_data,
-                           recent_transactions=recent_transactions_data.get('transactions', []))
+                           recent_transactions=recent_transactions_data.get('transactions', []),
+                           dog_message=dog_message)  # Pass the dog message to the template
+
+# Generate a personalized dog message based on user data and portfolio
+def generate_dog_message(user, portfolio_data):
+    # Default message if we can't personalize
+    default_message = "Woof! Willkommen zu deinem Dashboard!"
+    
+    # Check if user has any portfolio data
+    if portfolio_data and portfolio_data.get('success') and portfolio_data.get('portfolio'):
+        # User has portfolio items
+        if len(portfolio_data['portfolio']) > 0:
+            return f"Hey {user['username']}! Du hast {len(portfolio_data['portfolio'])} Assets in deinem Portfolio. Gute Arbeit!"
+    
+    # Check user's profit/loss
+    if user.get('profit_loss', 0) > 0:
+        return f"Toll gemacht! Du bist im Plus mit €{user['profit_loss']:.2f} Gewinn!"
+    elif user.get('profit_loss', 0) < 0:
+        return f"Kopf hoch! Dein aktueller Verlust ist €{abs(user['profit_loss']):.2f}. Das wird bald besser!"
+    
+    # Check if user is new (few or no trades)
+    if user.get('total_trades', 0) < 5:
+        return f"Willkommen bei BuyHigh.io! Starte deine ersten Trades und werde zum Trading-Profi!"
+    
+    return default_message
 
 @main_bp.route('/trade')
 @login_required
