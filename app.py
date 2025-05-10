@@ -1,4 +1,4 @@
-from flask import Flask, request, session, flash, g, redirect, url_for
+from flask import Flask, request, session, flash, g, redirect, url_for, render_template
 import os
 import datetime
 from flask_socketio import SocketIO
@@ -61,6 +61,15 @@ def timestamp_to_date(timestamp):
 
 # Register the filter with the app
 app.jinja_env.filters['timestamp_to_date'] = timestamp_to_date
+
+# Errorhandler für 404 und 405
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    return render_template('405.html'), 405
 
 # Register Blueprints
 app.register_blueprint(main_bp)

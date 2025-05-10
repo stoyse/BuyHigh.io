@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}405 Fehler - BuyHigh.io{% endblock %}
+{% block content %}
+<div class="text-center py-16">
+  <h1 class="text-6xl font-bold text-game-red mb-4">405</h1>
+  <p class="text-xl font-pixel text-gray-700 dark:text-gray-200 mb-6">Methode nicht erlaubt</p>
+  <p class="text-md text-gray-500 dark:text-gray-400 mb-8">Die angeforderte Methode ist für diese URL nicht zulässig.</p>
+  <a href="{{ url_for('main.index') }}" class="inline-block px-6 py-2 bg-game-blue text-white font-pixel rounded shadow hover:bg-blue-700 transition">Zurück zur Startseite</a>
+</div>
+{% endblock %}
