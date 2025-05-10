@@ -39,32 +39,65 @@
     <!-- Change Password Card -->
     <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6">
       <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6">Change Password</h2>
-      <form method="post" action="{{ url_for('main.settings') }}">
-        <input type="hidden" name="form_type" value="password_settings">
-        <div class="space-y-4">
-          <div>
-            <label for="current_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Password</label>
-            <input type="password" name="current_password" id="current_password" required
-                   class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
+      
+      {% if not g.user.get('firebase_provider') or g.user.get('firebase_provider') == 'password' %}
+        <!-- For email/password users -->
+        <form method="post" action="{{ url_for('auth.change_password') }}" id="passwordChangeForm">
+          <input type="hidden" name="form_type" value="password_settings">
+          <div class="space-y-4">
+            <div>
+              <label for="current_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current Password</label>
+              <input type="password" name="current_password" id="current_password" required
+                     class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
+            </div>
+            <div>
+              <label for="new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Password</label>
+              <input type="password" name="new_password" id="new_password" required minlength="6"
+                     class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
+              <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Password must be at least 6 characters</p>
+            </div>
+            <div>
+              <label for="confirm_new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm New Password</label>
+              <input type="password" name="confirm_new_password" id="confirm_new_password" required
+                     class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
+            </div>
+            <div>
+              <button type="submit"
+                      class="py-2 px-4 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800 transition-colors">
+                Change Password
+              </button>
+            </div>
           </div>
-          <div>
-            <label for="new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">New Password</label>
-            <input type="password" name="new_password" id="new_password" required
-                   class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
-          </div>
-          <div>
-            <label for="confirm_new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Confirm New Password</label>
-            <input type="password" name="confirm_new_password" id="confirm_new_password" required
-                   class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
-          </div>
-          <div>
+        </form>
+        
+        <!-- Alternative: Send password reset email -->
+        <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            Alternatively, we can send you a password reset link via email:
+          </p>
+          <form method="post" action="{{ url_for('auth.send_password_reset') }}">
+            <input type="hidden" name="email" value="{{ g.user.email }}">
             <button type="submit"
-                    class="py-2 px-4 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 dark:focus:ring-offset-gray-800 transition-colors">
-              Change Password
+                    class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium text-sm">
+              Send Password Reset Link
             </button>
-          </div>
+          </form>
         </div>
-      </form>
+      
+      {% else %}
+        <!-- For social login users (Google, etc.) -->
+        <div class="text-center py-4">
+          <p class="text-gray-600 dark:text-gray-400 mb-4">
+            You're signed in with {{ g.user.firebase_provider|capitalize }}. To change your password, please visit your {{ g.user.firebase_provider|capitalize }} account settings.
+          </p>
+          <a href="https://myaccount.google.com/security" 
+             target="_blank" 
+             rel="noopener noreferrer"
+             class="inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-indigo-500 dark:hover:bg-indigo-600">
+            Go to {{ g.user.firebase_provider|capitalize }} Settings
+          </a>
+        </div>
+      {% endif %}
     </div>
   </div>
 
@@ -93,4 +126,17 @@
   </div>
 
 </div>
+
+<script>
+  // Form validation for password change
+  document.getElementById('passwordChangeForm')?.addEventListener('submit', function(event) {
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_new_password').value;
+    
+    if (newPassword !== confirmPassword) {
+      event.preventDefault();
+      alert('New password and confirmation do not match.');
+    }
+  });
+</script>
 {% endblock %}

@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
+    password_hash TEXT, -- Made optional as Firebase handles passwords
+    firebase_uid TEXT UNIQUE, -- Added for Firebase integration
+    firebase_provider TEXT DEFAULT 'password', -- Hinzugefügt: Authentifizierungsanbieter ('password', 'google', etc.)
     balance REAL DEFAULT 10000.0,  -- starting demo balance
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_login TIMESTAMP,
