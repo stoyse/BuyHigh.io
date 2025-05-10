@@ -194,6 +194,6 @@ def firebase_config():
 
 application = app
 
-if __name__ == '__main__':
-    logger.info("Starting Flask app with SocketIO in debug mode...")
-    socketio.run(app, debug=True, port=5000)
+#if __name__ == '__main__':
+#    logger.info("Starting Flask app with SocketIO in debug mode...")
+#    socketio.run(app, debug=True, port=5000)
