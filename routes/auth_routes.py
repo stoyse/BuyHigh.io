@@ -61,80 +61,78 @@ def register():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    if g.user:
-        return redirect(url_for('main.index'))
-
     if request.method == 'POST':
-        # Login form should now ideally ask for email, not username, for Firebase
-        email = request.form.get('email', request.form.get('username')) # Accept email or username
-        password = request.form['password']
-        error = None
-
-        if not email:
-            error = 'Email or Username is required.'
-        elif not password:
-            error = 'Password is required.'
+        email = request.form.get('email')
+        password = request.form.get('password')
         
-        if error is None:
-            try:
-                # Attempt to log in using Firebase REST API
-                firebase_uid, id_token = auth_module.login_firebase_user_rest(email, password)
-
-                if firebase_uid:
-                    # User authenticated with Firebase. Now fetch local user data.
+        # Erweiterte Debug-Ausgaben
+        current_app.logger.debug(f"Login attempt for email: {email}")
+        
+        try:
+            # Firebase-Authentifizierung - KORRIGIERT: Verwende die richtige Funktion
+            # Die Funktion gibt ein Tupel (uid, token) zurück, kein Dictionary
+            firebase_uid, id_token = auth_module.login_firebase_user_rest(email, password)
+            
+            if not firebase_uid or not id_token:
+                current_app.logger.error(f"Firebase authentication failed for email: {email}")
+                flash('Anmeldung fehlgeschlagen. Ungültige E-Mail oder Passwort.', 'danger')
+                return render_template('login.html')
+            
+            # Lokale Benutzerüberprüfung
+            local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
+            
+            if not local_user:
+                current_app.logger.debug(f"User not found by Firebase UID, trying to find by email: {email}")
+                # Benutzer über E-Mail finden
+                local_user = db_handler.get_user_by_email(email)
+                
+                if not local_user:
+                    current_app.logger.debug(f"User not found in local DB, attempting to create: {email}")
+                    # Firebase-Benutzerdetails abrufen - Vereinfacht, da wir keine get_user_info haben
+                    username = email.split('@')[0]  # E-Mail-Präfix als Benutzernamen verwenden
+                    
+                    # Lokalen Benutzer erstellen
+                    success = db_handler.add_user(
+                        username=username, 
+                        email=email, 
+                        firebase_uid=firebase_uid
+                    )
+                    
+                    if not success:
+                        current_app.logger.error(f"Failed to create local user for: {email}")
+                        flash('Fehler beim Erstellen des Benutzerprofils.', 'danger')
+                        return render_template('login.html')
+                    
                     local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
-                    if not local_user:
-                        # This means user exists in Firebase but not in local DB.
-                        # Attempt to create local user profile.
-                        try:
-                            fb_user_record = auth_module.firebase_auth.get_user_by_email(email) # Get full record
-                            # Use display_name from Firebase, or generate a username from email
-                            new_username = fb_user_record.display_name or email.split('@')[0]
-                            
-                            # Ensure username is unique before adding
-                            counter = 0
-                            temp_username = new_username
-                            while db_handler.get_user_by_username(temp_username):
-                                counter += 1
-                                temp_username = f"{new_username}{counter}"
-                            new_username = temp_username
-
-                            if db_handler.add_user(new_username, email, firebase_uid):
-                                local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
-                                flash('Firebase login successful. Local profile created.', 'info')
-                            else:
-                                error = "Login successful with Firebase, but failed to create local profile."
-                        except Exception as e_create:
-                            error = f"Error creating local profile after Firebase login: {e_create}"
-
-
-                    if local_user and error is None:
-                        session.clear()
-                        session['firebase_uid'] = firebase_uid # Store Firebase UID in session
-                        session['id_token'] = id_token # Store ID token for potential future use
-                        session.permanent = True # Optional: make session more persistent
-                        
-                        db_handler.update_last_login(local_user['id']) # Use local user ID
-                        flash('Login successful!', 'success')
-                        
-                        next_page = request.args.get('next')
-                        if next_page:
-                            return redirect(next_page)
-                        return redirect(url_for('main.index'))
-                    elif not error: # if local_user is still None after potential creation
-                        error = "User authenticated but local profile not found or couldn't be created."
-
-                # login_firebase_user_rest will raise ValueError for incorrect credentials
-            except ValueError as e:
-                error = str(e)
-            except Exception as e:
-                error = f"An unexpected error occurred during login: {e}"
-        
-        if error:
-            flash(error, 'danger')
-
-    dark_mode_active = request.args.get('darkmode', 'False').lower() == 'true'
-    return render_template('login.html', darkmode=dark_mode_active)
+                    current_app.logger.info(f"New local user created for: {email}")
+                else:
+                    current_app.logger.debug(f"User found by email, updating Firebase UID: {email}")
+                    # Firebase UID aktualisieren
+                    db_handler.update_firebase_uid(local_user['id'], firebase_uid)
+            
+            # Session aktualisieren
+            session.clear()  # Vorherige Session-Daten löschen
+            session['logged_in'] = True
+            session['user_id'] = local_user['id']
+            session['firebase_uid'] = firebase_uid
+            session['id_token'] = id_token
+            
+            # Login-Zeit aktualisieren
+            db_handler.update_last_login(local_user['id'])
+            
+            # Alle verfügbaren Routen anzeigen (Debug)
+            for rule in current_app.url_map.iter_rules():
+                current_app.logger.debug(f"Available route: {rule.endpoint} -> {rule}")
+            
+            current_app.logger.info(f"User {email} successfully logged in")
+            flash('Anmeldung erfolgreich!', 'success')
+            return redirect(url_for('main.dashboard'))
+        except Exception as e:
+            current_app.logger.error(f"Unexpected error during login: {str(e)}", exc_info=True)
+            flash(f'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.', 'danger')
+            return render_template('login.html')
+    
+    return render_template('login.html')
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
@@ -156,6 +154,86 @@ def forgot_password():
             flash('An error occurred while sending the password reset email.', 'danger')
     
     return render_template('forgot_password.html')
+
+@auth_bp.route('/login-with-google')
+def login_with_google():
+    """Startet den Google OAuth-Flow für die Anmeldung"""
+    try:
+        # Redirect URL für die Google OAuth-Anmeldung
+        redirect_url = auth_module.get_google_auth_url()
+        return redirect(redirect_url)
+    except Exception as e:
+        current_app.logger.error(f"Error initiating Google login: {e}")
+        flash('Fehler beim Starten der Google-Anmeldung.', 'danger')
+        return redirect(url_for('auth.login'))
+
+@auth_bp.route('/auth/google/callback')
+def google_auth_callback():
+    """Callback-Handler für die Google OAuth-Authentifizierung"""
+    try:
+        # OAuth-Code aus der Anfrage extrahieren
+        auth_code = request.args.get('code')
+        if not auth_code:
+            flash('Google-Authentifizierungscode fehlt.', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        # Code gegen Token und Profildaten austauschen
+        user_info = auth_module.exchange_google_code(auth_code)
+        
+        if not user_info:
+            flash('Fehler beim Verarbeiten der Google-Anmeldung.', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        # E-Mail und Firebase-UID aus den Google-Profildaten extrahieren
+        email = user_info.get('email')
+        firebase_uid = user_info.get('firebase_uid')
+        
+        if not email or not firebase_uid:
+            flash('Unvollständige Benutzerinformationen von Google.', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        # Überprüfen, ob der Benutzer bereits in der lokalen DB existiert
+        local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
+        
+        if not local_user:
+            # Prüfen, ob ein Benutzer mit dieser E-Mail existiert
+            local_user = db_handler.get_user_by_email(email)
+            
+            if not local_user:
+                # Neuen Benutzer anlegen, wenn keiner existiert
+                username = user_info.get('name', email.split('@')[0])
+                success = db_handler.add_user(
+                    username=username,
+                    email=email,
+                    firebase_uid=firebase_uid,
+                    provider='google'  # Anbieter als 'google' markieren
+                )
+                
+                if not success:
+                    flash('Fehler beim Erstellen des Benutzerprofils.', 'danger')
+                    return redirect(url_for('auth.login'))
+                
+                local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
+            else:
+                # Bestehenden Benutzer mit Firebase UID verknüpfen
+                db_handler.update_firebase_uid(local_user['id'], firebase_uid)
+        
+        # Benutzer in die Session setzen
+        session.clear()
+        session['logged_in'] = True
+        session['user_id'] = local_user['id']
+        session['firebase_uid'] = firebase_uid
+        session['id_token'] = user_info.get('id_token', '')
+        
+        # Login-Zeit aktualisieren
+        db_handler.update_last_login(local_user['id'])
+        
+        flash('Erfolgreich mit Google angemeldet!', 'success')
+        return redirect(url_for('main.dashboard'))
+    except Exception as e:
+        current_app.logger.error(f"Error during Google auth callback: {e}", exc_info=True)
+        flash('Ein Fehler ist während der Google-Authentifizierung aufgetreten.', 'danger')
+        return redirect(url_for('auth.login'))
 
 @auth_bp.route('/delete_account', methods=['POST'])
 @login_required

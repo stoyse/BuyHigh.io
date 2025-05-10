@@ -5,7 +5,7 @@
 {% block content %}
   <div class="max-w-md mx-auto">
     <h2 class="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-gray-200">Login to Your Account</h2>
-    <form method="post" class="space-y-6">
+    <form method="POST" action="{{ url_for('auth.login') }}" class="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-lg shadow-lg">
       <div>
         <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
         <input type="email" name="email" id="email" required 
@@ -23,7 +23,6 @@
       </div>
     </form>
     
-    <!-- Passwort vergessen Link -->
     <div class="mt-3 text-center">
       <a href="{{ url_for('auth.forgot_password') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
         Passwort vergessen?

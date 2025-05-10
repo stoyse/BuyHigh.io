@@ -41,44 +41,144 @@ def format_datetime(value, format='%d.%m.%Y %H:%M'):
 def chat_collection():
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     
-    # Sicherstellen, dass der Benutzer am Standard-Chat teilnimmt
-    chat_db_handler.ensure_user_in_default_chat(g.user['id'])
+    # Debug: Firebase-Status und Datenquelle deutlicher überprüfen
+    import firebase_db_handler
+    USE_FIREBASE = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
+    can_use_fb = firebase_db_handler.can_use_firebase() if USE_FIREBASE else False
     
-    # Chatrooms abrufen, an denen der Benutzer teilnimmt
-    chat_data = chat_db_handler.get_user_chats(g.user['id'])
+    # Stärker gefiltertes Logging
+    logger.info(f"Chat collection: Firebase enabled: {USE_FIREBASE}, Can use Firebase: {can_use_fb}, User ID: {g.user['id']}")
     
-    logger.debug(f"Retrieved {len(chat_data)} chat rooms for user {g.user['id']}")
+    # Force user into default chat
+    try:
+        if can_use_fb:
+            firebase_db_handler.ensure_user_in_default_chat(g.user['id'])
+            # Überprüfen, ob der Default-Chat erfolgreich erstellt wurde
+            default_chat = firebase_db_handler.get_default_chat_id()
+            logger.info(f"Default Firebase chat ID: {default_chat}")
+        else:
+            chat_db_handler.ensure_user_in_default_chat(g.user['id'])
+    except Exception as e:
+        logger.error(f"Error ensuring default chat: {e}", exc_info=True)
+    
+    # Chats aus der richtigen Datenquelle abrufen
+    chat_data = []
+    try:
+        if can_use_fb:
+            # Direkte Abfrage in Firebase
+            user_id_str = str(g.user['id'])  # Firebase vergleicht mit Strings
+            
+            # Teilnahme direkt überprüfen
+            from firebase_admin import db
+            chat_participants_ref = db.reference("/chat_participants")
+            all_participants = chat_participants_ref.get() or {}
+            logger.info(f"All chat participants: {all_participants}")
+            
+            if isinstance(all_participants, dict):
+                for chat_id, participants in all_participants.items():
+                    logger.info(f"Checking chat {chat_id} for user {user_id_str} - participants: {participants}")
+                    # Prüfen ob der User ein Teilnehmer ist
+                    if isinstance(participants, dict) and user_id_str in participants:
+                        logger.info(f"Found user {user_id_str} as participant in chat {chat_id}")
+                        # Chat-Details abrufen
+                        chat_ref = db.reference(f"/chats/{chat_id}")
+                        chat_data_entry = chat_ref.get() or {}
+                        
+                        if chat_data_entry:
+                            # Format und hinzufügen
+                            chat_data.append({
+                                "id": chat_id,
+                                "name": chat_data_entry.get("name", "Unbenannt"),
+                                "last_message": "",  # Können wir später noch auffüllen
+                                "last_activity": "vor kurzem"
+                            })
+                            logger.info(f"Added chat {chat_id} with name {chat_data_entry.get('name')} to results")
+                            
+            # Falls keine Chats über direkte Methode gefunden wurden, Fallback auf normal
+            if not chat_data:
+                logger.warning(f"No chats found with direct Firebase access, trying normal function")
+                chat_data = firebase_db_handler.get_user_chats(g.user['id'])
+        else:
+            chat_data = chat_db_handler.get_user_chats(g.user['id'])
+    except Exception as e:
+        logger.error(f"Error getting user chats: {e}", exc_info=True)
+    
+    logger.info(f"Returning {len(chat_data)} chats for display: {chat_data}")
+    
+    # Debug-Modus für Entwicklung
+    debug_info = {
+        "firebase_enabled": USE_FIREBASE,
+        "can_use_firebase": can_use_fb,
+        "user_id": g.user['id'],
+        "user_id_str": str(g.user['id']),
+        "chat_count": len(chat_data)
+    }
     
     return render_template('chat_collection.html', 
                            user=g.user, 
                            darkmode=dark_mode_active, 
-                           chat_rooms=chat_data)
+                           chat_rooms=chat_data,
+                           debug_info=debug_info)  # Debug-Info an Template übergeben
 
-@chat_bp.route('/<int:chat_id>')
+@chat_bp.route('/<string:chat_id>')
 @login_required
 def chat_details(chat_id):
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
-    
-    # Überprüfen, ob der Chat existiert
-    chat = chat_db_handler.get_chat_by_id(chat_id)
-    
+    import firebase_db_handler
+    USE_FIREBASE = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
+    can_use_fb = firebase_db_handler.can_use_firebase() if USE_FIREBASE else False
+
+    # Chat laden
+    chat = None
+    if can_use_fb:
+        try:
+            chat = firebase_db_handler.get_chat_by_id(chat_id)
+        except Exception:
+            pass
+    if not chat:
+        chat = chat_db_handler.get_chat_by_id(chat_id)
     if not chat:
         flash('Der angeforderte Chat existiert nicht.', 'danger')
         return redirect(url_for('chat.chat_collection'))
-    
-    # Überprüfen, ob der Benutzer Teilnehmer ist
-    if not chat_db_handler.is_chat_participant(chat_id, g.user['id']):
-        chat_db_handler.join_chat(chat_id, g.user['id'])
-        flash(f'Du wurdest zum Chat "{chat["name"]}" hinzugefügt.', 'success')
-    
-    # Nachrichten des Chats laden
-    messages = chat_db_handler.get_chat_messages(chat_id, limit=100)
-    
-    return render_template('chat_details.html', 
-                           user=g.user, 
+
+    # Sicherstellen, dass der User Teilnehmer ist (immer join_chat, wenn nicht)
+    is_participant = False
+    if can_use_fb:
+        try:
+            is_participant = firebase_db_handler.is_chat_participant(chat_id, g.user['id'])
+        except Exception:
+            pass
+    else:
+        is_participant = chat_db_handler.is_chat_participant(chat_id, g.user['id'])
+
+    if not is_participant:
+        if can_use_fb:
+            firebase_db_handler.join_chat(chat_id, g.user['id'])
+        else:
+            chat_db_handler.join_chat(chat_id, g.user['id'])
+        # Nach join_chat() ist der User jetzt Teilnehmer
+
+    # Jetzt Nachrichten laden (nach join_chat!)
+    messages = []
+    if can_use_fb:
+        try:
+            messages = firebase_db_handler.get_chat_messages(chat_id, limit=100)
+        except Exception:
+            pass
+    if not messages:
+        messages = chat_db_handler.get_chat_messages(chat_id, limit=100)
+
+    return render_template('chat_details.html',
+                           user=g.user,
                            darkmode=dark_mode_active,
                            chat=chat,
-                           initial_messages=messages)
+                           initial_messages=messages,
+                           debug_info={
+                               "chat_id": chat_id,
+                               "firebase_enabled": can_use_fb,
+                               "user_id": g.user['id'],
+                               "message_count": len(messages)
+                           })
 
 @chat_bp.route('/new-chat', methods=['GET', 'POST'])
 @login_required
@@ -104,7 +204,7 @@ def new_chat():
     return render_template('new_chat.html', darkmode=dark_mode_active, user=g.user)
 
 
-@chat_bp.route('/chat/<int:chat_id>/settings', methods=['GET', 'POST'])
+@chat_bp.route('/<string:chat_id>/settings', methods=['GET', 'POST'])
 @login_required
 def chat_settings(chat_id):
     import db_handler
@@ -157,7 +257,7 @@ def chat_settings(chat_id):
     )
 
 
-@chat_bp.route('/chat/<int:chat_id>/delete', methods=['POST'])
+@chat_bp.route('/<string:chat_id>/delete', methods=['POST'])
 @login_required
 def delete_chat(chat_id):
     chat = chat_db_handler.get_chat_by_id(chat_id)
@@ -189,7 +289,7 @@ def delete_chat(chat_id):
     return redirect(url_for('chat.chat_collection'))
 
 
-@chat_bp.route('/<int:chat_id>/messages', methods=['POST'])
+@chat_bp.route('/<string:chat_id>/messages', methods=['POST'])
 @login_required
 def api_send_message(chat_id):
     logger.debug(f"[API_SEND_MESSAGE] Received POST request for chat_id: {chat_id} (type: {type(chat_id)})")
@@ -203,60 +303,93 @@ def api_send_message(chat_id):
         logger.error("[API_SEND_MESSAGE] user_id not found in g.user.")
         return jsonify({'error': 'Benutzer-ID nicht gefunden.'}), 400
     
-    logger.debug(f"[API_SEND_MESSAGE] Authenticated user_id: {user_id} (type: {type(user_id)})")
+    # Wir stellen sicher, dass wir einen String-Type für die Chat-ID haben
+    chat_id_str = str(chat_id)
+    user_id_str = str(user_id)
+    
+    logger.debug(f"[API_SEND_MESSAGE] Authenticated user_id: {user_id_str} to chat_id: {chat_id_str}")
 
     data = request.get_json()
     if not data:
         logger.warning("[API_SEND_MESSAGE] No JSON data received in request.")
         return jsonify({'error': 'Keine Daten empfangen.'}), 400
     
-    logger.debug(f"[API_SEND_MESSAGE] Received JSON data: {data}")
-    
     message_text = (data.get('message_text') or '').strip()
-    logger.debug(f"[API_SEND_MESSAGE] Extracted message_text: '{message_text}'")
-
     if not message_text:
         logger.warning("[API_SEND_MESSAGE] Message text is empty.")
         return jsonify({'error': 'Nachricht darf nicht leer sein.'}), 400
 
-    logger.debug(f"[API_SEND_MESSAGE] Checking if user {user_id} is participant in chat {chat_id}")
-    if not chat_db_handler.is_chat_participant(chat_id, user_id):
-        logger.warning(f"[API_SEND_MESSAGE] User {user_id} is not a participant of chat {chat_id}.")
-        return jsonify({'error': 'Du bist kein Teilnehmer dieses Chats.'}), 403
-    logger.debug(f"[API_SEND_MESSAGE] User {user_id} is a participant.")
-
-    logger.debug(f"[API_SEND_MESSAGE] Attempting to add message to DB: chat_id={chat_id} (type: {type(chat_id)}), user_id={user_id} (type: {type(user_id)}), text='{message_text}'")
-    message_details = chat_db_handler.add_message_and_get_details(chat_id, user_id, message_text)
-    logger.debug(f"[API_SEND_MESSAGE] Raw return from add_message_and_get_details: {message_details}")
+    # Import und Überprüfung der Firebase-Verfügbarkeit
+    import firebase_db_handler
+    USE_FIREBASE = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
+    can_use_fb = firebase_db_handler.can_use_firebase() if USE_FIREBASE else False
+    
+    # Überprüfung des Chats und der Teilnehmerstatus
+    if can_use_fb:
+        # Überprüfen, ob der Chat existiert
+        chat_ref = firebase_db_handler.get_chat_by_id(chat_id_str)
+        if not chat_ref:
+            logger.warning(f"[API_SEND_MESSAGE] Chat {chat_id_str} does not exist.")
+            return jsonify({'error': 'Chat existiert nicht.'}), 404
+            
+        # Sicherstellen, dass der Benutzer ein Teilnehmer ist
+        is_participant = firebase_db_handler.is_chat_participant(chat_id_str, user_id_str)
+        
+        if not is_participant:
+            logger.info(f"[API_SEND_MESSAGE] User {user_id_str} is not a participant of chat {chat_id_str}. Adding...")
+            firebase_db_handler.join_chat(chat_id_str, user_id_str)
+    else:
+        # SQLite-Fallback
+        chat_ref = chat_db_handler.get_chat_by_id(chat_id_str)
+        if not chat_ref:
+            logger.warning(f"[API_SEND_MESSAGE] Chat {chat_id_str} does not exist.")
+            return jsonify({'error': 'Chat existiert nicht.'}), 404
+            
+        # Sicherstellen, dass der Benutzer ein Teilnehmer ist
+        if not chat_db_handler.is_chat_participant(chat_id_str, user_id_str):
+            logger.info(f"[API_SEND_MESSAGE] User {user_id_str} is not a participant of chat {chat_id_str}. Adding...")
+            chat_db_handler.join_chat(chat_id_str, user_id_str)
+    
+    # Nachricht hinzufügen
+    if can_use_fb:
+        message_details = firebase_db_handler.add_message_and_get_details(chat_id_str, user_id_str, message_text)
+    else:
+        message_details = chat_db_handler.add_message_and_get_details(chat_id_str, user_id_str, message_text)
     
     if not message_details:
-        logger.error(f"[API_SEND_MESSAGE] Failed to add message to DB. chat_db_handler.add_message_and_get_details returned: {message_details}")
+        logger.error("[API_SEND_MESSAGE] Failed to add message to DB.")
         return jsonify({'error': 'Fehler beim Speichern der Nachricht.'}), 500
     
-    logger.debug(f"[API_SEND_MESSAGE] Message supposedly added to DB. Details: {message_details}")
-
-    # SocketIO: Nachricht an Raum senden
+    # Wichtiges Debug-Log
+    logger.info(f"[API_SEND_MESSAGE] Message saved to chat {chat_id_str} with details: {message_details}")
+    
+    # SocketIO-Nachricht senden
     from flask import current_app
     socketio = current_app.extensions.get('socketio')
     if socketio:
-        logger.debug(f"[API_SEND_MESSAGE] Attempting to emit 'new_message' to room '{str(chat_id)}' with details: {message_details}")
-        socketio.emit('new_message', message_details, room=str(chat_id), namespace='/chat')
-        logger.debug(f"[API_SEND_MESSAGE] 'new_message' emit call completed for room '{str(chat_id)}'.")
-    else:
-        logger.error("[API_SEND_MESSAGE] SocketIO instance not found in current_app.extensions. Cannot emit message.")
-
-    logger.info(f"[API_SEND_MESSAGE] Message successfully processed for user {user_id} to chat {chat_id}.")
+        socketio.emit('new_message', message_details, room=str(chat_id_str), namespace='/chat')
+    
     return jsonify({'success': True, 'message': message_details}), 201
 
 def register_chat_events(socketio_instance):
     @socketio_instance.on('join', namespace='/chat')
     def handle_join(data):
         room_id = data.get('room_id')
-        user_id = session.get('user_id')
-        user = db_handler.get_user_by_id(user_id) if user_id else None
-
-        if not room_id or not user:
-            emit('error', {'msg': 'Fehlende Raum-ID oder Benutzer nicht angemeldet.'})
+        firebase_uid = session.get('firebase_uid')
+        if not firebase_uid:
+            emit('error', {'msg': 'Benutzer nicht angemeldet (Firebase UID fehlt).'})
+            return
+            
+        from db_handler import get_user_by_firebase_uid
+        user = get_user_by_firebase_uid(firebase_uid)
+        if not user:
+            emit('error', {'msg': 'Benutzer wurde nicht in der Datenbank gefunden.'})
+            return
+            
+        user_id = user['id']
+        
+        if not room_id:
+            emit('error', {'msg': 'Fehlende Raum-ID'})
             return
 
         join_room(str(room_id))
@@ -265,11 +398,21 @@ def register_chat_events(socketio_instance):
     @socketio_instance.on('leave', namespace='/chat')
     def handle_leave(data):
         room_id = data.get('room_id')
-        user_id = session.get('user_id')
-        user = db_handler.get_user_by_id(user_id) if user_id else None
+        firebase_uid = session.get('firebase_uid')
+        if not firebase_uid:
+            emit('error', {'msg': 'Benutzer nicht angemeldet (Firebase UID fehlt).'})
+            return
+            
+        from db_handler import get_user_by_firebase_uid
+        user = get_user_by_firebase_uid(firebase_uid)
+        if not user:
+            emit('error', {'msg': 'Benutzer wurde nicht in der Datenbank gefunden.'})
+            return
+            
+        user_id = user['id']
 
-        if not room_id or not user:
-            emit('error', {'msg': 'Fehlende Raum-ID oder Benutzer nicht angemeldet.'})
+        if not room_id:
+            emit('error', {'msg': 'Fehlende Raum-ID'})
             return
 
         leave_room(str(room_id))
@@ -279,16 +422,18 @@ def register_chat_events(socketio_instance):
     def handle_send_message(data):
         message_text = data.get('message_text')
         chat_room_id = data.get('chat_room_id')
-        user_id = session.get('user_id')
-
-        if not user_id:
-            emit('error', {'msg': 'Benutzer nicht angemeldet.'})
+        firebase_uid = session.get('firebase_uid')
+        if not firebase_uid:
+            emit('error', {'msg': 'Benutzer nicht angemeldet (Firebase UID fehlt).'})
             return
-        
-        current_user = db_handler.get_user_by_id(user_id)
+            
+        from db_handler import get_user_by_firebase_uid
+        current_user = get_user_by_firebase_uid(firebase_uid)
         if not current_user:
-            emit('error', {'msg': 'Benutzer nicht gefunden.'})
+            emit('error', {'msg': 'Benutzer wurde nicht in der Datenbank gefunden.'})
             return
+            
+        user_id = current_user['id']
 
         if not message_text or len(message_text.strip()) == 0:
             emit('error', {'msg': 'Nachricht darf nicht leer sein.'})
@@ -313,3 +458,20 @@ def register_chat_events(socketio_instance):
         else:
             emit('error', {'msg': 'Fehler beim Senden der Nachricht.'})
             return
+
+@chat_bp.route('/admin/migrate-chat-data')
+@login_required
+def migrate_chat_data():
+    # Prüfe, ob Benutzer Admin ist (ID 1)
+    if g.user and g.user['id'] == 1:  # Einfacher Admin-Check, erweitern nach Bedarf
+        import firebase_db_handler
+        success = firebase_db_handler.migrate_chat_data_from_sqlite_to_firebase()
+        
+        if success:
+            flash('Chat-Daten wurden erfolgreich zu Firebase migriert!', 'success')
+        else:
+            flash('Fehler bei der Migration der Chat-Daten.', 'danger')
+    else:
+        flash('Zugriff verweigert. Nur Administratoren können diese Funktion nutzen.', 'danger')
+    
+    return redirect(url_for('chat.chat_collection'))

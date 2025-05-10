@@ -1,6 +1,11 @@
 import sqlite3
 import os
 from datetime import datetime
+import logging
+
+# Configure logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 
 DATABASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database')
 DATABASE_PATH = os.path.join(DATABASE_DIR, 'database.db')  # Geändert zu database.db
@@ -98,6 +103,65 @@ def get_user_by_firebase_uid(firebase_uid):
     conn.close()
     return _parse_user_timestamps(user) if user else None
 
+def get_user_by_id(user_id):
+    """Get user data by local database ID"""
+    if not user_id:
+        return None
+        
+    db = get_db_connection()
+    try:
+        cursor = db.cursor()
+        cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        user = cursor.fetchone()
+        if user:
+            # Convert sqlite3.Row object to dictionary if needed
+            if hasattr(user, "keys"):
+                return {key: user[key] for key in user.keys()}
+            else:
+                # If not using row_factory = sqlite3.Row
+                columns = [col[0] for col in cursor.description]
+                return dict(zip(columns, user))
+        return None
+    except Exception as e:
+        logger.error(f"Error getting user by ID: {e}")
+        return None
+    finally:
+        db.close()
+
+def get_user_by_username(username):
+    """Gibt einen Benutzer anhand des Benutzernamens zurück oder None, wenn nicht gefunden"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+        user = cursor.fetchone()
+        if user:
+            return dict(user)
+        return None
+    except Exception as e:
+        logger.error(f"Fehler beim Abrufen des Benutzers nach Benutzername: {e}")
+        return None
+    finally:
+        conn.close()
+
+def get_user_by_email(email):
+    """Gibt einen Benutzer anhand der E-Mail-Adresse zurück oder None, wenn nicht gefunden"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+        user = cursor.fetchone()
+        if user:
+            return dict(user)
+        return None
+    except Exception as e:
+        logger.error(f"Fehler beim Abrufen des Benutzers nach E-Mail: {e}")
+        return None
+    finally:
+        conn.close()
+
 def update_last_login(user_id):
     """Updates the last_login timestamp for a user."""
     conn = get_db_connection()
@@ -109,5 +173,37 @@ def update_last_login(user_id):
     except Exception as e:
         print(f"Error updating last login timestamp: {e}")
         return False
+    finally:
+        conn.close()
+
+def update_firebase_uid(user_id, firebase_uid):
+    """Aktualisiert die Firebase UID eines bestehenden Benutzers"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute(
+            "UPDATE users SET firebase_uid = ? WHERE id = ?", 
+            (firebase_uid, user_id)
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        logger.error(f"Fehler beim Aktualisieren der Firebase UID: {e}")
+        return False
+    finally:
+        conn.close()
+
+def update_user_theme(user_id, theme):
+    """Updates the theme for a user."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE users SET theme = ? WHERE id = ?", (theme, user_id))
+        conn.commit()
+        return cursor.rowcount
+    except Exception as e:
+        logger.error(f"Error updating user theme: {e}")
+        return 0
     finally:
         conn.close()

@@ -2,6 +2,11 @@ import firebase_admin
 from firebase_admin import auth as firebase_auth, credentials
 import requests  # For Firebase REST API
 import os
+import dotenv
+import json
+
+# Lade .env Datei falls vorhanden
+dotenv.load_dotenv()
 
 # Initialize Firebase Admin SDK
 # It's better to initialize it once in app.py
@@ -26,14 +31,68 @@ def initialize_firebase_app():
         print(f"Firebase service account key not found at {cred_path}. Firebase Admin SDK not initialized.")
         # Handle missing key file
 
-# Call initialization once, ideally at app startup.
-# For simplicity here, but better in app.py
-# if not firebase_admin._apps:
-# initialize_firebase_app()
-# This will be called from app.py
+# Get Firebase Web API Key from various sources with fallbacks
+def get_firebase_web_api_key():
+    """Get Firebase Web API Key from various sources with fallbacks"""
+    # Try environment variable first
+    api_key = os.getenv('FIREBASE_WEB_API_KEY')
+    if api_key:
+        return api_key
+    
+    # Try to read from config.json
+    try:
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+                api_key = config.get('FIREBASE_WEB_API_KEY')
+                if api_key:
+                    return api_key
+    except Exception as e:
+        print(f"Error reading config.json: {e}")
+    
+    # Try to read from .env file directly
+    try:
+        env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+        if os.path.exists(env_path):
+            with open(env_path, 'r') as f:
+                for line in f:
+                    if line.startswith('FIREBASE_WEB_API_KEY='):
+                        api_key = line.strip().split('=', 1)[1].strip('\'"')
+                        if api_key:
+                            return api_key
+    except Exception as e:
+        print(f"Error reading .env file: {e}")
+    
+    return None
 
-# Get Firebase Web API Key from environment variable or config
-FIREBASE_WEB_API_KEY = os.getenv('FIREBASE_WEB_API_KEY')  # You need to set this env variable
+# Get Firebase Web API Key
+FIREBASE_WEB_API_KEY = get_firebase_web_api_key()
+
+# Display clear error about the missing API Key
+if not FIREBASE_WEB_API_KEY:
+    error_message = """
+    ============================================
+    FEHLER: FIREBASE_WEB_API_KEY ist nicht gesetzt!
+    ============================================
+    
+    Bitte setze den Firebase Web API Key mit einer dieser Methoden:
+    
+    1. Als Umgebungsvariable:
+       export FIREBASE_WEB_API_KEY=dein_api_key
+       
+    2. In einer .env Datei im Projektverzeichnis:
+       FIREBASE_WEB_API_KEY=dein_api_key
+       
+    3. In einer config.json Datei im Projektverzeichnis:
+       {
+         "FIREBASE_WEB_API_KEY": "dein_api_key"
+       }
+       
+    Den API Key findest du in der Firebase Console unter:
+    Project Settings -> Web API Key
+    """
+    print(error_message)
 
 def create_firebase_user(email, password, username):
     # Legt einen neuen User in Firebase Authentication an
@@ -60,7 +119,9 @@ def login_firebase_user_rest(email, password):
     Returns user's UID and ID token on success.
     """
     if not FIREBASE_WEB_API_KEY:
-        raise EnvironmentError("FIREBASE_WEB_API_KEY is not set.")
+        error_message = "FIREBASE_WEB_API_KEY ist nicht gesetzt. Login unmöglich."
+        print(error_message)
+        raise EnvironmentError(error_message)
 
     rest_api_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}"
     payload = {
@@ -68,16 +129,39 @@ def login_firebase_user_rest(email, password):
         "password": password,
         "returnSecureToken": True
     }
+    
     try:
+        print(f"Attempting Firebase login for email: {email}")
         response = requests.post(rest_api_url, json=payload)
-        response.raise_for_status()  # Raises an HTTPError for bad responses (4XX or 5XX)
+        
+        if response.status_code == 400:
+            # Verbesserte Fehlerverarbeitung für 400-Fehler
+            error_data = response.json()
+            error_message = error_data.get("error", {}).get("message", "Unknown error")
+            print(f"Firebase login failed with error: {error_message}")
+            
+            # Ausführlichere Fehlermeldung basierend auf dem Fehlercode
+            if error_message == "INVALID_LOGIN_CREDENTIALS":
+                raise ValueError("Ungültige Anmeldedaten. E-Mail oder Passwort falsch oder Benutzer existiert nicht.")
+            elif "INVALID_PASSWORD" in error_message:
+                raise ValueError("Falsches Passwort.")
+            elif "EMAIL_NOT_FOUND" in error_message:
+                raise ValueError("Kein Konto mit dieser E-Mail-Adresse gefunden.")
+            elif "USER_DISABLED" in error_message:
+                raise ValueError("Dieses Konto wurde deaktiviert.")
+            elif "TOO_MANY_ATTEMPTS_TRY_LATER" in error_message:
+                raise ValueError("Zu viele fehlgeschlagene Anmeldeversuche. Bitte versuche es später erneut.")
+            else:
+                raise ValueError(f"Firebase login failed: {error_message}")
+        
+        response.raise_for_status()
         data = response.json()
-        return data.get('localId'), data.get('idToken')  # UID, ID Token
+        print(f"Firebase login successful for email: {email}")
+        return data.get('localId'), data.get('idToken')
     except requests.exceptions.HTTPError as e:
-        error_json = e.response.json()
+        error_json = e.response.json() if hasattr(e, 'response') and e.response is not None else {}
         error_message = error_json.get("error", {}).get("message", "Unknown login error")
-        if "INVALID_PASSWORD" in error_message or "EMAIL_NOT_FOUND" in error_message:
-            raise ValueError("Incorrect email or password.")
+        print(f"Firebase HTTP error: {error_message}")
         raise ValueError(f"Firebase login failed: {error_message}")
     except Exception as e:
         print(f"Firebase REST API login error: {e}")
@@ -196,3 +280,77 @@ def change_firebase_password(uid, new_password):
     except Exception as e:
         print(f"Unexpected error changing Firebase password: {e}")
         raise ValueError(f"Could not change password: {e}")
+
+def get_google_auth_url():
+    """Erstellt eine Google OAuth-URL"""
+    import os
+    from google.oauth2 import id_token
+    from google.auth.transport import requests
+    import urllib.parse
+    
+    # Google OAuth Konfiguration aus Umgebungsvariablen
+    client_id = os.getenv('GOOGLE_CLIENT_ID')
+    redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
+    
+    if not client_id or not redirect_uri:
+        raise ValueError("GOOGLE_CLIENT_ID und GOOGLE_REDIRECT_URI müssen in den Umgebungsvariablen gesetzt sein")
+    
+    # OAuth-Parameter
+    params = {
+        'client_id': client_id,
+        'redirect_uri': redirect_uri,
+        'response_type': 'code',
+        'scope': 'email profile',
+        'prompt': 'select_account'
+    }
+    
+    # URL erstellen
+    auth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urllib.parse.urlencode(params)
+    return auth_url
+
+def exchange_google_code(auth_code):
+    """Tauscht den OAuth-Code gegen Benutzerinformationen aus"""
+    import os
+    import requests
+    from google.oauth2 import id_token
+    from google.auth.transport import requests as google_requests
+    
+    # Google OAuth Konfiguration
+    client_id = os.getenv('GOOGLE_CLIENT_ID')
+    client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+    redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
+    
+    if not client_id or not client_secret or not redirect_uri:
+        raise ValueError("Google OAuth Konfiguration unvollständig")
+    
+    # Token-Request an Google OAuth-Server
+    token_url = 'https://oauth2.googleapis.com/token'
+    token_data = {
+        'code': auth_code,
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'redirect_uri': redirect_uri,
+        'grant_type': 'authorization_code'
+    }
+    
+    response = requests.post(token_url, data=token_data)
+    if not response.ok:
+        return None
+    
+    token_json = response.json()
+    id_info = id_token.verify_oauth2_token(
+        token_json['id_token'],
+        google_requests.Request(),
+        client_id
+    )
+    
+    # Firebase Custom Token erstellen
+    firebase_uid = 'google_' + id_info['sub']  # Google-Benutzer-ID als Firebase UID verwenden
+    
+    # Benutzerinformationen zurückgeben
+    return {
+        'email': id_info['email'],
+        'name': id_info.get('name'),
+        'firebase_uid': firebase_uid,
+        'id_token': token_json['id_token']
+    }

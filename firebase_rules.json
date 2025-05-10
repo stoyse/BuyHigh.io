@@ -1,0 +1,19 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "messages": {
+      "$chat_id": {
+        ".indexOn": ["sent_at"]
+      }
+    },
+    "chat_participants": {
+      "$chat_id": {
+        ".indexOn": ["joined_at"]
+      }
+    },
+    "chats": {
+      ".indexOn": ["name", "created_at"]
+    }
+  }
+}

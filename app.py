@@ -4,7 +4,8 @@ import datetime
 from flask_socketio import SocketIO
 import logging
 import sqlite3
-from dotenv import load_dotenv  # Added for loading .env files
+from dotenv import load_dotenv
+import firebase_admin  # Added for Firebase Admin SDK
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -55,7 +56,27 @@ if db_dir and not os.path.exists(db_dir):
 # Initialize Firebase Admin SDK
 if not os.getenv('FIREBASE_WEB_API_KEY'):
     print("WARNING: FIREBASE_WEB_API_KEY environment variable is not set. Login functionality will fail.")
-auth_module.initialize_firebase_app()  # Initialize Firebase
+
+# Check if the Firebase Default-App is already initialized
+if not firebase_admin._apps:
+    print("No Firebase app initialized yet by other modules. Calling auth_module.initialize_firebase_app().")
+    auth_module.initialize_firebase_app()
+else:
+    print("Firebase Admin SDK app already initialized (likely by firebase_db_handler or another module). Skipping redundant call to auth_module.initialize_firebase_app().")
+
+# --- Klarer Hinweis, welche DB verwendet wird ---
+USE_FIREBASE = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
+if USE_FIREBASE:
+    try:
+        import firebase_db_handler
+        if firebase_db_handler.can_use_firebase():
+            print("\033[92m" + "✅ SYSTEM: Using Firebase Realtime Database as primary data backend." + "\033[0m")
+        else:
+            print("\033[93m" + "⚠️ SYSTEM: Firebase configured, but not available. Falling back to SQLite!" + "\033[0m")
+    except Exception as e:
+        print("\033[91m" + f"❌ SYSTEM: Firebase import/initialization failed ({e}). Using SQLite only!" + "\033[0m")
+else:
+    print("\033[94m" + "ℹ️ SYSTEM: Firebase is disabled in .env. Using SQLite as data backend." + "\033[0m")
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 

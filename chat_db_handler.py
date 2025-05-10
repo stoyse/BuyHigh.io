@@ -1,9 +1,13 @@
 import sqlite3
 import logging
 from datetime import datetime
+import os
 
 # Logger konfigurieren
 logger = logging.getLogger(__name__)
+
+# Check if we should use Firebase
+USE_FIREBASE = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
 
 def get_db_connection():
     """Verbindung zur SQLite-Datenbank herstellen"""
@@ -11,8 +15,46 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+# Try to import Firebase handler, but don't fail if not available
+try:
+    if USE_FIREBASE:
+        import firebase_db_handler
+        firebase_initialized = firebase_db_handler.initialize_firebase_db()
+    else:
+        firebase_initialized = False
+except ImportError:
+    firebase_initialized = False
+    logger.warning("Firebase DB handler not available, using SQLite only")
+
+# Function to determine which database system to use
+def use_firebase():
+    """Check if we should use Firebase for this request"""
+    if not USE_FIREBASE:
+        logger.debug("USE_FIREBASE is set to False. Using SQLite.")
+        return False
+    
+    try:
+        import firebase_db_handler
+        is_initialized = firebase_db_handler.can_use_firebase()
+        if not is_initialized:
+            logger.debug("Firebase can_use_firebase() returned False. Using SQLite.")
+        return is_initialized
+    except ImportError:
+        logger.warning("Firebase DB handler not available, using SQLite only.")
+        return False
+    except Exception as e:
+        logger.error(f"Error checking Firebase status: {e}. Using SQLite fallback.")
+        return False
+
 def get_user_chats(user_id):
     """Alle Chats abrufen, an denen ein Benutzer teilnimmt"""
+    if use_firebase():
+        try:
+            return firebase_db_handler.get_user_chats(user_id)
+        except Exception as e:
+            logger.error(f"Firebase error in get_user_chats: {e}. Falling back to SQLite.")
+    
+    # Original SQLite implementation
     # Stellen sicher, dass der Benutzer dem Standard-Chat beigetreten ist
     ensure_user_in_default_chat(user_id)
     
@@ -65,6 +107,13 @@ def get_user_chats(user_id):
 
 def ensure_user_in_default_chat(user_id):
     """Stellt sicher, dass ein Benutzer am Standard-Chat (General) teilnimmt"""
+    if use_firebase():
+        try:
+            return firebase_db_handler.ensure_user_in_default_chat(user_id)
+        except Exception as e:
+            logger.error(f"Firebase error in ensure_user_in_default_chat: {e}. Falling back to SQLite.")
+    
+    # Original SQLite implementation
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -99,8 +148,33 @@ def ensure_user_in_default_chat(user_id):
     finally:
         conn.close()
 
+def get_default_chat_id():
+    """Findet die ID des Standard-Chats 'General'"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute("SELECT id FROM chat_rooms WHERE name = 'General' LIMIT 1")
+        default_chat = cursor.fetchone()
+        
+        if default_chat:
+            return default_chat['id']
+        return None
+    except sqlite3.Error as e:
+        logger.error(f"Datenbankfehler beim Abrufen des Standard-Chats: {e}")
+        return None
+    finally:
+        conn.close()
+
 def get_chat_by_id(chat_id):
     """Chatroom-Informationen anhand der ID abrufen"""
+    if use_firebase():
+        try:
+            return firebase_db_handler.get_chat_by_id(chat_id)
+        except Exception as e:
+            logger.error(f"Firebase error in get_chat_by_id: {e}. Falling back to SQLite.")
+    
+    # Original SQLite implementation
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -119,6 +193,13 @@ def get_chat_by_id(chat_id):
 
 def is_chat_participant(chat_id, user_id):
     """Prüft, ob ein Benutzer an einem Chat teilnimmt"""
+    if use_firebase():
+        try:
+            return firebase_db_handler.is_chat_participant(chat_id, user_id)
+        except Exception as e:
+            logger.error(f"Firebase error in is_chat_participant: {e}. Falling back to SQLite.")
+    
+    # Original SQLite implementation
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -134,6 +215,13 @@ def is_chat_participant(chat_id, user_id):
 
 def join_chat(chat_id, user_id):
     """Benutzer zu einem Chat hinzufügen"""
+    if use_firebase():
+        try:
+            return firebase_db_handler.join_chat(chat_id, user_id)
+        except Exception as e:
+            logger.error(f"Firebase error in join_chat: {e}. Falling back to SQLite.")
+    
+    # Original SQLite implementation
     if is_chat_participant(chat_id, user_id):
         return True  # Benutzer nimmt bereits teil
         
@@ -153,6 +241,13 @@ def join_chat(chat_id, user_id):
 
 def create_chat(chat_name, user_id):
     """Einen neuen Chat erstellen"""
+    if use_firebase():
+        try:
+            return firebase_db_handler.create_chat(chat_name, user_id)
+        except Exception as e:
+            logger.error(f"Firebase error in create_chat: {e}. Falling back to SQLite.")
+    
+    # Original SQLite implementation
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -183,6 +278,13 @@ def create_chat(chat_name, user_id):
 
 def add_message_and_get_details(chat_id, user_id, message_text):
     """Nachricht zu einem Chat hinzufügen und die Details der Nachricht abrufen."""
+    if use_firebase():
+        try:
+            return firebase_db_handler.add_message_and_get_details(chat_id, user_id, message_text)
+        except Exception as e:
+            logger.error(f"Firebase error in add_message_and_get_details: {e}. Falling back to SQLite.")
+    
+    # Original SQLite implementation
     logger.debug(f"[DB] add_message_and_get_details called: chat_id={chat_id}, user_id={user_id}, message_text={message_text}")
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -222,6 +324,13 @@ def add_message_and_get_details(chat_id, user_id, message_text):
 
 def get_chat_messages(chat_id, limit=50, offset=0):
     """Nachrichten eines Chats abrufen"""
+    if use_firebase():
+        try:
+            return firebase_db_handler.get_chat_messages(chat_id, limit, offset)
+        except Exception as e:
+            logger.error(f"Firebase error in get_chat_messages: {e}. Falling back to SQLite.")
+    
+    # Original SQLite implementation
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -264,6 +373,13 @@ def get_chat_messages(chat_id, limit=50, offset=0):
 
 def delete_chat(chat_id):
     """Löscht einen Chat und alle zugehörigen Nachrichten und Teilnehmer."""
+    if use_firebase():
+        try:
+            return firebase_db_handler.delete_chat(chat_id)
+        except Exception as e:
+            logger.error(f"Firebase error in delete_chat: {e}. Falling back to SQLite.")
+    
+    # Original SQLite implementation
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -280,3 +396,21 @@ def delete_chat(chat_id):
         return False
     finally:
         conn.close()
+
+# Add a migration utility function
+def migrate_data_to_firebase():
+    """Migrate data from SQLite to Firebase"""
+    if not USE_FIREBASE:
+        logger.warning("Firebase is disabled. Enable it to migrate data.")
+        return False
+    
+    try:
+        import firebase_db_handler
+        result = firebase_db_handler.migrate_chat_data_from_sqlite_to_firebase()
+        return result
+    except ImportError:
+        logger.error("Firebase DB handler not available. Cannot migrate data.")
+        return False
+    except Exception as e:
+        logger.error(f"Error migrating data to Firebase: {e}")
+        return False
