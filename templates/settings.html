@@ -103,22 +103,22 @@
 
   <!-- Delete Account Card -->
   <div class="mt-8 bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 border-2 border-red-500 dark:border-red-700">
-    <h2 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-6">Konto löschen</h2>
+    <h2 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-6">Delete Account</h2>
     <p class="text-gray-700 dark:text-gray-300 mb-4">
-      <strong>Warnung:</strong> Diese Aktion ist endgültig und kann nicht rückgängig gemacht werden. Alle Ihre Daten, einschließlich Ihres Portfolios und Ihrer Transaktionshistorie, werden dauerhaft gelöscht.
+      <strong>Warning:</strong> This action is final and cannot be undone. All your data, including your portfolio and transaction history, will be permanently deleted.
     </p>
-    <form method="post" action="{{ url_for('auth.delete_account') }}" onsubmit="return confirm('Sind Sie absolut sicher, dass Sie Ihr Konto dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.');">
+    <form method="post" action="{{ url_for('auth.delete_account') }}" onsubmit="return confirm('Are you absolutely sure you want to permanently delete your account? This action cannot be undone.');">
       <input type="hidden" name="form_type" value="delete_account">
       <div class="space-y-4">
         <div>
-          <label for="current_password_for_delete" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Aktuelles Passwort zur Bestätigung</label>
+          <label for="current_password_for_delete" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Current password for confirmation</label>
           <input type="password" name="current_password_for_delete" id="current_password_for_delete" required
                  class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:border-red-500 focus:ring-red-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
         </div>
         <div>
           <button type="submit"
                   class="py-2 px-4 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-800 transition-colors">
-            Konto dauerhaft löschen
+            Permanently delete account
           </button>
         </div>
       </div>

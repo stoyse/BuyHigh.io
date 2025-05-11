@@ -367,46 +367,49 @@ def change_password():
     # Längen loggen für Debugging
     logger.debug(f"Passwort ändern für {user_email}: Aktuelles PW Länge: {len(current_password) if current_password else 0}, Neues PW Länge: {len(new_password) if new_password else 0}")
 
-    if not current_password or not new_password or not confirm_new_password:
-        flash('Alle Felder sind erforderlich.', 'danger')
-        logger.warning(f"Passwort ändern für {user_email}: Nicht alle Felder ausgefüllt.")
+    if not current_password:
+        flash('Current password is required.', 'danger')
+        logger.warning(f"Password change for {user_email}: Current password missing.")
+        return redirect(url_for('main.settings'))
+    
+    if not auth_module.verify_firebase_password_rest(g.user['email'], current_password):
+        flash('Current password is incorrect.', 'danger')
+        logger.warning(f"Password change for {user_email}: Current password incorrect.")
+        return redirect(url_for('main.settings'))
+    
+    if not new_password or not confirm_new_password:
+        flash('All fields are required.', 'danger')
+        logger.warning(f"Password change for {user_email}: Not all fields filled.")
         return redirect(url_for('main.settings'))
     
     if new_password != confirm_new_password:
-        flash('Neues Passwort und Bestätigung stimmen nicht überein.', 'danger')
-        logger.warning(f"Passwort ändern für {user_email}: Neues Passwort und Bestätigung stimmen nicht überein.")
+        flash('New password and confirmation do not match.', 'danger')
+        logger.warning(f"Password change for {user_email}: New password and confirmation do not match.")
         return redirect(url_for('main.settings'))
     
     # Zusätzliche Längenprüfung für neues Passwort (Beispiel)
     if len(new_password) < 6: # Synchron mit Registrierungsanforderung halten
-        flash('Das neue Passwort muss mindestens 6 Zeichen lang sein.', 'danger')
-        logger.warning(f"Passwort ändern für {user_email}: Neues Passwort zu kurz (Länge {len(new_password)}).")
+        flash('The new password must be at least 6 characters long.', 'danger')
+        logger.warning(f"Password change for {user_email}: New password too short (length {len(new_password)}).")
         return redirect(url_for('main.settings'))
 
     try:
-        logger.debug(f"Überprüfe aktuelles Passwort für {user_email} (Passwort ändern).")
-        if not auth_module.verify_firebase_password_rest(g.user['email'], current_password):
-            flash('Aktuelles Passwort ist nicht korrekt.', 'danger')
-            logger.warning(f"Passwort ändern für {user_email}: Aktuelles Passwort falsch.")
-            return redirect(url_for('main.settings'))
-        logger.info(f"Aktuelles Passwort für {user_email} erfolgreich verifiziert.")
-        
         firebase_uid_for_pw_change = g.user.get('firebase_uid')
         if not firebase_uid_for_pw_change: # Sollte nicht passieren
-            logger.error(f"Passwort ändern für {user_email}: Firebase UID nicht in g.user gefunden.")
-            flash('Benutzeridentifikation fehlgeschlagen.', 'danger')
+            logger.error(f"Password change for {user_email}: Firebase UID not found in g.user.")
+            flash('User identification failed.', 'danger')
             return redirect(url_for('main.settings'))
 
-        logger.debug(f"Ändere Firebase-Passwort für UID: {firebase_uid_for_pw_change}.")
+        logger.debug(f"Change Firebase password for UID: {firebase_uid_for_pw_change}.")
         auth_module.change_firebase_password(firebase_uid_for_pw_change, new_password)
-        flash('Passwort erfolgreich geändert!', 'success')
-        logger.info(f"Passwort für Benutzer {user_email} (UID: {firebase_uid_for_pw_change}) erfolgreich in Firebase geändert.")
+        flash('Password successfully changed!', 'success')
+        logger.info(f"Password for user {user_email} (UID: {firebase_uid_for_pw_change}) successfully changed in Firebase.")
     except ValueError as e: # Erwartete Fehler von Firebase-Operationen
         flash(str(e), 'danger')
-        logger.error(f"ValueError beim Passwort ändern für {user_email}: {e}", exc_info=True)
+        logger.error(f"ValueError while changing password for {user_email}: {e}", exc_info=True)
     except Exception as e:
-        logger.error(f"Unerwarteter Fehler beim Passwort ändern für {user_email}: {e}", exc_info=True)
-        flash('Ein unerwarteter Fehler ist aufgetreten.', 'danger')
+        logger.error(f"Unexpected error while changing password for {user_email}: {e}", exc_info=True)
+        flash('An unexpected error occurred.', 'danger')
     
     return redirect(url_for('main.settings'))
 

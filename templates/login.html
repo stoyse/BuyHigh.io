@@ -25,15 +25,15 @@
     
     <div class="mt-3 text-center">
       <a href="{{ url_for('auth.forgot_password') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
-        Passwort vergessen?
+        Forgot password?
       </a>
     </div>
 
     <div class="mt-4 text-center">
-      <p class="text-sm text-gray-600 dark:text-gray-400">Oder</p>
+      <p class="text-sm text-gray-600 dark:text-gray-400">Or</p>
       <button id="google-signin-btn" class="mt-2 w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" class="w-5 h-5 mr-2">
-        Mit Google anmelden
+        Sign in with Google
       </button>
     </div>
 
@@ -45,11 +45,11 @@
     </div>
   </div>
 
-  <!-- Firebase App (Core) Skript -->
+  <!-- Firebase App (Core) Script -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <!-- Firebase Authentication Skript -->
+  <!-- Firebase Authentication Script -->
   <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
   
-  <!-- Ihr benutzerdefiniertes Firebase Auth Skript -->
+  <!-- Custom Firebase Auth Script -->
   <script src="{{ url_for('static', filename='js/firebase-auth-client.js') }}"></script>
 {% endblock %}

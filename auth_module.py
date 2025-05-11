@@ -77,7 +77,7 @@ def sign_in_with_email_password(email, password):
         error_json = e.response.json() if hasattr(e, 'response') and e.response is not None else {}
         error_message = error_json.get('error', {}).get('message', 'Unknown error')
         
-        # Detaillierte Fehlermeldungen
+        # More detailed error messages based on error code
         if error_message == 'EMAIL_NOT_FOUND':
             logger.error(f"Login failed: Email not registered in Firebase: {email}")
         elif error_message == 'INVALID_PASSWORD':
