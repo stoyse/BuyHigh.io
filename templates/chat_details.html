@@ -160,7 +160,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const messageDiv = document.createElement('div');
-    const isOwnMessage = msgData.user_id === currentUserId;
+    // Stelle sicher, dass beide IDs als String verglichen werden!
+    const isOwnMessage = String(msgData.user_id) === String(currentUserId);
     
     messageDiv.classList.add('mb-4');
     if (isOwnMessage) {

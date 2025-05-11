@@ -216,27 +216,31 @@ def get_or_create_local_user_from_firebase(decoded_token, db): # db ist Ihre Dat
     username = decoded_token.get('name') or decoded_token.get('display_name') or email.split('@')[0] 
     
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM users WHERE firebase_uid = ?", (firebase_uid,))
+    cursor.execute("SELECT * FROM users WHERE firebase_uid = %s", (firebase_uid,))
     user = cursor.fetchone()
 
     if user:
         # Benutzer existiert, ggf. last_login aktualisieren
-        cursor.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE firebase_uid = ?", (firebase_uid,))
+        cursor.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE firebase_uid = %s", (firebase_uid,))
         db.commit()
         print(f"Local user found and updated: {firebase_uid}")
     else:
         # Benutzer existiert nicht, neu erstellen
         # password_hash ist für Firebase-Benutzer nicht relevant, kann NULL bleiben
         cursor.execute(
-            "INSERT INTO users (username, email, firebase_uid, email_verified, last_login) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)",
+            "INSERT INTO users (username, email, firebase_uid, email_verified, last_login) VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING id",
             (username, email, firebase_uid, decoded_token.get('email_verified', False))
         )
+        user_id_row = cursor.fetchone()
         db.commit()
-        user_id = cursor.lastrowid
-        # Hole den neu erstellten Benutzer, um ihn zurückzugeben (optional, aber gut für Konsistenz)
-        cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-        user = cursor.fetchone()
-        print(f"New local user created: {firebase_uid} with username {username}")
+        user_id = user_id_row['id'] if user_id_row else None
+        if user_id:
+            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+            print(f"New local user created: {firebase_uid} with username {username}")
+        else:
+            print(f"Failed to create new local user for firebase_uid: {firebase_uid}")
+            user = None
     
     return user # Gibt das Benutzerobjekt (als Tupel/Dict von der DB) oder None zurück
 

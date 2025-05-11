@@ -6,22 +6,6 @@
 <div class="container mx-auto px-4 py-6 max-w-full">
   <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-6 text-center">MEINE CHATS</h1>
 
-  <!-- Debug-Bereich für Entwicklung -->
-  {% if debug_info %}
-  <div class="bg-yellow-100 dark:bg-yellow-900 border-2 border-yellow-400 dark:border-yellow-700 rounded-lg p-3 mb-4">
-    <h3 class="text-xs font-pixel text-yellow-800 dark:text-yellow-300 mb-1">DEBUG-INFO:</h3>
-    <div class="grid grid-cols-2 gap-1 text-xxs">
-      <div>Firebase aktiviert:</div><div>{{ debug_info.firebase_enabled }}</div>
-      <div>Firebase nutzbar:</div><div>{{ debug_info.can_use_firebase }}</div>
-      <div>Benutzer-ID:</div><div>{{ debug_info.user_id }} (str: {{ debug_info.user_id_str }})</div>
-      <div>Chat-Anzahl:</div><div>{{ debug_info.chat_count }}</div>
-    </div>
-    <div class="mt-1">
-      <a href="/chat/admin/migrate-chat-data" class="text-xxs font-semibold hover:underline text-blue-700 dark:text-blue-400">DATEN MIGRIEREN</a>
-    </div>
-  </div>
-  {% endif %}
-
   <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-4 mb-6">
     <div class="flex flex-wrap justify-between items-center">
       <div class="w-full md:w-2/3 mb-4 md:mb-0">
@@ -81,16 +65,6 @@
           STARTEN
         </button>
       </div>
-    {% endif %}
-
-    <!-- Direkte Debug-Anzeige aller Chat-Daten -->
-    {% if debug_info and chat_rooms %}
-    <div class="mt-6 border-t-2 border-gray-200 dark:border-gray-700 pt-3">
-      <details>
-        <summary class="font-pixel text-xxs cursor-pointer text-gray-500 hover:text-blue-600 mb-2">Chat Debug Daten</summary>
-        <pre class="text-xxs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-x-auto max-h-48">{{ chat_rooms|tojson(indent=2) }}</pre>
-      </details>
-    </div>
     {% endif %}
   </div>
 </div>

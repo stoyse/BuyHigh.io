@@ -57,3 +57,4 @@ finnhub-python
 rich
 pandas
 enventlet
+psycopg2

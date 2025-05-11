@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, g, request, flash, redirect, url_for
 from utils import login_required
-import database.handler.db_handler as db_handler
+import database.handler.postgres.postgres_db_handler as db_handler
 import logging  # Add logging import
 import stock_news
 from rich import print
@@ -26,7 +26,7 @@ def dashboard():
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     
     # Import transactions_handler locally to avoid potential circular imports at top level
-    import transactions_handler 
+    import database.handler.postgres.postgre_transactions_handler as transactions_handler 
     logger.debug("Lade Portfolio-Daten...")
     portfolio_data = transactions_handler.show_user_portfolio(g.user['id'])
     logger.debug(f"Portfolio-Daten geladen: Erfolg={portfolio_data.get('success', False)}, Anzahl Items={len(portfolio_data.get('portfolio', []))}")

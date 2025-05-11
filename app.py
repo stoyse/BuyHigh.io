@@ -4,14 +4,15 @@ import datetime
 from flask_socketio import SocketIO
 import logging
 from logging.handlers import RotatingFileHandler  # Hinzugefügt für Dateiprotokollierung
-import sqlite3
+import psycopg2
+import psycopg2.extras
 from dotenv import load_dotenv
 import firebase_admin  # Added for Firebase Admin SDK
 
 load_dotenv()  # Load environment variables from .env file
 
-import database.handler.db_handler as db_handler
-import transactions_handler
+import database.handler.postgres.postgres_db_handler as db_handler
+import database.handler.postgres.postgre_transactions_handler as transactions_handler
 import auth as auth_module  # Import our updated auth module
 
 # Import Blueprints
@@ -118,15 +119,20 @@ logger.info("Datenbank und Asset-Typen initialisiert.")
 def get_db():
     if 'db' not in g:
         try:
-            logger.debug("Datenbankverbindung wird geöffnet.")
-            g.db = sqlite3.connect(
-                app.config['DATABASE'],
-                detect_types=sqlite3.PARSE_DECLTYPES
+            logger.debug("PostgreSQL-Datenbankverbindung wird geöffnet.")
+            pg_host = os.getenv('POSTGRES_HOST')
+            pg_port = os.getenv('POSTGRES_PORT')
+            pg_db = os.getenv('POSTGRES_DB')
+            pg_user = os.getenv('POSTGRES_USER')
+            pg_password = os.getenv('POSTGRES_PASSWORD')
+            dsn = f"dbname={pg_db} user={pg_user} password={pg_password} host={pg_host} port={pg_port}"
+            g.db = psycopg2.connect(
+                dsn=dsn,
+                cursor_factory=psycopg2.extras.RealDictCursor
             )
-            g.db.row_factory = sqlite3.Row
-            logger.debug("Datenbankverbindung erfolgreich geöffnet.")
-        except sqlite3.Error as e:
-            logger.error(f"Datenbankverbindungsfehler: {e}")
+            logger.debug("PostgreSQL-Datenbankverbindung erfolgreich geöffnet.")
+        except psycopg2.Error as e:
+            logger.error(f"PostgreSQL-Datenbankverbindungsfehler: {e}")
             raise
     return g.db
 
@@ -135,7 +141,7 @@ def close_db(e=None):
     db = g.pop('db', None)
     if db is not None:
         db.close()
-        logger.debug("Datenbankverbindung geschlossen.")
+        logger.debug("PostgreSQL-Datenbankverbindung geschlossen.")
     if e:
         logger.error(f"Fehler während Teardown App Context: {e}")
 
@@ -213,7 +219,12 @@ def google_signin():
 
         decoded_token = auth_module.verify_firebase_id_token(id_token)
         logger.info(f"Firebase ID-Token verifiziert für UID: {decoded_token.get('uid')}")
-        db_conn = get_db()
+        try:
+            db_conn = get_db()
+        except psycopg2.OperationalError as db_err:
+            logger.error(f"PostgreSQL-Verbindungsfehler während Google Sign-In: {db_err}", exc_info=True)
+            return jsonify({"success": False, "error": "Database connection failed. Please try again later."}), 503
+
         local_user = auth_module.get_or_create_local_user_from_firebase(decoded_token, db_conn)
 
         if not local_user:

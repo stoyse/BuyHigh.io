@@ -22,6 +22,15 @@ logger.info(f"Chat DB Handler: USE_FIREBASE aus Umgebungsvariable: {USE_FIREBASE
 def get_db_connection():
     """Verbindung zur SQLite-Datenbank herstellen"""
     logger.debug(f"Versuche SQLite-Verbindung zu öffnen: {DB_PATH}")
+    # Stelle sicher, dass das Verzeichnis existiert
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir and not os.path.exists(db_dir):
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+            logger.info(f"SQLite-Datenbankverzeichnis erstellt: {db_dir}")
+        except Exception as e:
+            logger.error(f"Fehler beim Erstellen des SQLite-Datenbankverzeichnisses {db_dir}: {e}", exc_info=True)
+            raise
     try:
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row

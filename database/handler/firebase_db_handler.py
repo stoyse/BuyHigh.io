@@ -102,7 +102,8 @@ def can_use_firebase():
         return False
             
     try:
-        test_ref = db_ref_check.child(".info/connected")
+        # Fix: use db.reference(".info/connected") instead of db_ref_check.child(".info/connected")
+        test_ref = db.reference(".info/connected")
         connected_status = test_ref.get()
         logger.info(f"Firebase connection test: .info/connected = {connected_status}")
         if connected_status:

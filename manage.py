@@ -105,7 +105,7 @@ def setup_database():
     print("[yellow]Richte SQLite-Datenbank ein...[/yellow]")
     logger.info("Richte SQLite-Datenbank ein...")
     try:
-        import database.handler.db_handler as db_handler
+        import database.handler.postgres.postgres_db_handler as db_handler
         db_handler.init_db()
         print("[green]SQLite-Datenbank erfolgreich initialisiert.[/green]")
         logger.info("SQLite-Datenbank erfolgreich initialisiert.")

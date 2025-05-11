@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, g
 from datetime import datetime, timedelta
 from utils import login_required
 import stock_data
-import transactions_handler
+import database.handler.postgres.postgre_transactions_handler as transactions_handler
 import pandas as pd # Import pandas for pd.notna()
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')

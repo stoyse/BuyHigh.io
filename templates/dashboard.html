@@ -119,7 +119,7 @@
             {{ 'Bought' if tx.transaction_type == 'buy' else 'Sold' }}: {{ "%.0f"|format(tx.quantity) }} {{ tx.asset_symbol }} @ ${{ "%.2f"|format(tx.price_per_unit) }}
           </p>
           <p class="text-xxs font-pixel text-gray-500 dark:text-gray-400">
-            {{ tx.timestamp.split(' ')[0] }}
+            {{ tx.timestamp.strftime('%Y-%m-%d') }}
           </p>
         </div>
           {% endfor %}
