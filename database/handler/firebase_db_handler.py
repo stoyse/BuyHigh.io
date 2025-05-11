@@ -123,7 +123,7 @@ def get_user_chats(user_id):
     logger.info(f"Firebase: get_user_chats for user ID: {user_id}")
     if not can_use_firebase():
         logger.warning("Firebase not usable in get_user_chats. Falling back to SQLite.")
-        import chat_db_handler
+        import database.handler.chat_db_handler as chat_db_handler
         return chat_db_handler.get_user_chats(user_id)
     
     db_ref = initialize_firebase_db()

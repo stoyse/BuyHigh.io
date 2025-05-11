@@ -7,12 +7,21 @@ import logging
 logger = logging.getLogger(__name__)
 # logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s') # Wird global in app.py konfiguriert
 
-DATABASE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database')
-DATABASE_PATH = os.path.join(DATABASE_DIR, 'database.db')
+# --- BEGIN: Use DATABASE_FILE_PATH from environment or fallback ---
+DATABASE_ENV_PATH = os.getenv('DATABASE_FILE_PATH', 'database/database.db')
+if not os.path.isabs(DATABASE_ENV_PATH):
+    # Use absolute path relative to app root if possible
+    APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+    DATABASE_PATH = os.path.abspath(os.path.join(APP_ROOT, DATABASE_ENV_PATH))
+else:
+    DATABASE_PATH = DATABASE_ENV_PATH
 
-if not os.path.exists(DATABASE_DIR):
+DATABASE_DIR = os.path.dirname(DATABASE_PATH)
+# --- END: Use DATABASE_FILE_PATH from environment or fallback ---
+
+if DATABASE_DIR and not os.path.exists(DATABASE_DIR):
     try:
-        os.makedirs(DATABASE_DIR)
+        os.makedirs(DATABASE_DIR, exist_ok=True)
         logger.info(f"Datenbankverzeichnis erstellt: {DATABASE_DIR}")
     except OSError as e:
         logger.error(f"Fehler beim Erstellen des Datenbankverzeichnisses {DATABASE_DIR}: {e}")

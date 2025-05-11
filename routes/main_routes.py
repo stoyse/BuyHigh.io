@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, g, request, flash, redirect, url_for
 from utils import login_required
-import db_handler
+import database.handler.db_handler as db_handler
 import logging  # Add logging import
 import stock_news
 from rich import print

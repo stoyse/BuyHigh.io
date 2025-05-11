@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}403 - Zugriff verweigert - BuyHigh.io{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 text-center">
+    <div class="flex flex-col items-center justify-center">
+        <div class="w-40 h-40 bg-gray-700 dark:bg-gray-800 border-4 border-game-red rounded-lg flex items-center justify-center mb-6">
+            <h1 class="font-pixel text-5xl text-game-red animate-pulse-slow">403</h1>
+        </div>
+        
+        <h2 class="font-pixel text-xl text-gray-700 dark:text-white mb-4">ZUGRIFF VERWEIGERT</h2>
+        
+        <div class="glass p-6 rounded-lg max-w-lg mb-8">
+            <p class="text-gray-600 dark:text-gray-300 mb-6">
+                Halt! Es sieht aus, als hätten Sie nicht die richtigen Zugriffsrechte für diese Seite. Wie bei einem Margin Call - kein Zugang ohne die richtigen Berechtigungen.
+            </p>
+            
+            <div class="pixel-art mb-6 flex justify-center">
+                <svg class="w-32 h-32" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="0" y="0" width="16" height="16" fill="none"/>
+                    <rect x="5" y="2" width="6" height="4" fill="#ef4444"/>
+                    <rect x="6" y="6" width="4" height="2" fill="#64748b"/>
+                    <rect x="4" y="8" width="8" height="6" fill="#64748b"/>
+                    <rect x="7" y="9" width="2" height="2" fill="#000000"/>
+                </svg>
+            </div>
+            
+            <p class="text-gray-600 dark:text-gray-300">
+                Vielleicht müssen Sie sich anmelden oder weitere Berechtigungen erwerben, um auf diese Ressource zuzugreifen?
+            </p>
+        </div>
+        
+        <div class="flex space-x-4">
+            <a href="{{ url_for('main.index') }}" class="btn-pixel px-5 py-2 rounded font-pixel text-xs bg-game-blue text-white hover:bg-blue-700 transition-colors flex items-center">
+                <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                START
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="btn-pixel px-5 py-2 rounded font-pixel text-xs bg-game-gold text-white hover:bg-yellow-600 transition-colors flex items-center">
+                <svg class="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                LOGIN
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

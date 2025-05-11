@@ -6,28 +6,36 @@ import os
 # Logger konfigurieren
 logger = logging.getLogger(__name__)
 
+# --- BEGIN: Use DATABASE_FILE_PATH from environment or fallback ---
+DATABASE_ENV_PATH = os.getenv('DATABASE_FILE_PATH', 'database/database.db')
+if not os.path.isabs(DATABASE_ENV_PATH):
+    APP_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+    DB_PATH = os.path.abspath(os.path.join(APP_ROOT, DATABASE_ENV_PATH))
+else:
+    DB_PATH = DATABASE_ENV_PATH
+# --- END: Use DATABASE_FILE_PATH from environment or fallback ---
+
 # Check if we should use Firebase
 USE_FIREBASE_ENV = os.getenv('USE_FIREBASE', 'true').lower() == 'true' # Umbenannt zur Klarheit
 logger.info(f"Chat DB Handler: USE_FIREBASE aus Umgebungsvariable: {USE_FIREBASE_ENV}")
 
 def get_db_connection():
     """Verbindung zur SQLite-Datenbank herstellen"""
-    db_path = '/Users/julianstosse/Developer/BuyHigh.io/database/database.db'
-    logger.debug(f"Versuche SQLite-Verbindung zu öffnen: {db_path}")
+    logger.debug(f"Versuche SQLite-Verbindung zu öffnen: {DB_PATH}")
     try:
-        conn = sqlite3.connect(db_path)
+        conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
-        logger.debug(f"SQLite-Verbindung erfolgreich geöffnet: {db_path}")
+        logger.debug(f"SQLite-Verbindung erfolgreich geöffnet: {DB_PATH}")
         return conn
     except sqlite3.Error as e:
-        logger.error(f"Fehler beim Öffnen der SQLite-Verbindung zu {db_path}: {e}", exc_info=True)
+        logger.error(f"Fehler beim Öffnen der SQLite-Verbindung zu {DB_PATH}: {e}", exc_info=True)
         raise # Fehler weiterleiten, damit er behandelt werden kann
 
 # Try to import Firebase handler, but don't fail if not available
 _firebase_handler_available = False
 if USE_FIREBASE_ENV:
     try:
-        import firebase_db_handler
+        import database.handler.firebase_db_handler as firebase_db_handler
         if firebase_db_handler.can_use_firebase():
             _firebase_handler_available = True
             logger.info("Firebase DB Handler ist verfügbar und nutzbar.")
@@ -456,7 +464,7 @@ def migrate_data_to_firebase():
         return False
         
     try:
-        import firebase_db_handler 
+        import database.handler.firebase_db_handler as firebase_db_handler 
         logger.info("Starte Migration von SQLite Chat-Daten zu Firebase.")
         result = firebase_db_handler.migrate_chat_data_from_sqlite_to_firebase()
         if result:

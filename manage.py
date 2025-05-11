@@ -27,7 +27,7 @@ logger.info("Umgebungsvariablen aus .env geladen (falls vorhanden).")
 
 # Import firebase_db_handler for specific commands
 try:
-    import firebase_db_handler
+    import database.handler.firebase_db_handler as firebase_db_handler
     logger.debug("firebase_db_handler Modul erfolgreich importiert.")
 except ImportError:
     firebase_db_handler = None
@@ -105,7 +105,7 @@ def setup_database():
     print("[yellow]Richte SQLite-Datenbank ein...[/yellow]")
     logger.info("Richte SQLite-Datenbank ein...")
     try:
-        import db_handler
+        import database.handler.db_handler as db_handler
         db_handler.init_db()
         print("[green]SQLite-Datenbank erfolgreich initialisiert.[/green]")
         logger.info("SQLite-Datenbank erfolgreich initialisiert.")

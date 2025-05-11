@@ -10,7 +10,7 @@ import firebase_admin  # Added for Firebase Admin SDK
 
 load_dotenv()  # Load environment variables from .env file
 
-import db_handler
+import database.handler.db_handler as db_handler
 import transactions_handler
 import auth as auth_module  # Import our updated auth module
 
@@ -95,7 +95,7 @@ else:
 USE_FIREBASE = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
 if USE_FIREBASE:
     try:
-        import firebase_db_handler
+        import database.handler.firebase_db_handler as firebase_db_handler
         if firebase_db_handler.can_use_firebase():
             logger.info("✅ SYSTEM: Verwende Firebase Realtime Database als primäres Daten-Backend.")
         else:

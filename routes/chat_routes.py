@@ -7,14 +7,14 @@ import sqlite3
 import dotenv
 import os
 
-import db_handler
-import chat_db_handler
+import database.handler.db_handler as db_handler
+import database.handler.chat_db_handler as chat_db_handler
 
 # Lade Umgebungsvariablen aus .env-Datei
 dotenv.load_dotenv()
 # Stelle sicher, dass die Umgebungsvariablen geladen sind
 
-DATABASE_FILE_PATH = 'database/database.db' # Korrigierter relativer Pfad als Fallback
+DATABASE_FILE_PATH = '../database.db' # Korrigierter relativer Pfad als Fallback
 
 # Logger konfigurieren
 logger = logging.getLogger(__name__)
@@ -46,7 +46,7 @@ def chat_collection():
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     
     # Debug: Firebase-Status und Datenquelle deutlicher überprüfen
-    import firebase_db_handler
+    import database.handler.firebase_db_handler as firebase_db_handler
     USE_FIREBASE = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
     can_use_fb = firebase_db_handler.can_use_firebase() if USE_FIREBASE else False
     
@@ -125,7 +125,7 @@ def chat_details(chat_id):
     user_id = g.user['id'] if g.user else 'Unbekannt'
     logger.info(f"Chat-Details für Chat ID '{chat_id}' aufgerufen von Benutzer ID: {user_id}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
-    import firebase_db_handler
+    import database.handler.firebase_db_handler as firebase_db_handler
     USE_FIREBASE = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
     can_use_fb = firebase_db_handler.can_use_firebase() if USE_FIREBASE else False
     logger.debug(f"Chat-Details: Firebase aktiviert: {USE_FIREBASE}, Kann Firebase verwenden: {can_use_fb}")
@@ -237,7 +237,7 @@ def chat_settings(chat_id):
     user_id = g.user['id'] if g.user else 'Unbekannt'
     logger.info(f"Chat-Einstellungen für Chat ID '{chat_id}' aufgerufen von Benutzer ID: {user_id}, Methode: {request.method}")
     
-    import db_handler
+    import database.handler.db_handler as db_handler
     chat = db_handler.get_chat_room(chat_id)
     
     if not chat:
@@ -374,7 +374,7 @@ def api_send_message(chat_id):
         logger.warning("[API_SEND_MESSAGE] Nachrichtentext ist leer.")
         return jsonify({'error': 'Nachricht darf nicht leer sein.'}), 400
 
-    import firebase_db_handler
+    import database.handler.firebase_db_handler as firebase_db_handler
     USE_FIREBASE_API = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
     can_use_fb_api = firebase_db_handler.can_use_firebase() if USE_FIREBASE_API else False
     logger.debug(f"[API_SEND_MESSAGE] Firebase verwenden: {can_use_fb_api}")
@@ -423,7 +423,7 @@ def register_chat_events(socketio_instance):
             emit('error', {'msg': 'Benutzer nicht angemeldet (Firebase UID fehlt).'})
             return
             
-        from db_handler import get_user_by_firebase_uid
+        from database.handler.db_handler import get_user_by_firebase_uid
         user = get_user_by_firebase_uid(firebase_uid_session)
         if not user:
             logger.warning(f"SocketIO 'join': Benutzer mit Firebase UID {firebase_uid_session} nicht in lokaler DB gefunden.")
@@ -454,7 +454,7 @@ def register_chat_events(socketio_instance):
             emit('error', {'msg': 'Benutzer nicht angemeldet (Firebase UID fehlt).'})
             return
             
-        from db_handler import get_user_by_firebase_uid
+        from database.handler.db_handler import get_user_by_firebase_uid
         user = get_user_by_firebase_uid(firebase_uid_session)
         if not user:
             logger.warning(f"SocketIO 'leave': Benutzer mit Firebase UID {firebase_uid_session} nicht in lokaler DB gefunden.")
@@ -486,7 +486,7 @@ def register_chat_events(socketio_instance):
             emit('error', {'msg': 'Benutzer nicht angemeldet (Firebase UID fehlt).'})
             return
             
-        from db_handler import get_user_by_firebase_uid
+        from database.handler.db_handler import get_user_by_firebase_uid
         current_user = get_user_by_firebase_uid(firebase_uid_session)
         if not current_user:
             logger.warning(f"SocketIO 'send_message': Benutzer mit Firebase UID {firebase_uid_session} nicht in DB gefunden.")
@@ -538,7 +538,7 @@ def migrate_chat_data():
 
     if g.user and g.user['id'] == 1:
         logger.info(f"Admin-Benutzer {username} (ID: {user_id}) führt Chat-Datenmigration zu Firebase durch.")
-        import firebase_db_handler
+        import database.handler.firebase_db_handler as firebase_db_handler
         success = firebase_db_handler.migrate_chat_data_from_sqlite_to_firebase()
         
         if success:
