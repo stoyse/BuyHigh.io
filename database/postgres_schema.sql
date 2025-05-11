@@ -1,4 +1,3 @@
-
 -- USERS TABLE
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -99,13 +98,55 @@ CREATE TABLE IF NOT EXISTS assets (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO assets (symbol, name, asset_type, exchange, sector, industry)
+INSERT INTO assets (symbol, name, asset_type, exchange, sector, industry, default_price)
 VALUES 
-('AAPL', 'Apple Inc.', 'stock', 'NASDAQ', 'Technology', 'Consumer Electronics'),
-('TSLA', 'Tesla Inc.', 'stock', 'NASDAQ', 'Automotive', 'Auto Manufacturers'),
-('GOOGL', 'Alphabet Inc.', 'stock', 'NASDAQ', 'Technology', 'Internet Content'),
-('BTC', 'Bitcoin', 'crypto', 'Binance', NULL, NULL),
-('ETH', 'Ethereum', 'crypto', 'Binance', NULL, NULL);
+('AAPL', 'Apple Inc.', 'stock', 'NASDAQ', 'Technology', 'Consumer Electronics', 170),
+('TSLA', 'Tesla Inc.', 'stock', 'NASDAQ', 'Automotive', 'Auto Manufacturers', 250),
+('GOOGL', 'Alphabet Inc.', 'stock', 'NASDAQ', 'Technology', 'Internet Content', 140),
+('BTC', 'Bitcoin', 'crypto', 'Binance', NULL, NULL, 30000),
+('ETH', 'Ethereum', 'crypto', 'Binance', NULL, NULL, 2000)
+ON CONFLICT (symbol) DO UPDATE SET default_price = EXCLUDED.default_price;
+
+-- Assets-Tabelle mit default_price, last_price und last_price_updated Feldern erweitern
+
+-- Überprüfen, ob die Spalten bereits existieren, falls nicht, füge sie hinzu
+DO $$
+BEGIN
+    -- Überprüfen ob default_price Spalte existiert
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'assets' AND column_name = 'default_price'
+    ) THEN
+        ALTER TABLE assets ADD COLUMN default_price REAL;
+    END IF;
+
+    -- Überprüfen ob last_price Spalte existiert
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'assets' AND column_name = 'last_price'
+    ) THEN
+        ALTER TABLE assets ADD COLUMN last_price REAL;
+    END IF;
+
+    -- Überprüfen ob last_price_updated Spalte existiert
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'assets' AND column_name = 'last_price_updated'
+    ) THEN
+        ALTER TABLE assets ADD COLUMN last_price_updated TIMESTAMP;
+    END IF;
+END
+$$;
+
+-- Beispielhafte Default-Preise für bestehende Assets setzen (nur falls noch nicht gesetzt)
+UPDATE assets SET default_price = 170 WHERE symbol = 'AAPL' AND default_price IS NULL;
+UPDATE assets SET default_price = 250 WHERE symbol = 'TSLA' AND default_price IS NULL;
+UPDATE assets SET default_price = 140 WHERE symbol = 'GOOGL' AND default_price IS NULL;
+UPDATE assets SET default_price = 30000 WHERE symbol = 'BTC' AND default_price IS NULL;
+UPDATE assets SET default_price = 2000 WHERE symbol = 'ETH' AND default_price IS NULL;
 
 CREATE TABLE IF NOT EXISTS portfolio (
     id SERIAL PRIMARY KEY,

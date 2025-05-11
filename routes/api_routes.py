@@ -4,6 +4,10 @@ from utils import login_required
 import stock_data
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
 import pandas as pd # Import pandas for pd.notna()
+import logging # Import logging module
+
+# Logger für dieses Modul konfigurieren
+logger = logging.getLogger(__name__)
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -61,17 +65,25 @@ def api_stock_data():
         else:
             df = stock_data.get_cached_or_live_data(symbol, timeframe)
         
+        is_demo_data = getattr(df, 'is_demo', True) # Default to True if attribute missing or df is None
+
         if df is None or df.empty:
+            # This block might be redundant if get_cached_or_live_data always returns a df (even demo)
+            # For safety, ensure demo data is generated if df is still None or empty.
+            logger.warning(f"DataFrame for {symbol} is None or empty. Generating explicit demo data.")
             is_minutes_demo = timeframe == '1MIN'
-            demo_days = (end_date_dt - start_date_dt).days if start_date_dt is not None else 90 
-            demo_units = 240 if is_minutes_demo else demo_days
-
-            # KORREKTUR: Nur symbol und demo_units übergeben!
-            df = stock_data.get_demo_stock_data(symbol, demo_units)
-
+            demo_days = (end_date_dt - start_date_dt).days if start_date_dt is not None else 90
+            
+            # For 1MIN, demo_units should represent minutes, not days
+            demo_units = 240 if is_minutes_demo else demo_days # 240 minutes for 1MIN demo
+            
+            df = stock_data.get_demo_stock_data(symbol, demo_units, is_minutes=is_minutes_demo)
+            is_demo_data = True # Explicitly set as demo
+            
             if df is None or df.empty: 
-                print(f"No data (including demo) found for {symbol}. Returning empty list.")
-                return jsonify([]) 
+                logger.error(f"No data (including fallback demo) found for {symbol}. Returning empty list.")
+                return jsonify({'data': [], 'is_demo': True, 'currency': 'USD'})
+
 
         data = []
         # Ensure df is not None and has rows before iterating, and required columns exist
@@ -112,14 +124,15 @@ def api_stock_data():
                     continue # Skip rows with conversion errors
         
         # Nach dem Laden der Daten, den letzten Kurs in der Assets-Datenbank aktualisieren
-        if len(data) > 0 and data[-1].get('close') is not None:
+        # NUR wenn es KEINE Demo-Daten sind und Daten vorhanden sind
+        if not is_demo_data and len(data) > 0 and data[-1].get('close') is not None:
             try:
                 update_asset_price(symbol, float(data[-1]['close']))
             except Exception as e:
                 # Nur loggen, nicht abbrechen wenn Update fehlschlägt
                 logger.error(f"Error updating asset price in database: {e}")
         
-        return jsonify(data)
+        return jsonify({'data': data, 'is_demo': is_demo_data, 'currency': 'USD'})
     except Exception as e:
         print(f"Error in /api/stock-data for {symbol} timeframe {timeframe}: {e}") # Log error
         import traceback
@@ -129,20 +142,28 @@ def api_stock_data():
 # Neue Hilfsfunktion zum Aktualisieren der Asset-Preise in der Datenbank
 def update_asset_price(symbol, price):
     """Aktualisiert den letzten bekannten Preis eines Assets in der Datenbank"""
-    import database.handler.postgres.postgre_transactions_handler as db
     try:
-        with db.get_connection() as conn:
+        with transactions_handler.get_connection() as conn:
             with conn.cursor() as cur:
-                # Preis und Zeitstempel aktualisieren
+                # Prüfen, ob das Asset existiert
+                cur.execute("SELECT id FROM assets WHERE symbol = %s", (symbol,))
+                asset_row = cur.fetchone()
+                
+                if not asset_row:
+                    logger.warning(f"Asset mit Symbol '{symbol}' nicht gefunden, kann Preis nicht aktualisieren.")
+                    return False
+                
+                # Preis in einer separaten Tabelle oder Feld aktualisieren
+                # Hier verwenden wir eine einfache UPDATE-Anweisung anstatt einen neuen Typ zu erstellen
                 cur.execute("""
-                    UPDATE assets 
-                    SET last_price = %s, last_updated = CURRENT_TIMESTAMP
+                    UPDATE assets SET last_price = %s, last_price_updated = CURRENT_TIMESTAMP
                     WHERE symbol = %s
                 """, (price, symbol))
                 conn.commit()
+                return True
     except Exception as e:
-        # Fehler loggen, aber nicht abbrechen
-        print(f"Error updating asset price for {symbol}: {e}")
+        logger.error(f"Error updating asset price in database: {e}", exc_info=True)
+        return False
 
 @api_bp.route('/trade/buy', methods=['POST'])
 @login_required
@@ -217,10 +238,22 @@ def api_get_asset(symbol):
     """API-Endpunkt zum Abrufen eines bestimmten Assets anhand seines Symbols"""
     result = transactions_handler.get_asset_by_symbol(symbol)
     
-    if result['success']:
-        return jsonify(result)
-    else:
-        return jsonify(result), 404
+    # Stellen Sie sicher, dass last_price nicht zurückgegeben wird, sondern nur default_price
+    if result['success'] and 'asset' in result and result['asset']:
+        # Wenn last_price vorhanden ist, entfernen
+        if 'last_price' in result['asset']:
+            del result['asset']['last_price']
+        
+        # last_price_updated Feld auch entfernen
+        if 'last_price_updated' in result['asset']:
+            del result['asset']['last_price_updated']
+            
+        # Falls default_price nicht gesetzt ist, einen Standardwert verwenden
+        if 'default_price' not in result['asset'] or result['asset']['default_price'] is None:
+            logger.warning(f"Asset {symbol} hat keinen default_price gesetzt!")
+            result['asset']['default_price'] = 100.0  # Fallback-Wert
+    
+    return jsonify(result) if result['success'] else (jsonify(result), 404)
 
 # Dummy route from original app.py, can be removed if not used
 @api_bp.route('/trade/<symbol>/')

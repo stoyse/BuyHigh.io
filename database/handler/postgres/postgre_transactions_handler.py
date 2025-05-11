@@ -295,15 +295,14 @@ def sell_stock(user_id, asset_symbol, quantity, price_per_unit):
 def show_user_portfolio(user_id):
     """
     Zeigt das aktuelle Portfolio für einen Benutzer (PostgreSQL).
-    Verwendet aktuelle Marktdaten für die Preise anstatt gespeicherter Werte.
+    Verwendet aktuelle Marktdaten für die Preise, ansonsten default_price aus der DB.
     """
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                # Portfolio-Positionen laden
                 cur.execute("""
                     SELECT p.quantity, p.average_buy_price, 
-                           a.symbol, a.name, a.asset_type, a.sector
+                           a.symbol, a.name, a.asset_type, a.sector, a.default_price
                     FROM portfolio p
                     JOIN assets a ON p.asset_id = a.id
                     WHERE p.user_id = %s
@@ -311,21 +310,28 @@ def show_user_portfolio(user_id):
                 
                 portfolio = []
                 for row in cur.fetchall():
-                    # Aktuelle Marktdaten für dieses Asset abrufen
                     symbol = row['symbol']
-                    current_price = 0.0
-                    try:
-                        # Versuche, den aktuellen Kurs von der API zu holen
-                        df = stock_data.get_cached_or_live_data(symbol, '1D')
-                        if df is not None and not df.empty:
-                            # Letzten Schlusskurs nehmen
-                            current_price = float(df['Close'].iloc[-1])
-                    except Exception as e:
-                        print(f"Fehler beim Abrufen des Kurses für {symbol}: {e}")
-                        # Verwende den durchschnittlichen Kaufpreis als Fallback
-                        current_price = float(row['average_buy_price'])
+                    current_price = None # Wird später gesetzt
                     
-                    # Wertentwicklung berechnen
+                    # Versuche, den aktuellen Kurs von der API zu holen (für 1D Ansicht)
+                    try:
+                        df = stock_data.get_cached_or_live_data(symbol, '1D') # '1D' für den aktuellsten Schlusskurs
+                        if df is not None and not df.empty and not getattr(df, 'is_demo', True): # Nur echte API-Daten verwenden
+                            current_price = float(df['Close'].iloc[-1])
+                        else:
+                            print(f"API lieferte Demo-Daten oder keine Daten für {symbol} im Portfolio. Nutze DB Fallback.")
+                    except Exception as e:
+                        print(f"Fehler beim Abrufen des API-Kurses für {symbol} im Portfolio: {e}. Nutze DB Fallback.")
+
+                    # Fallback-Logik, wenn current_price nicht durch echte API-Daten gesetzt wurde
+                    if current_price is None:
+                        if row['default_price'] is not None:
+                            current_price = float(row['default_price'])
+                        else:
+                            # Allerletzter Fallback, wenn auch default_price fehlt
+                            current_price = float(row['average_buy_price'])
+                            print(f"Warnung: Weder API-Preis noch default_price für {symbol} verfügbar. Nutze average_buy_price.")
+                    
                     avg_price = float(row['average_buy_price'])
                     performance = ((current_price - avg_price) / avg_price * 100) if avg_price > 0 else 0
                     
@@ -452,17 +458,15 @@ def get_all_assets(active_only=True, asset_type=None):
 def get_asset_by_symbol(symbol):
     """
     Ruft ein Asset anhand seines Symbols ab.
-    
-    Args:
-        symbol (str): Symbol des Assets (z.B. AAPL, BTC)
-        
-    Returns:
-        dict: Asset-Daten oder None, wenn nicht gefunden
+    Gibt default_price zurück, aber NICHT last_price.
     """
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute("SELECT * FROM assets WHERE symbol = %s", (symbol,))
+                cur.execute("""
+                    SELECT id, symbol, name, asset_type, exchange, currency, sector, industry, logo_url, description, is_active, created_at, default_price
+                    FROM assets WHERE symbol = %s
+                """, (symbol,))
                 asset = cur.fetchone()
                 if asset:
                     return {"success": True, "asset": asset}
@@ -492,3 +496,15 @@ def create_asset(symbol, name, asset_type, exchange=None, currency="USD",
                 return {"success": True, "asset": cur.fetchone()}
     except Exception as e:
         return {"success": False, "message": f"Database error: {e}"}
+
+def get_default_price_for_symbol(symbol):
+    """
+    Holt den default_price für ein Asset aus der Datenbank.
+    """
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT default_price FROM assets WHERE symbol = %s", (symbol,))
+            row = cur.fetchone()
+            if row and row.get('default_price') is not None:
+                return float(row['default_price'])
+            return None

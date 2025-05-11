@@ -73,19 +73,56 @@ document.addEventListener('DOMContentLoaded', function() {
       const symbol = item.getAttribute('data-symbol');
       if (!symbol) return;
       
+      // Immer zuerst den Default-Preis aus der DB holen als Basis-Wert
+      const basePrice = getStartPrice(symbol);
+      const fallbackPrice = parseFloat(basePrice).toFixed(2);
+      
+      // Sicherstellen, dass immer ein Preis gesetzt ist, auch bevor die API antworten kann
+      if (!item.getAttribute('data-price') || item.getAttribute('data-price') === '0.00' || item.getAttribute('data-price') === '0') {
+        item.setAttribute('data-price', fallbackPrice);
+        const priceElement = item.querySelector('.stock-price');
+        if (priceElement) {
+          priceElement.textContent = `$${fallbackPrice}`;
+        }
+      }
+      
       // API-Aufruf für aktuelle Preisdaten
       fetch(`/api/stock-data?symbol=${symbol}&timeframe=1D`)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            logDebug(`⚠️ API response not ok for ${symbol}: ${response.status}`);
+            throw new Error(`HTTP error ${response.status}`);
+          }
+          return response.json();
+        })
         .then(data => {
-          if (data && data.length > 0) {
+          // Zuerst prüfen, ob die Antwort API-Limitierungsmeldungen enthält
+          if (data && (data.Note || data.Information)) {
+            logDebug(`⚠️ API Limitierung für ${symbol}: ${data.Note || data.Information}`);
+            // Automatischer Fallback auf Demo-Daten bei API-Limitierung
+            useFallbackDemoPrice(item, symbol);
+            return;
+          }
+          
+          // Prüfen, ob gültige Daten vorliegen
+          if (Array.isArray(data) && data.length > 0) {
             const latestData = data[data.length - 1];
+            
+            // Zusätzliche Prüfung auf gültige Datenpunkte
+            if (!latestData || typeof latestData.close === 'undefined' || latestData.close === null) {
+              logDebug(`⚠️ Ungültiger Datenpunkt für ${symbol}:`, latestData);
+              useFallbackDemoPrice(item, symbol);
+              return;
+            }
+            
             const price = parseFloat(latestData.close).toFixed(2);
             
             // Alten Preis extrahieren für Vergleich
-            const oldPrice = parseFloat(item.getAttribute('data-price'));
+            const oldPrice = parseFloat(item.getAttribute('data-price') || 0);
             
             // Update data-attribute
             item.setAttribute('data-price', price);
+            item.setAttribute('data-source', 'api'); // Markieren als API-Daten
             
             // Update UI elements
             const priceElement = item.querySelector('.stock-price');
@@ -110,12 +147,57 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             logDebug(`✅ Updated price for ${symbol}: $${price}`);
+          } else if (data && data.error) {
+            logDebug(`⚠️ Error in API response for ${symbol} during all stock update: ${data.error}`);
+            // Optional: UI-Indikator für Fehler setzen
+            const priceElement = item.querySelector('.stock-price');
+            if (priceElement) {
+              priceElement.classList.add('error-flash');
+              setTimeout(() => priceElement.classList.remove('error-flash'), 1000);
+            }
+          } else {
+            // Allgemeine Fehler bei leerer oder ungültiger Antwort
+            logDebug(`⚠️ Ungültiges Datenformat für ${symbol}:`, data);
           }
         })
         .catch(error => {
           logDebug(`⚠️ Error updating price for ${symbol}: ${error.message}`);
+          // Optional: UI-Indikator für Fehler setzen
+          const priceElement = item.querySelector('.stock-price');
+          if (priceElement) {
+            priceElement.textContent = 'Error';
+            priceElement.classList.add('error-flash');
+            setTimeout(() => priceElement.classList.remove('error-flash'), 1000);
+          }
         });
     });
+  }
+
+  // Neue Hilfsfunktion für Fallback auf Demo-Preise bei API-Limitierung
+  function useFallbackDemoPrice(item, symbol) {
+    // Hole Default-Preis aus der Datenbank (immer neu holen!)
+    const basePrice = getStartPrice(symbol);
+    const fallbackPrice = parseFloat(basePrice).toFixed(2);
+
+    item.setAttribute('data-price', fallbackPrice);
+    item.setAttribute('data-source', 'demo');
+
+    const priceElement = item.querySelector('.stock-price');
+    if (priceElement) {
+      priceElement.textContent = `$${fallbackPrice}`;
+      priceElement.classList.add('demo-data');
+      setTimeout(() => priceElement.classList.remove('demo-data'), 2000);
+    }
+
+    if (currentSymbol === symbol) {
+      currentStockPrice = parseFloat(fallbackPrice);
+      document.getElementById('current-price').textContent = `$${fallbackPrice}`;
+      document.getElementById('current-price').classList.add('demo-data');
+      setTimeout(() => document.getElementById('current-price').classList.remove('demo-data'), 2000);
+      updateTotalPrice();
+    }
+
+    logDebug(`🔄 Fallback-Preis (Demo/Default aus DB) für ${symbol} verwendet: $${fallbackPrice}`);
   }
 
   // Funktion zum Laden von Aktiendaten
@@ -535,15 +617,32 @@ document.addEventListener('DOMContentLoaded', function() {
   // Demo-Daten verwenden, wenn API nicht funktioniert
   function useDemoData(symbol, timeframe) {
     const units = getTimeframeUnits(timeframe);
-    const startPrice = initialStockPrice > 0 ? initialStockPrice : getStartPrice(symbol);
+    const startPrice = getStartPrice(symbol); // immer Default-Preis aus DB holen!
     const isMinutes = timeframe === '1MIN';
-    logDebug(`📊 Generating fallback demo data for ${symbol} with startPrice $${startPrice.toFixed(2)}`);
+    logDebug(`📊 Generating fallback demo data for ${symbol} with startPrice $${parseFloat(startPrice).toFixed(2)}`);
     const demoData = generateCandlestickData(units, startPrice, isMinutes);
     updateChartAndStats(symbol, demoData);
   }
 
   // Dummy für getStartPrice, falls nicht vorhanden
   function getStartPrice(symbol) {
+    // Hole Default-Preis aus der Datenbank per synchronem API-Call (nur beim ersten Mal)
+    let price = null;
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', `/api/assets/${symbol}`, false); // synchroner Request (nur für Initialisierung)
+    try {
+      xhr.send(null);
+      if (xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        if (data && data.asset && data.asset.default_price) {
+          price = parseFloat(data.asset.default_price);
+        }
+      }
+    } catch (e) {
+      // Fallback auf statische Werte unten
+    }
+    if (price && !isNaN(price)) return price;
+    // Fallback falls kein Wert aus DB
     const basePrice = {"SPY": 450, "AAPL": 170, "TSLA": 250, "MSFT": 330, "AMZN": 130, "GOOGL": 140, "META": 290};
     return basePrice[symbol] || (100 + Math.random() * 400);
   }
@@ -564,8 +663,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Initialize the page
   function initializePage() {
+    // Füge CSS für Demo-Daten-Indikator hinzu
+    const style = document.createElement('style');
+    style.textContent = `
+      .demo-data {
+        animation: pulse 1s;
+        position: relative;
+      }
+      .demo-data::after {
+        content: "⚠️";
+        font-size: 0.7em;
+        position: absolute;
+        top: -8px;
+        right: -10px;
+      }
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+    
     setupChart();
     loadUserBalance();
+    
+    // HINZUGEFÜGT: Sofort die Default-Preise aus data-price in die UI übernehmen
+    document.querySelectorAll('.stock-item').forEach(item => {
+      const price = item.getAttribute('data-price');
+      const priceElement = item.querySelector('.stock-price');
+      if (priceElement && price) {
+        priceElement.textContent = `$${parseFloat(price).toFixed(2)}`;
+      }
+    });
     
     // NEU: Preise von API laden beim Seitenaufruf
     updateAllStockPrices();

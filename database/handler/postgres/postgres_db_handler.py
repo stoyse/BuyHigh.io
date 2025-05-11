@@ -1,4 +1,4 @@
-import os
+import os  # Dieser Import fehlte
 import psycopg2
 import psycopg2.extras
 from datetime import datetime
@@ -43,37 +43,14 @@ def _parse_user_timestamps(user_row):
     return user_data
 
 def init_db():
-    """Initialisiert die wichtigsten Tabellen in PostgreSQL."""
+    """Initialisiert den DB-Verbindungspool."""
     conn = get_db_connection()
-    cur = conn.cursor()
     try:
-        cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT NOT NULL UNIQUE,
-            email TEXT NOT NULL UNIQUE,
-            password_hash TEXT,
-            firebase_uid TEXT UNIQUE,
-            firebase_provider TEXT DEFAULT 'password',
-            balance REAL DEFAULT 10000.0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_login TIMESTAMP,
-            mood_pet TEXT DEFAULT 'bull',
-            pet_energy INTEGER DEFAULT 100,
-            is_meme_mode BOOLEAN DEFAULT FALSE,
-            email_verified BOOLEAN DEFAULT FALSE,
-            theme TEXT DEFAULT 'light',
-            total_trades INTEGER DEFAULT 0,
-            profit_loss REAL DEFAULT 0.0
-        )
-        """)
-        conn.commit()
-        logger.info("PostgreSQL: Tabelle 'users' erfolgreich erstellt/überprüft.")
+        # Keine Tabellen-Erstellung notwendig, da alle Tabellen bereits existieren
+        logger.info("PostgreSQL: Verbindung erfolgreich hergestellt.")
     except psycopg2.Error as e:
-        conn.rollback()
         logger.error(f"Fehler während der DB-Initialisierung: {e}", exc_info=True)
     finally:
-        cur.close()
         conn.close()
 
 def add_user(username, email, firebase_uid, provider='password'):
@@ -237,6 +214,25 @@ def get_all_users():
     finally:
         cur.close()
         conn.close()
+
+def create_asset(symbol, name, asset_type, exchange=None, currency="USD", 
+                sector=None, industry=None, logo_url=None, description=None, default_price=None):
+    """
+    Erstellt ein neues Asset in der Datenbank.
+    """
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO assets 
+                    (symbol, name, asset_type, exchange, currency, sector, industry, logo_url, description, default_price)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (symbol, name, asset_type, exchange, currency, sector, industry, logo_url, description, default_price))
+                conn.commit()
+                return True
+    except Exception as e:
+        logger.error(f"Fehler beim Erstellen eines Assets: {e}")
+        return False
 
 if __name__ == "__main__":
     print("Starte einfachen Test für postgres_db_handler.py ...")

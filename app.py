@@ -60,13 +60,20 @@ DATABASE_ENV_PATH = DATABASE_ENV_PATH_RAW.split('#')[0].strip()
 logger.debug(f"Roher Wert von DATABASE_FILE_PATH (aus os.getenv): '{DATABASE_ENV_PATH_RAW}'")
 logger.debug(f"Bereinigter Wert von DATABASE_FILE_PATH: '{DATABASE_ENV_PATH}'")
 
+# Korrigiere den Datenbankpfad - verwende app.root_path direkt anstelle von '..'
 if not os.path.isabs(DATABASE_ENV_PATH):
-    app.config['DATABASE'] = os.path.join(app.root_path, DATABASE_ENV_PATH)
-    logger.debug(f"DATABASE_FILE_PATH ist relativ. Verknüpft mit app.root_path: '{app.config['DATABASE']}'")
+    # Wenn der Pfad relativ ist und '..' enthält, ersetze durch einen absoluten Pfad im Projektverzeichnis
+    if '..' in DATABASE_ENV_PATH:
+        DATABASE_ENV_PATH = os.path.join(app.root_path, 'database/database.db')
+        logger.debug(f"Relativer Pfad mit '..' erkannt, ersetze durch: '{DATABASE_ENV_PATH}'")
+    else:
+        # Sonst kombiniere wie bisher mit app.root_path
+        DATABASE_ENV_PATH = os.path.join(app.root_path, DATABASE_ENV_PATH)
+        logger.debug(f"DATABASE_FILE_PATH ist relativ. Verknüpft mit app.root_path: '{DATABASE_ENV_PATH}'")
 else:
-    app.config['DATABASE'] = DATABASE_ENV_PATH
-    logger.debug(f"DATABASE_FILE_PATH ist absolut: '{app.config['DATABASE']}'")
+    logger.debug(f"DATABASE_FILE_PATH ist absolut: '{DATABASE_ENV_PATH}'")
 
+app.config['DATABASE'] = DATABASE_ENV_PATH
 logger.info(f"Finaler app.config['DATABASE'] Pfad ist gesetzt auf: {app.config['DATABASE']}")
 
 # Ensure the database directory exists
@@ -96,15 +103,21 @@ else:
 USE_FIREBASE = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
 if USE_FIREBASE:
     try:
-        import database.handler.sqlite.firebase_db_handler as firebase_db_handler
-        if firebase_db_handler.can_use_firebase():
+        # Korrigiere den Import-Pfad - entferne 'sqlite' da es nicht existiert
+        import firebase_admin.db as firebase_db_handler
+        
+        # Füge eine einfache can_use_firebase Funktion hinzu
+        def can_use_firebase():
+            return firebase_admin._apps and 'default' in firebase_admin._apps
+            
+        if can_use_firebase():
             logger.info("✅ SYSTEM: Verwende Firebase Realtime Database als primäres Daten-Backend.")
         else:
-            logger.warning("⚠️ SYSTEM: Firebase konfiguriert, aber nicht verfügbar. Fallback auf SQLite!")
+            logger.warning("⚠️ SYSTEM: Firebase konfiguriert, aber nicht verfügbar. Fallback auf lokale Datenbank!")
     except Exception as e:
-        logger.error(f"❌ SYSTEM: Firebase Import/Initialisierung fehlgeschlagen ({e}). Verwende nur SQLite!")
+        logger.error(f"❌ SYSTEM: Firebase Import/Initialisierung fehlgeschlagen ({e}). Verwende nur lokale Datenbank!")
 else:
-    logger.info("ℹ️ SYSTEM: Firebase ist in .env deaktiviert. Verwende SQLite als Daten-Backend.")
+    logger.info("ℹ️ SYSTEM: Firebase ist in .env deaktiviert. Verwende lokale Datenbank als Daten-Backend.")
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 logger.info("SocketIO initialisiert.")

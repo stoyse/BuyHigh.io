@@ -167,7 +167,7 @@ def get_stock_data(symbol: str, period: str = None, interval: str = None, start_
         end_date: End date for data in YYYY-MM-DD format
     
     Returns:
-        DataFrame with Open, High, Low, Close, Volume columns
+        DataFrame with Open, High, Low, Close, Volume columns and an 'is_demo' attribute.
         
     Note: All price values are in USD ($).
     """
@@ -304,6 +304,7 @@ def get_stock_data(symbol: str, period: str = None, interval: str = None, start_
                     df = df[df.index > cutoff]
             
             print(f"Successfully fetched {len(df)} data points for {symbol}")
+            df.is_demo = False # Mark as real API data
             return df
                 
         except requests.exceptions.HTTPError as http_err:
@@ -336,7 +337,7 @@ def get_cached_or_live_data(symbol, timeframe):
         timeframe: One of '1MIN', '1W', '1M', '3M', '6M', '1Y', 'ALL'
     
     Returns:
-        DataFrame with stock data
+        DataFrame with stock data and an 'is_demo' attribute.
     """
     period = None
     interval = None
@@ -377,28 +378,48 @@ def get_cached_or_live_data(symbol, timeframe):
     # Try to get live data first
     df = get_stock_data(symbol, period, interval, start_date, end_date)
     
-    # If no data returned, use demo data
+    # If no data returned or it's empty, use demo data
     if df is None or df.empty:
-        print(f"No live data available for {symbol} with timeframe {timeframe}, using demo data.")
+        print(f"No live data available for {symbol} with timeframe {timeframe}, using demo data for chart.")
         days = 5 if timeframe == '1MIN' else 7 if timeframe == '1W' else 30 if timeframe == '1M' else \
               90 if timeframe == '3M' else 180 if timeframe == '6M' else 365 if timeframe == '1Y' else 1825
+        
+        # Demo data for 1MIN should also be short
+        if timeframe == '1MIN':
+             return get_demo_stock_data(symbol, days, is_minutes=True) # Pass is_minutes for 1MIN
         return get_demo_stock_data(symbol, days)
     
+    # Ensure is_demo attribute is set (should be False if we got here from get_stock_data)
+    if not hasattr(df, 'is_demo'):
+        df.is_demo = False
     return df
 
 
 # Demo function that can work without API key
-def get_demo_stock_data(symbol: str = "DEMO", days: int = 30):
+def get_demo_stock_data(symbol: str = "DEMO", days: int = 30, is_minutes: bool = False):
     """
     Generate demo stock data when API is not available
     
     Note: All price values are in USD ($).
     """
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=days)
     
-    dates = pd.date_range(start=start_date, end=end_date, freq='B')  # Business days
+    if is_minutes:
+        # For 1MIN demo, generate for a shorter period, e.g., last few hours
+        start_date = end_date - timedelta(hours=max(1, days / 24)) # Approx 'days' worth of minutes if days is small
+        freq = '1min'
+        # Ensure we don't generate too many points for minute data
+        num_points = min(days * 60 * 8, 240) # Max 240 points (4 hours of 1-min data) or less
+        dates = pd.date_range(end=end_date, periods=num_points, freq=freq)
+
+    else:
+        start_date = end_date - timedelta(days=days)
+        freq = 'B' # Business days
+        dates = pd.date_range(start=start_date, end=end_date, freq=freq)
     
+    if dates.empty: # Ensure dates is not empty
+        dates = pd.date_range(end=end_date, periods=1, freq=freq)
+
     # Start price (in USD)
     start_price = 100.0 if symbol == "DEMO" else 150.0 if symbol == "AAPL" else 200.0
     
@@ -420,6 +441,7 @@ def get_demo_stock_data(symbol: str = "DEMO", days: int = 30):
     }
     
     df = pd.DataFrame(data, index=dates)
+    df.is_demo = True # Mark as demo data
     return df
 
 

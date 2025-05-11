@@ -124,7 +124,7 @@
             <div class="stock-item p-3 glass-card hover:bg-gray-100/10 dark:hover:bg-gray-700/20 rounded-xl cursor-pointer border border-gray-200/20 dark:border-gray-700/20 transition-all hover:scale-[1.02] hover:shadow-neo" 
                  data-symbol="{{ asset.symbol }}" 
                  data-name="{{ asset.name }}" 
-                 data-price="0.00" 
+                 data-price="{{ asset.default_price }}" 
                  data-change="0.00"
                  data-asset-type="{{ asset.asset_type }}"
                  data-sector="{{ asset.sector or '' }}">
