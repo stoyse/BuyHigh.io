@@ -31,6 +31,12 @@ def dashboard():
     portfolio_data = transactions_handler.show_user_portfolio(g.user['id'])
     logger.debug(f"Portfolio-Daten geladen: Erfolg={portfolio_data.get('success', False)}, Anzahl Items={len(portfolio_data.get('portfolio', []))}")
     
+    # Calculate total portfolio value - this was missing
+    portfolio_total_value = 0
+    if portfolio_data and portfolio_data.get('success') and portfolio_data.get('portfolio'):
+        for item in portfolio_data.get('portfolio', []):
+            portfolio_total_value += item.get('quantity', 0) * item.get('current_price', 0)
+    
     logger.debug("Lade letzte Transaktionen...")
     recent_transactions_data = transactions_handler.get_recent_transactions(g.user['id'])
     logger.debug(f"Letzte Transaktionen geladen: Anzahl={len(recent_transactions_data.get('transactions', []))}")
@@ -56,6 +62,7 @@ def dashboard():
                            user=g.user, 
                            darkmode=dark_mode_active,
                            portfolio_data=portfolio_data,
+                           portfolio_total_value=portfolio_total_value,  # Added this variable
                            recent_transactions=recent_transactions_data.get('transactions', []),
                            dog_message=dog_message, total_asset_values=asset_values,)
 

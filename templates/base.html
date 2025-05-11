@@ -438,6 +438,14 @@
                 </svg>
                 Login
               </a>
+              <!-- Neuer Button für Anonymous Login -->
+              <button id="anonymous-login-btn" class="neo-button rounded-lg px-4 py-2 text-sm font-medium bg-gray-200/60 text-gray-700 border border-gray-300/40 hover:bg-gray-400 hover:text-white transition-all duration-300 flex items-center ml-2" type="button">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16v.01M12 8v4"></path>
+                </svg>
+                Guest
+              </button>
               <a href="{{ url_for('auth.register') }}" class="neo-button rounded-lg px-4 py-2 text-sm font-medium bg-neo-emerald/10 text-neo-emerald border border-neo-emerald/20 hover:bg-neo-emerald hover:text-white transition-all duration-300 flex items-center">
                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
@@ -610,6 +618,31 @@
             });
           }
         });
+
+        // Anonymous Login Button Handler
+        const anonBtn = document.getElementById('anonymous-login-btn');
+        if (anonBtn) {
+          anonBtn.addEventListener('click', function() {
+            anonBtn.disabled = true;
+            anonBtn.textContent = "Logging in...";
+            fetch('/auth/anonymous-login', {method: 'POST'})
+              .then(res => res.json())
+              .then(data => {
+                if (data.success && data.redirect_url) {
+                  window.location.href = data.redirect_url;
+                } else {
+                  alert(data.error || "Anonymous login failed.");
+                  anonBtn.disabled = false;
+                  anonBtn.textContent = "Guest";
+                }
+              })
+              .catch(() => {
+                alert("Anonymous login failed.");
+                anonBtn.disabled = false;
+                anonBtn.textContent = "Guest";
+              });
+          });
+        }
       });
     </script>
   </body>

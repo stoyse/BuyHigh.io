@@ -4,9 +4,20 @@ import requests  # For Firebase REST API
 import os
 import dotenv
 import json
+import logging
+
+# Configure logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 # Lade .env Datei falls vorhanden
 dotenv.load_dotenv()
+
+
 
 # Initialize Firebase Admin SDK
 # It's better to initialize it once in app.py
@@ -212,9 +223,14 @@ def get_or_create_local_user_from_firebase(decoded_token, db): # db ist Ihre Dat
     """
     firebase_uid = decoded_token['uid']
     email = decoded_token.get('email')
-    # Firebase gibt 'name' für Google, 'displayName' könnte auch vorhanden sein
-    username = decoded_token.get('name') or decoded_token.get('display_name') or email.split('@')[0] 
-    
+    # Username-Logik robust machen für anonyme User ohne E-Mail
+    if email:
+        username = decoded_token.get('name') or decoded_token.get('display_name') or email.split('@')[0]
+    else:
+        # Fallback für anonyme User: "guest_" + die ersten 8 Zeichen der UID
+        username = decoded_token.get('name') or decoded_token.get('display_name') or f"guest_{firebase_uid[:8]}"
+        email = f"{firebase_uid}@anonymous.firebase"  # Dummy-E-Mail für DB
+
     cursor = db.cursor()
     cursor.execute("SELECT * FROM users WHERE firebase_uid = %s", (firebase_uid,))
     user = cursor.fetchone()
@@ -241,7 +257,7 @@ def get_or_create_local_user_from_firebase(decoded_token, db): # db ist Ihre Dat
         else:
             print(f"Failed to create new local user for firebase_uid: {firebase_uid}")
             user = None
-    
+
     return user # Gibt das Benutzerobjekt (als Tupel/Dict von der DB) oder None zurück
 
 def send_password_reset_email(email):
@@ -358,3 +374,15 @@ def exchange_google_code(auth_code):
         'firebase_uid': firebase_uid,
         'id_token': token_json['id_token']
     }
+
+def create_anonymous_user():
+    """
+    Erstellt einen anonymen Benutzer in Firebase.
+    """
+    try:
+        user_record = firebase_admin.auth.create_user()
+        logger.info(f"Anonymer Firebase-Benutzer erstellt: UID={user_record.uid}")
+        return {"uid": user_record.uid}
+    except Exception as e:
+        logger.error(f"Fehler beim Erstellen eines anonymen Firebase-Benutzers: {e}", exc_info=True)
+        return None

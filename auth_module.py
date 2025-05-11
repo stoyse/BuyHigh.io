@@ -91,3 +91,32 @@ def sign_in_with_email_password(email, password):
     except Exception as e:
         logger.error(f"Unexpected error during login: {str(e)}")
         return None
+    
+def sign_in_anonymously():
+    """Meldet einen Benutzer anonym über Firebase an"""
+    logger = logging.getLogger(__name__)
+
+    try:
+        logger.info("Attempting anonymous Firebase login...")
+
+        url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={FIREBASE_WEB_API_KEY}"
+        payload = {
+            "returnSecureToken": True
+        }
+
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+
+        data = response.json()
+        logger.info("Anonymous Firebase login successful.")
+        logger.debug(f"User ID: {data.get('localId')}, ID Token: {data.get('idToken')}")
+        return data
+
+    except requests.exceptions.HTTPError as e:
+        error_json = e.response.json() if hasattr(e, 'response') and e.response is not None else {}
+        error_message = error_json.get('error', {}).get('message', 'Unknown error')
+        logger.error(f"Anonymous login failed with error: {error_message}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error during anonymous login: {str(e)}")
+        return None

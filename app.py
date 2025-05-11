@@ -18,7 +18,7 @@ import auth as auth_module  # Import our updated auth module
 # Import Blueprints
 from routes.main_routes import main_bp
 from routes.auth_routes import auth_bp
-from routes.api_routes import api_bp
+from routes.api_routes import api_bp  # Korrigiert von "api" zu "api_bp"
 from routes.chat_routes import chat_bp
 
 app = Flask(__name__)
@@ -208,8 +208,8 @@ def method_not_allowed(e):
 # Register Blueprints
 logger.info("Registriere Blueprints...")
 app.register_blueprint(main_bp)
-app.register_blueprint(auth_bp)
-app.register_blueprint(api_bp, url_prefix='/api')
+app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(api_bp, url_prefix='/api')  # Korrigiert von "api" zu "api_bp"
 app.register_blueprint(chat_bp, url_prefix='/chat')
 logger.info("Blueprints registriert.")
 
@@ -275,6 +275,41 @@ def firebase_config():
 
     logger.debug(f"Firebase-Konfiguration gesendet: {config}")
     return jsonify(config)
+
+@app.route('/auth/anonymous-login', methods=['POST'])
+def anonymous_login():
+    logger.info("Anonyme Anmeldung angefordert.")
+    try:
+        # Generiere eine anonyme Firebase-Benutzer-ID
+        anonymous_user = auth_module.create_anonymous_user()
+        if not anonymous_user:
+            logger.error("Fehler beim Erstellen eines anonymen Benutzers.")
+            return jsonify({"success": False, "error": "Failed to create anonymous user."}), 500
+
+        logger.info(f"Anonymer Benutzer erstellt: UID={anonymous_user['uid']}")
+
+        # Speichere den anonymen Benutzer in der lokalen Datenbank
+        db_conn = get_db()
+        local_user = auth_module.get_or_create_local_user_from_firebase(anonymous_user, db_conn)
+
+        if not local_user:
+            logger.error("Fehler beim Abrufen oder Erstellen des lokalen Benutzers für anonymen Login.")
+            return jsonify({"success": False, "error": "Failed to get or create local user."}), 500
+
+        logger.info(f"Lokaler Benutzer (ID: {local_user['id']}) für anonymen Login erhalten/erstellt.")
+
+        # Setze die Session
+        session.clear()
+        session['firebase_uid'] = anonymous_user['uid']
+        session['user_id'] = local_user['id']
+        session.permanent = True
+        logger.info(f"Session für anonymen Benutzer {local_user['id']} (Firebase UID: {anonymous_user['uid']}) gesetzt.")
+
+        return jsonify({"success": True, "redirect_url": url_for('main.index')})
+
+    except Exception as e:
+        logger.error(f"Fehler während der anonymen Anmeldung: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "An unexpected error occurred."}), 500
 
 application = app
 

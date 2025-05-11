@@ -102,7 +102,7 @@
         </div>
         <div class="ml-11">
           <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-end space-x-1">
-            <span class="counter">€{{ "%.2f"|format(g.user.balance if g.user.balance is not none else 0) }}</span>
+            <span class="counter">${{ "%.2f"|format(g.user.balance if g.user.balance is not none else 0) }}</span>
           </div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Available for trading
@@ -218,7 +218,7 @@
               <!-- Asset distribution stats -->
               <div class="glass-card p-4 rounded-xl backdrop-blur-sm">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Total Assets Value</span>
-                <p class="text-2xl font-bold text-gray-800 dark:text-gray-200 mt-1">€{{ total_asset_value }}</p>
+                <p class="text-2xl font-bold text-gray-800 dark:text-gray-200 mt-1" id="portfolio-total-value">€{{ "%.2f"|format(portfolio_total_value) }}</p>
               </div>
               <div class="glass-card p-4 rounded-xl backdrop-blur-sm">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Best Performer</span>
@@ -574,6 +574,25 @@
 <script>
   // Animation for counting up numbers
   document.addEventListener('DOMContentLoaded', function() {
+    // Calculate portfolio total value from portfolio items
+    function calculatePortfolioTotal() {
+      let total = 0;
+      {% if portfolio_data and portfolio_data.get('portfolio', []) %}
+        {% for item in portfolio_data.get('portfolio', []) %}
+          // Quantity × current price für jedes Asset
+          total += {{ item.quantity|float }} * {{ item.current_price|float }};
+        {% endfor %}
+      {% endif %}
+      return total;
+    }
+    
+    // Setze den berechneten Wert als Portfolio-Gesamtwert (NUR FÜR DIESES ELEMENT)
+    const portfolioTotal = calculatePortfolioTotal();
+    const portfolioTotalDisplay = document.getElementById('portfolio-total-value');
+    if (portfolioTotalDisplay) {
+      portfolioTotalDisplay.textContent = '€' + portfolioTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    
     // Function to animate counting up
     function animateCounter(element, targetValue) {
       const duration = 2000; // Animation duration in ms
