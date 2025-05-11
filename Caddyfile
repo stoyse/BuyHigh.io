@@ -1,0 +1,12 @@
+{
+        admin unix//home/stoyse/caddy-admin.sock
+}
+
+http://stoyse.hackclub.app {
+        bind unix/.stoyse.hackclub.app.webserver.sock|777
+        root * /stoyse/pub
+        file_server {
+                hide .git .env
+        }
+        reverse_proxy http://127.0.0.1:9876
+}

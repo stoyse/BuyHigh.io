@@ -21,7 +21,6 @@ def fetch_company_news(symbol, from_date, to_date):
     :return: List of news articles
     """
     news = finnhub_client.company_news(symbol, _from=from_date, to=to_date)
-    print(news)
     return news
 
 def fetch_general_news(category="general"):
@@ -35,5 +34,4 @@ def fetch_general_news(category="general"):
     for article in news:
         if article.get('image') == 'https://static2.finnhub.io/file/publicdatany/finnhubimage/market_watch_logo.png':
             article['image'] = None
-    print(news)
     return news

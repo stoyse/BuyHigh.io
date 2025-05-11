@@ -7,18 +7,6 @@
 
 {% block content %}
 <div class="container mx-auto px-4 py-6 max-w-full">
-  <!-- Debug-Bereich für Entwicklung -->
-  {% if debug_info %}
-  <div class="bg-yellow-100 dark:bg-yellow-900 border-2 border-yellow-400 dark:border-yellow-700 rounded-lg p-3 mb-4">
-    <h3 class="text-xs font-pixel text-yellow-800 dark:text-yellow-300 mb-1">CHAT DEBUG-INFO:</h3>
-    <div class="grid grid-cols-2 gap-1 text-xxs">
-      <div>Chat ID:</div><div>{{ debug_info.chat_id }} ({{ chat.id }})</div>
-      <div>Firebase aktiviert:</div><div>{{ debug_info.firebase_enabled }}</div>
-      <div>Benutzer-ID:</div><div>{{ debug_info.user_id }}</div>
-      <div>Nachrichten:</div><div>{{ debug_info.message_count }}</div>
-    </div>
-  </div>
-  {% endif %}
 
   <div class="flex justify-between items-center mb-4">
     <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark">{{ chat.name }}</h1>

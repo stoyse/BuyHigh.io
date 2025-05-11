@@ -1,8 +1,55 @@
+import firebase_admin
+from firebase_admin import credentials, auth as firebase_auth_sdk  # Alias für Firebase Admin Auth
 import requests
 import logging
+import os
+from datetime import datetime, timedelta  # Hinzugefügt für Token-Überprüfung
 
-# Firebase API Key
-FIREBASE_API_KEY = "your_firebase_api_key_here"
+# Firebase Web API Key (wird für REST API Aufrufe benötigt)
+FIREBASE_WEB_API_KEY = os.getenv('FIREBASE_WEB_API_KEY')
+
+# Logger konfigurieren
+logger = logging.getLogger(__name__)
+
+# --- Firebase Admin SDK Initialisierung ---
+# Diese Funktion wird nun von app.py aufgerufen, um eine zentrale Initialisierung sicherzustellen.
+_admin_sdk_initialized = False
+
+def initialize_firebase_app():
+    global _admin_sdk_initialized
+    if _admin_sdk_initialized:
+        logger.debug("Firebase Admin SDK bereits initialisiert.")
+        return True
+    
+    logger.info("Initialisiere Firebase Admin SDK...")
+    try:
+        cred_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+        if not cred_path:
+            logger.error("GOOGLE_APPLICATION_CREDENTIALS Umgebungsvariable nicht gesetzt. Firebase Admin SDK kann nicht initialisiert werden.")
+            return False
+        if not os.path.exists(cred_path):
+            logger.error(f"Firebase Admin SDK Anmeldeinformationsdatei nicht gefunden: {cred_path}")
+            return False
+
+        # Prüfe, ob schon eine Default-App existiert (könnte von firebase_db_handler kommen)
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            logger.info("Firebase Admin SDK erfolgreich initialisiert (neue App).")
+        else:
+            logger.info("Firebase Admin SDK: Verwende existierende Default-App.")
+            
+        _admin_sdk_initialized = True
+        return True
+    except Exception as e:
+        logger.error(f"Fehler bei der Initialisierung des Firebase Admin SDK: {e}", exc_info=True)
+        _admin_sdk_initialized = False
+        return False
+
+# Sicherstellen, dass die Initialisierung beim Import des Moduls versucht wird,
+# falls app.py es nicht explizit tut (obwohl es das sollte).
+if not _admin_sdk_initialized:
+    initialize_firebase_app()
 
 def sign_in_with_email_password(email, password):
     """Authentifiziere einen Benutzer mit E-Mail und Passwort"""
@@ -12,7 +59,7 @@ def sign_in_with_email_password(email, password):
         # Debug-Logging
         logger.info(f"Attempting to sign in user with email: {email}")
         
-        url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_API_KEY}"
+        url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}"
         payload = {
             "email": email,
             "password": password,
