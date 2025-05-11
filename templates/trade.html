@@ -2,368 +2,289 @@
 
 {% block title %}Trade - BuyHigh.io{% endblock %}
 
-{% block content %}
-<div class="container mx-auto px-4 py-6 max-w-full">
-  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-6 text-center">STOCK ARENA</h1>
+{% block head_extra %}
+<style>
+  /* Trade-specific styles */
+  .stock-item {
+    transition: all 0.3s ease;
+  }
+  
+  .stock-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Special glow effects for selected stock */
+  .selected-stock {
+    position: relative;
+    z-index: 1;
+    border-color: rgb(59, 130, 246) !important;
+  }
+  
+  .selected-stock::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: -2px;
+    top: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: inherit;
+    background: linear-gradient(45deg, rgba(139, 92, 246, 0.5), rgba(59, 130, 246, 0.5));
+    opacity: 0.4;
+    filter: blur(8px);
+  }
+  
+  /* Animated price changes */
+  .price-flash-up {
+    animation: flashGreen 1s ease-out;
+  }
+  
+  .price-flash-down {
+    animation: flashRed 1s ease-out;
+  }
+  
+  @keyframes flashGreen {
+    0% { background-color: rgba(16, 185, 129, 0.2); }
+    100% { background-color: transparent; }
+  }
+  
+  @keyframes flashRed {
+    0% { background-color: rgba(239, 68, 68, 0.2); }
+    100% { background-color: transparent; }
+  }
+  
+  /* Button hover effects */
+  .btn-pixel:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .btn-pixel:active {
+    transform: translateY(0px);
+  }
+  
+  /* Chart container animation */
+  #candlestick-chart {
+    transition: all 0.5s ease;
+  }
+  
+  #candlestick-chart:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Timeframe button active state */
+  .timeframe-btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.3);
+  }
+</style>
+{% endblock %}
 
+{% block content %}
+<div class="container mx-auto">
+  <!-- Trade Header -->
+  <header class="mb-6 text-center">
+    <h1 class="text-3xl font-pixel gradient-text mb-2 flex justify-center items-center">
+      <svg class="w-8 h-8 mr-2 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      Stock Arena
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400 text-sm max-w-2xl mx-auto">
+      Buy high, sell low. Make strategic trades in our simulated market.
+    </p>
+  </header>
+
+  <!-- Main Trading Interface -->
   <div class="flex flex-col lg:flex-row gap-6">
     <!-- Left Column: Stock List and Search -->
-    <div class="w-full lg:w-1/3 bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-4">
+    <div class="w-full lg:w-1/3 glass-card shadow-neo border border-gray-200/10 dark:border-gray-700/20 rounded-2xl p-5 relative overflow-hidden animate-float glow-effect" style="animation-delay: 0.1s">
+      <!-- Decorative elements -->
+      <div class="absolute -top-16 -right-16 w-32 h-32 bg-neo-blue rounded-full opacity-20 blur-3xl"></div>
+      
       <!-- Search Bar -->
       <div class="mb-4 relative">
-        <label for="stock-search" class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1 block">SEARCH:</label>
+        <label for="stock-search" class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block flex items-center">
+          <svg class="w-4 h-4 mr-1 text-neo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          Search Assets
+        </label>
         <input type="search" id="stock-search" placeholder="e.g., AAPL, S&P 500..." 
-               class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white focus:border-game-blue focus:outline-none">
+               class="w-full p-3 glass-card border border-gray-200/20 dark:border-gray-700/20 rounded-xl text-sm dark:bg-gray-800/50 focus:border-neo-blue focus:ring-2 focus:ring-neo-blue/30 focus:outline-none transition-all">
       </div>
 
       <!-- Stock List -->
       <div id="stock-list" class="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-        <!-- Stock 1 -->
-        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="SPY" data-name="S&P 500 SPDR ETF" data-price="450.05" data-change="+0.50">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">S&P 500 ETF</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">SPY</p>
+        {% if assets %}
+          {% for asset in assets %}
+            <div class="stock-item p-3 glass-card hover:bg-gray-100/10 dark:hover:bg-gray-700/20 rounded-xl cursor-pointer border border-gray-200/20 dark:border-gray-700/20 transition-all hover:scale-[1.02] hover:shadow-neo" 
+                 data-symbol="{{ asset.symbol }}" 
+                 data-name="{{ asset.name }}" 
+                 data-price="0.00" 
+                 data-change="0.00"
+                 data-asset-type="{{ asset.asset_type }}"
+                 data-sector="{{ asset.sector or '' }}">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="font-medium text-gray-800 dark:text-gray-200">{{ asset.name }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">{{ asset.symbol }}</p>
+                  {% if asset.sector %}
+                    <span class="text-xxs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">{{ asset.sector }}</span>
+                  {% endif %}
+                </div>
+                <div class="text-right">
+                  <p class="stock-price font-medium text-gray-800 dark:text-gray-200">$0.00</p>
+                  <p class="stock-change text-xs text-gray-500 flex items-center justify-end">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                    </svg>
+                    0.00%
+                  </p>
+                </div>
+              </div>
+              <!-- Miniature graph -->
+              <div class="w-full h-4 bg-gray-100/20 dark:bg-gray-700/20 mt-2 rounded-sm overflow-hidden">
+                <div class="h-full flex items-end">
+                  {% set heights = [30, 50, 40, 70, 60, 80] %}
+                  {% for i in range(6) %}
+                    <div class="w-1/6 h-[{{ heights[i] }}%] bg-gray-400/50 dark:bg-gray-500/50"></div>
+                  {% endfor %}
+                </div>
+              </div>
             </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$450.05</p>
-              <p class="font-pixel text-xxs text-game-green">+0.50%</p>
+          {% endfor %}
+        {% else %}
+          <!-- Fallback für fehlende Assets -->
+          <div class="stock-item p-3 glass-card hover:bg-gray-100/10 dark:hover:bg-gray-700/20 rounded-xl cursor-pointer border border-gray-200/20 dark:border-gray-700/20 transition-all hover:scale-[1.02] hover:shadow-neo" data-symbol="SPY" data-name="S&P 500 SPDR ETF" data-price="450.05" data-change="+0.50">
+            <div class="flex justify-between items-center">
+              <div>
+                <p class="font-medium text-gray-800 dark:text-gray-200">S&P 500 ETF</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">SPY</p>
+              </div>
+              <div class="text-right">
+                <p class="font-medium text-gray-800 dark:text-gray-200">$450.05</p>
+                <p class="text-xs text-neo-emerald flex items-center">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                  </svg>
+                  +0.50%
+                </p>
+              </div>
             </div>
-          </div>
-          <!-- Miniature pixel graph -->
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[30%] bg-game-green"></div>
-              <div class="w-1/6 h-[50%] bg-game-green"></div>
-              <div class="w-1/6 h-[40%] bg-game-green"></div>
-              <div class="w-1/6 h-[70%] bg-game-green"></div>
-              <div class="w-1/6 h-[60%] bg-game-green"></div>
-              <div class="w-1/6 h-[80%] bg-game-green"></div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Stock 2 -->
-        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="AAPL" data-name="Apple Inc." data-price="175.20" data-change="-0.20">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Apple Inc.</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">AAPL</p>
-            </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$175.20</p>
-              <p class="font-pixel text-xxs text-game-red">-0.20%</p>
-            </div>
-          </div>
-          <!-- Miniature pixel graph -->
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[70%] bg-game-red"></div>
-              <div class="w-1/6 h-[60%] bg-game-red"></div>
-              <div class="w-1/6 h-[80%] bg-game-red"></div>
-              <div class="w-1/6 h-[50%] bg-game-red"></div>
-              <div class="w-1/6 h-[40%] bg-game-red"></div>
-              <div class="w-1/6 h-[30%] bg-game-red"></div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Stock 3 -->
-        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="TSLA" data-name="Tesla Inc." data-price="250.75" data-change="+1.20">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Tesla Inc.</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">TSLA</p>
-            </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$250.75</p>
-              <p class="font-pixel text-xxs text-game-green">+1.20%</p>
-            </div>
-          </div>
-          <!-- Miniature pixel graph -->
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[20%] bg-game-green"></div>
-              <div class="w-1/6 h-[40%] bg-game-green"></div>
-              <div class="w-1/6 h-[30%] bg-game-green"></div>
-              <div class="w-1/6 h-[60%] bg-game-green"></div>
-              <div class="w-1/6 h-[70%] bg-game-green"></div>
-              <div class="w-1/6 h-[90%] bg-game-green"></div>
+            <!-- Miniature graph -->
+            <div class="w-full h-4 bg-gray-100/20 dark:bg-gray-700/20 mt-2 rounded-sm overflow-hidden">
+              <div class="h-full flex items-end">
+                <div class="w-1/6 h-[30%] bg-neo-emerald"></div>
+                <div class="w-1/6 h-[50%] bg-neo-emerald"></div>
+                <div class="w-1/6 h-[40%] bg-neo-emerald"></div>
+                <div class="w-1/6 h-[70%] bg-neo-emerald"></div>
+                <div class="w-1/6 h-[60%] bg-neo-emerald"></div>
+                <div class="w-1/6 h-[80%] bg-neo-emerald"></div>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <!-- Microsoft Corp. -->
-        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="MSFT" data-name="Microsoft Corporation" data-price="330.10" data-change="+0.85">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Microsoft Corp.</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">MSFT</p>
-            </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$330.10</p>
-              <p class="font-pixel text-xxs text-game-green">+0.85%</p>
-            </div>
-          </div>
-          <!-- Miniature pixel graph -->
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[40%] bg-game-green"></div>
-              <div class="w-1/6 h-[60%] bg-game-green"></div>
-              <div class="w-1/6 h-[50%] bg-game-green"></div>
-              <div class="w-1/6 h-[80%] bg-game-green"></div>
-              <div class="w-1/6 h-[70%] bg-game-green"></div>
-              <div class="w-1/6 h-[90%] bg-game-green"></div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Amazon.com Inc. -->
-        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="AMZN" data-name="Amazon.com Inc." data-price="130.50" data-change="-1.10">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Amazon.com Inc.</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">AMZN</p>
-            </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$130.50</p>
-              <p class="font-pixel text-xxs text-game-red">-1.10%</p>
-            </div>
-          </div>
-          <!-- Miniature pixel graph -->
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[60%] bg-game-red"></div>
-              <div class="w-1/6 h-[50%] bg-game-red"></div>
-              <div class="w-1/6 h-[70%] bg-game-red"></div>
-              <div class="w-1/6 h-[40%] bg-game-red"></div>
-              <div class="w-1/6 h-[30%] bg-game-red"></div>
-              <div class="w-1/6 h-[20%] bg-game-red"></div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Alphabet Inc. -->
-        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="GOOGL" data-name="Alphabet Inc." data-price="140.20" data-change="+0.65">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Alphabet Inc.</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">GOOGL</p>
-            </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$140.20</p>
-              <p class="font-pixel text-xxs text-game-green">+0.65%</p>
-            </div>
-          </div>
-          <!-- Miniature pixel graph -->
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[50%] bg-game-green"></div>
-              <div class="w-1/6 h-[70%] bg-game-green"></div>
-              <div class="w-1/6 h-[60%] bg-game-green"></div>
-              <div class="w-1/6 h-[80%] bg-game-green"></div>
-              <div class="w-1/6 h-[90%] bg-game-green"></div>
-              <div class="w-1/6 h-[40%] bg-game-green"></div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Meta Platforms -->
-        <div class="stock-item p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors" data-symbol="META" data-name="Meta Platforms Inc." data-price="295.40" data-change="+1.50">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Meta Platforms</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">META</p>
-            </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$295.40</p>
-              <p class="font-pixel text-xxs text-game-green">+1.50%</p>
-            </div>
-          </div>
-          <!-- Miniature pixel graph -->
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[80%] bg-game-green"></div>
-              <div class="w-1/6 h-[60%] bg-game-green"></div>
-              <div class="w-1/6 h-[90%] bg-game-green"></div>
-              <div class="w-1/6 h-[70%] bg-game-green"></div>
-              <div class="w-1/6 h-[50%] bg-game-green"></div>
-              <div class="w-1/6 h-[40%] bg-game-green"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Hidden Stocks/Indices (only visible during search) -->
-        <div class="stock-item hidden p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors"
-             data-symbol="NVDA" data-name="NVIDIA Corporation" data-price="900.00" data-change="+2.10">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">NVIDIA Corporation</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">NVDA</p>
-            </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$900.00</p>
-              <p class="font-pixel text-xxs text-game-green">+2.10%</p>
-            </div>
-          </div>
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[60%] bg-game-green"></div>
-              <div class="w-1/6 h-[80%] bg-game-green"></div>
-              <div class="w-1/6 h-[70%] bg-game-green"></div>
-              <div class="w-1/6 h-[90%] bg-game-green"></div>
-              <div class="w-1/6 h-[50%] bg-game-green"></div>
-              <div class="w-1/6 h-[40%] bg-game-green"></div>
-            </div>
-          </div>
-        </div>
-        <div class="stock-item hidden p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors"
-             data-symbol="NFLX" data-name="Netflix Inc." data-price="600.00" data-change="-0.80">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Netflix Inc.</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">NFLX</p>
-            </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$600.00</p>
-              <p class="font-pixel text-xxs text-game-red">-0.80%</p>
-            </div>
-          </div>
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[40%] bg-game-red"></div>
-              <div class="w-1/6 h-[30%] bg-game-red"></div>
-              <div class="w-1/6 h-[60%] bg-game-red"></div>
-              <div class="w-1/6 h-[50%] bg-game-red"></div>
-              <div class="w-1/6 h-[70%] bg-game-red"></div>
-              <div class="w-1/6 h-[20%] bg-game-red"></div>
-            </div>
-          </div>
-        </div>
-        <div class="stock-item hidden p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors"
-             data-symbol="DAX" data-name="DAX Index" data-price="18000.00" data-change="+0.30">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">DAX Index</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">DAX</p>
-            </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$18000.00</p>
-              <p class="font-pixel text-xxs text-game-green">+0.30%</p>
-            </div>
-          </div>
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[60%] bg-game-green"></div>
-              <div class="w-1/6 h-[80%] bg-game-green"></div>
-              <div class="w-1/6 h-[70%] bg-game-green"></div>
-              <div class="w-1/6 h-[90%] bg-game-green"></div>
-              <div class="w-1/6 h-[50%] bg-game-green"></div>
-              <div class="w-1/6 h-[40%] bg-game-green"></div>
-            </div>
-          </div>
-        </div>
-        <div class="stock-item hidden p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors"
-             data-symbol="BTCUSD" data-name="Bitcoin / USD" data-price="65000.00" data-change="+3.00">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Bitcoin / USD</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">BTCUSD</p>
-            </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$65000.00</p>
-              <p class="font-pixel text-xxs text-game-green">+3.00%</p>
-            </div>
-          </div>
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[90%] bg-game-green"></div>
-              <div class="w-1/6 h-[80%] bg-game-green"></div>
-              <div class="w-1/6 h-[70%] bg-game-green"></div>
-              <div class="w-1/6 h-[60%] bg-game-green"></div>
-              <div class="w-1/6 h-[50%] bg-game-green"></div>
-              <div class="w-1/6 h-[40%] bg-game-green"></div>
-            </div>
-          </div>
-        </div>
-        <div class="stock-item hidden p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer border-2 border-gray-200 dark:border-gray-700 transition-colors"
-             data-symbol="ETHUSD" data-name="Ethereum / USD" data-price="3200.00" data-change="+2.50">
-          <div class="flex justify-between items-center">
-            <div>
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">Ethereum / USD</p>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">ETHUSD</p>
-            </div>
-            <div class="text-right">
-              <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">$3200.00</p>
-              <p class="font-pixel text-xxs text-game-green">+2.50%</p>
-            </div>
-          </div>
-          <div class="w-full h-4 bg-gray-100 dark:bg-gray-700 mt-2 rounded-sm overflow-hidden">
-            <div class="h-full flex items-end">
-              <div class="w-1/6 h-[80%] bg-game-green"></div>
-              <div class="w-1/6 h-[60%] bg-game-green"></div>
-              <div class="w-1/6 h-[90%] bg-game-green"></div>
-              <div class="w-1/6 h-[70%] bg-game-green"></div>
-              <div class="w-1/6 h-[50%] bg-game-green"></div>
-              <div class="w-1/6 h-[40%] bg-game-green"></div>
-            </div>
-          </div>
-        </div>
+          <!-- Weiter mit dem Rest der Demo-Daten -->
+        {% endif %}
       </div>
     </div>
 
     <!-- Right Column: Graph and Trading Actions -->
-    <div class="w-full lg:w-2/3 bg-white dark:bg-gray-800 shadow-pixel border-4 border-primary-light rounded-lg p-4">
+    <div class="w-full lg:w-2/3 glass-card shadow-neo border border-gray-200/10 dark:border-gray-700/20 rounded-2xl p-5 relative overflow-hidden animate-float glow-effect" style="animation-delay: 0.3s">
+      <!-- Decorative elements -->
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-neo-purple rounded-full opacity-20 blur-3xl"></div>
+      
+      <!-- Stock Header -->
       <div class="mb-4 flex justify-between items-start">
         <div>
-          <h2 id="stock-name" class="text-xl font-pixel text-primary-light dark:text-primary-dark">S&P 500 ETF (SPY)</h2>
-          <p id="stock-price" class="font-pixel text-xs text-gray-600 dark:text-gray-400">Price: $450.05 (+0.50%)</p>
+          <h2 id="stock-name" class="text-xl font-medium text-gray-800 dark:text-gray-100 gradient-text flex items-center">
+            <svg class="w-5 h-5 mr-2 text-neo-blue animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+            </svg>
+            S&P 500 ETF (SPY)
+          </h2>
+          <p id="stock-price" class="text-sm text-gray-600 dark:text-gray-400 flex items-center mt-1">
+            <svg class="w-4 h-4 mr-1 text-neo-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Price: $450.05 (+0.50%)
+          </p>
         </div>
+        
         <a id="news-button" href="{{ url_for('main.company_news', symbol='SPY') }}" 
-           class="px-3 py-2 bg-game-gold border-b-4 border-yellow-600 text-white font-pixel text-xs rounded hover:bg-yellow-500 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+           class="neo-button px-3 py-2 bg-neo-amber/10 text-neo-amber border border-neo-amber/20 hover:bg-neo-amber hover:text-white rounded-lg text-sm font-medium flex items-center">
+          <svg class="h-4 w-4 mr-2 animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
           </svg>
-          NEWS
+          Latest News
         </a>
       </div>
       
       <!-- Candlestick Chart Container -->
-      <div id="candlestick-chart" class="bg-gray-100 dark:bg-gray-700 h-64 md:h-80 rounded border-2 border-gray-200 dark:border-gray-600 mb-6 overflow-hidden relative">
+      <div id="candlestick-chart" class="glass-card bg-opacity-40 h-64 md:h-80 rounded-xl border border-gray-200/20 dark:border-gray-700/20 mb-6 overflow-hidden relative">
         <!-- Chart will be rendered here -->
+        <!-- Loading indicator until chart loads -->
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neo-purple"></div>
+        </div>
       </div>
 
       <!-- Timeframe Selection -->
       <div class="mb-6 flex flex-wrap gap-2 justify-center">
-        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="1MIN">1MIN</button>
-        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="1W">1W</button>
-        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="1M">1M</button>
-        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-primary-light dark:bg-primary-dark text-white rounded border-2 border-primary-light dark:border-primary-dark" data-timeframe="3M">3M</button>
-        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="6M">6M</button>
-        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="1Y">1Y</button>
-        <button class="timeframe-btn font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-timeframe="ALL">ALL</button>
+        <button class="timeframe-btn text-sm px-3 py-1 glass-card rounded-lg border border-gray-200/20 dark:border-gray-700/20 hover:bg-neo-purple hover:text-white hover:border-neo-purple transition-colors" data-timeframe="1MIN">1MIN</button>
+        <button class="timeframe-btn text-sm px-3 py-1 glass-card rounded-lg border border-gray-200/20 dark:border-gray-700/20 hover:bg-neo-purple hover:text-white hover:border-neo-purple transition-colors" data-timeframe="1W">1W</button>
+        <button class="timeframe-btn text-sm px-3 py-1 glass-card rounded-lg border border-gray-200/20 dark:border-gray-700/20 hover:bg-neo-purple hover:text-white hover:border-neo-purple transition-colors" data-timeframe="1M">1M</button>
+        <button class="timeframe-btn text-sm px-3 py-1 bg-neo-purple text-white rounded-lg border border-neo-purple animate-pulse-slow" data-timeframe="3M">3M</button>
+        <button class="timeframe-btn text-sm px-3 py-1 glass-card rounded-lg border border-gray-200/20 dark:border-gray-700/20 hover:bg-neo-purple hover:text-white hover:border-neo-purple transition-colors" data-timeframe="6M">6M</button>
+        <button class="timeframe-btn text-sm px-3 py-1 glass-card rounded-lg border border-gray-200/20 dark:border-gray-700/20 hover:bg-neo-purple hover:text-white hover:border-neo-purple transition-colors" data-timeframe="1Y">1Y</button>
+        <button class="timeframe-btn text-sm px-3 py-1 glass-card rounded-lg border border-gray-200/20 dark:border-gray-700/20 hover:bg-neo-purple hover:text-white hover:border-neo-purple transition-colors" data-timeframe="ALL">ALL</button>
       </div>
 
       <!-- Trading Actions -->
-      <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700">
-        <h3 class="text-lg font-pixel text-primary-light dark:text-primary-dark mb-4">EXECUTE TRADE</h3>
+      <div class="glass-card p-5 rounded-xl border border-gray-200/20 dark:border-gray-700/20 relative overflow-hidden shadow-neo">
+        <div class="absolute -top-20 -right-20 w-40 h-40 bg-neo-emerald rounded-full opacity-10 blur-3xl"></div>
+        <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-neo-red rounded-full opacity-10 blur-3xl"></div>
+        
+        <h3 class="text-lg font-medium text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-neo-emerald animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Execute Trade
+        </h3>
         
         <div class="mb-2">
-            <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">YOUR BALANCE: 
-                <span id="user-balance" class="text-primary-light dark:text-primary-dark font-bold">€{{ "%.2f"|format(g.user.balance if g.user.balance is not none else 0) }}</span>
+            <p class="text-sm text-gray-700 dark:text-gray-300 flex items-center">
+              <svg class="w-4 h-4 mr-1 text-neo-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Your Balance: 
+              <span id="user-balance" class="text-neo-blue font-bold ml-1">€{{ "%.2f"|format(g.user.balance if g.user.balance is not none else 0) }}</span>
             </p>
         </div>
 
         <form id="trade-form" class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label for="quantity" class="block text-xs font-pixel text-gray-700 dark:text-gray-300 mb-1">QUANTITY:</label>
+              <label for="quantity" class="block text-sm text-gray-700 dark:text-gray-300 mb-1 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                </svg>
+                Quantity:
+              </label>
               <input type="number" id="quantity" name="quantity" value="1" min="1"
-                     class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white">
+                     class="w-full p-2 glass-card border border-gray-200/20 dark:border-gray-700/20 rounded-lg text-sm dark:bg-gray-800/50 focus:ring-2 focus:ring-neo-purple/30">
             </div>
             <div>
-              <label for="price" class="block text-xs font-pixel text-gray-700 dark:text-gray-300 mb-1">PRICE:</label>
-              <div id="current-price" class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-sm dark:bg-gray-700 dark:text-white">
+              <label for="price" class="block text-sm text-gray-700 dark:text-gray-300 mb-1 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Price:
+              </label>
+              <div id="current-price" class="w-full p-2 glass-card border border-gray-200/20 dark:border-gray-700/20 rounded-lg text-sm dark:bg-gray-800/50 animate-pulse-slow">
                 $450.05
               </div>
             </div>
@@ -371,50 +292,77 @@
           
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">TOTAL:</p>
-              <p id="total-price" class="text-lg font-pixel text-primary-light dark:text-primary-dark">$450.05</p>
+              <p class="text-sm text-gray-700 dark:text-gray-300 flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                Total:
+              </p>
+              <p id="total-price" class="text-lg font-medium text-neo-blue">$450.05</p>
             </div>
             <div>
-              <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">POTENTIAL GAIN:</p>
+              <p class="text-sm text-gray-700 dark:text-gray-300 flex items-center">
+                <svg class="w-4 h-4 mr-1 text-neo-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+                Potential Gain:
+              </p>
               <div class="flex space-x-2">
-                <span id="potential-gain" class="text-xs font-pixel text-game-green">+$4.50</span>
-                <span id="potential-gain-percent" class="text-xs font-pixel text-game-green">(+1%)</span>
+                <span id="potential-gain" class="text-sm font-medium text-neo-emerald">+$4.50</span>
+                <span id="potential-gain-percent" class="text-sm font-medium text-neo-emerald">(+1%)</span>
               </div>
             </div>
           </div>
           
           <div class="flex space-x-4 pt-2">
             <button type="button" id="buy-button"
-                    class="flex-1 py-3 px-4 bg-game-green border-b-4 border-green-700 text-white font-pixel text-sm rounded hover:bg-green-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
+                    class="flex-1 py-3 px-4 neo-button bg-neo-emerald/10 text-neo-emerald border border-neo-emerald/20 hover:bg-neo-emerald hover:text-white rounded-lg text-sm font-medium transition-all flex items-center justify-center">
+              <svg class="w-5 h-5 mr-2 animate-bounce-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
               BUY
             </button>
             <button type="button" id="sell-button"
-                    class="flex-1 py-3 px-4 bg-game-red border-b-4 border-red-700 text-white font-pixel text-sm rounded hover:bg-red-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
+                    class="flex-1 py-3 px-4 neo-button bg-neo-red/10 text-neo-red border border-neo-red/20 hover:bg-neo-red hover:text-white rounded-lg text-sm font-medium transition-all flex items-center justify-center">
+              <svg class="w-5 h-5 mr-2 animate-bounce-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
               SELL
             </button>
           </div>
         </form>
       </div>
       
-      <!-- Game-Inspired Stats -->
+      <!-- Stock Stats -->
       <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div class="bg-gray-100 dark:bg-gray-900 p-2 rounded border-2 border-gray-200 dark:border-gray-700 text-center">
-          <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">VOLUME</p>
-          <p id="stock-volume" class="font-pixel text-xs text-gray-700 dark:text-gray-300">1.2M</p>
+        <div class="glass-card p-2 rounded-lg border border-gray-200/20 dark:border-gray-700/20 text-center transition-all hover:scale-105 hover:shadow-neo">
+          <p class="text-xs text-gray-500 dark:text-gray-400">VOLUME</p>
+          <p id="stock-volume" class="text-sm font-medium text-gray-700 dark:text-gray-300 animate-pulse-slow">1.2M</p>
         </div>
-        <div class="bg-gray-100 dark:bg-gray-900 p-2 rounded border-2 border-gray-200 dark:border-gray-700 text-center">
-          <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">HIGH</p>
-          <p id="stock-high" class="font-pixel text-xs text-gray-700 dark:text-gray-300">$452.75</p>
+        <div class="glass-card p-2 rounded-lg border border-gray-200/20 dark:border-gray-700/20 text-center transition-all hover:scale-105 hover:shadow-neo">
+          <p class="text-xs text-gray-500 dark:text-gray-400">HIGH</p>
+          <p id="stock-high" class="text-sm font-medium text-gray-700 dark:text-gray-300 animate-pulse-slow" style="animation-delay: 0.25s;">$452.75</p>
         </div>
-        <div class="bg-gray-100 dark:bg-gray-900 p-2 rounded border-2 border-gray-200 dark:border-gray-700 text-center">
-          <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">LOW</p>
-          <p id="stock-low" class="font-pixel text-xs text-gray-700 dark:text-gray-300">$448.25</p>
+        <div class="glass-card p-2 rounded-lg border border-gray-200/20 dark:border-gray-700/20 text-center transition-all hover:scale-105 hover:shadow-neo">
+          <p class="text-xs text-gray-500 dark:text-gray-400">LOW</p>
+          <p id="stock-low" class="text-sm font-medium text-gray-700 dark:text-gray-300 animate-pulse-slow" style="animation-delay: 0.5s;">$448.25</p>
         </div>
-        <div class="bg-gray-100 dark:bg-gray-900 p-2 rounded border-2 border-gray-200 dark:border-gray-700 text-center">
-          <p class="font-pixel text-xxs text-gray-500 dark:text-gray-400">MARKET CAP</p>
-          <p id="stock-market-cap" class="font-pixel text-xs text-gray-700 dark:text-gray-300">$40.3T</p>
+        <div class="glass-card p-2 rounded-lg border border-gray-200/20 dark:border-gray-700/20 text-center transition-all hover:scale-105 hover:shadow-neo">
+          <p class="text-xs text-gray-500 dark:text-gray-400">MARKET CAP</p>
+          <p id="stock-market-cap" class="text-sm font-medium text-gray-700 dark:text-gray-300 animate-pulse-slow" style="animation-delay: 0.75s;">$40.3T</p>
         </div>
       </div>
+    </div>
+  </div>
+  
+  <!-- Quick Actions -->
+  <div class="fixed bottom-8 right-8 hidden lg:block">
+    <div class="glass-card rounded-full p-2 shadow-neo mb-2 hover:shadow-neo-lg transition-all">
+      <a href="{{ url_for('main.dashboard') }}" class="w-12 h-12 flex items-center justify-center bg-neo-blue rounded-full text-white hover:scale-110 transition-transform">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+      </a>
     </div>
   </div>
 </div>
@@ -429,37 +377,68 @@
     const stockItems = document.querySelectorAll('.stock-item');
     const newsButton = document.getElementById('news-button');
 
+    // Initial asset loading via AJAX (optional for live data)
+    function loadAssets() {
+      fetch('/api/assets')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.assets && data.assets.length > 0) {
+            console.log('Assets loaded:', data.assets.length);
+            // Optionally refresh the UI with the latest data
+          }
+        })
+        .catch(error => {
+          console.error('Error loading assets:', error);
+        });
+    }
+
+    // Filter by asset type
+    const assetTypeButtons = document.querySelectorAll('.asset-type-filter');
+    if (assetTypeButtons) {
+      assetTypeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const assetType = this.getAttribute('data-asset-type');
+          
+          // Remove active class from all buttons
+          assetTypeButtons.forEach(btn => btn.classList.remove('bg-neo-purple', 'text-white'));
+          
+          // Add active class to clicked button
+          this.classList.add('bg-neo-purple', 'text-white');
+          
+          // Filter the stock items by asset type
+          stockItems.forEach(item => {
+            const itemType = item.getAttribute('data-asset-type');
+            if (!assetType || assetType === 'all' || itemType === assetType) {
+              item.style.display = '';
+            } else {
+              item.style.display = 'none';
+            }
+          });
+        });
+      });
+    }
+
     // Update news button when a stock is clicked
     stockItems.forEach(item => {
       item.addEventListener('click', function() {
         const symbol = this.getAttribute('data-symbol');
         if (symbol) {
           newsButton.href = `/news/${symbol}`;
+          
+          // Add a click animation and selected state
+          stockItems.forEach(s => s.classList.remove('selected-stock'));
+          this.classList.add('selected-stock', 'scale-95', 'bg-neo-blue/5');
+          setTimeout(() => {
+            this.classList.remove('scale-95');
+          }, 200);
         }
       });
     });
 
-    searchInput.addEventListener('input', function() {
-      const query = this.value.trim().toLowerCase();
-      stockItems.forEach(item => {
-        const name = item.getAttribute('data-name')?.toLowerCase() || '';
-        const symbol = item.getAttribute('data-symbol')?.toLowerCase() || '';
-        // Show item if search matches, otherwise hide
-        if (query && (name.includes(query) || symbol.includes(query))) {
-          item.classList.remove('hidden');
-          item.style.display = '';
-        } else if (!query && !item.classList.contains('hidden')) {
-          // Default: visible items remain visible
-          item.style.display = '';
-        } else if (!query && item.classList.contains('hidden')) {
-          // Default: hidden items remain hidden
-          item.style.display = 'none';
-        } else {
-          // If search doesn't match, hide the item
-          item.style.display = 'none';
-        }
-      });
-    });
+    // Load assets when the page loads (optional)
+    // loadAssets();
+    
+    // Rest of the existing code...
   });
 </script>
 {% endblock %}

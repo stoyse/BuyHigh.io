@@ -13,6 +13,9 @@ def api_stock_data():
     symbol = request.args.get('symbol', 'AAPL')
     timeframe = request.args.get('timeframe', '3M')
     
+    # Force fresh data flag hinzufügen
+    force_fresh = request.args.get('fresh', 'false').lower() == 'true'
+    
     end_date_dt = datetime.now()
     start_date_dt = None 
     
@@ -51,11 +54,12 @@ def api_stock_data():
     start_date_str = start_date_dt.strftime('%Y-%m-%d') if start_date_dt else None
     
     try:
-        if timeframe == '1MIN':
-            df = stock_data.get_stock_data(symbol, period=period_param_for_1min, interval=interval_param)
+        # Immer direkt von der API laden, ohne Cache zu verwenden, wenn force_fresh gesetzt ist
+        if force_fresh:
+            df = stock_data.get_stock_data(symbol, period=period_param_for_1min, interval=interval_param, 
+                                          start_date=start_date_str, end_date=end_date_str)
         else:
-            # Übergebe nur symbol, KEIN interval!
-            df = stock_data.get_stock_data(symbol)
+            df = stock_data.get_cached_or_live_data(symbol, timeframe)
         
         if df is None or df.empty:
             is_minutes_demo = timeframe == '1MIN'
@@ -107,12 +111,38 @@ def api_stock_data():
                     print(f"Error converting row data for {symbol} at {index}: {e}. Row: {row.to_dict()}")
                     continue # Skip rows with conversion errors
         
+        # Nach dem Laden der Daten, den letzten Kurs in der Assets-Datenbank aktualisieren
+        if len(data) > 0 and data[-1].get('close') is not None:
+            try:
+                update_asset_price(symbol, float(data[-1]['close']))
+            except Exception as e:
+                # Nur loggen, nicht abbrechen wenn Update fehlschlägt
+                logger.error(f"Error updating asset price in database: {e}")
+        
         return jsonify(data)
     except Exception as e:
         print(f"Error in /api/stock-data for {symbol} timeframe {timeframe}: {e}") # Log error
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e), 'currency': 'USD'}), 500
+
+# Neue Hilfsfunktion zum Aktualisieren der Asset-Preise in der Datenbank
+def update_asset_price(symbol, price):
+    """Aktualisiert den letzten bekannten Preis eines Assets in der Datenbank"""
+    import database.handler.postgres.postgre_transactions_handler as db
+    try:
+        with db.get_connection() as conn:
+            with conn.cursor() as cur:
+                # Preis und Zeitstempel aktualisieren
+                cur.execute("""
+                    UPDATE assets 
+                    SET last_price = %s, last_updated = CURRENT_TIMESTAMP
+                    WHERE symbol = %s
+                """, (price, symbol))
+                conn.commit()
+    except Exception as e:
+        # Fehler loggen, aber nicht abbrechen
+        print(f"Error updating asset price for {symbol}: {e}")
 
 @api_bp.route('/trade/buy', methods=['POST'])
 @login_required
@@ -166,6 +196,31 @@ def api_get_portfolio():
     user_id = g.user['id']
     portfolio_data = transactions_handler.show_user_portfolio(user_id)
     return jsonify(portfolio_data)
+
+@api_bp.route('/assets')
+@login_required
+def api_get_assets():
+    """API-Endpunkt zum Abrufen aller Assets oder nach Asset-Typ gefiltert"""
+    asset_type = request.args.get('type', None)
+    active_only = request.args.get('active_only', 'true').lower() == 'true'
+    
+    result = transactions_handler.get_all_assets(active_only, asset_type)
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 500
+
+@api_bp.route('/assets/<symbol>')
+@login_required
+def api_get_asset(symbol):
+    """API-Endpunkt zum Abrufen eines bestimmten Assets anhand seines Symbols"""
+    result = transactions_handler.get_asset_by_symbol(symbol)
+    
+    if result['success']:
+        return jsonify(result)
+    else:
+        return jsonify(result), 404
 
 # Dummy route from original app.py, can be removed if not used
 @api_bp.route('/trade/<symbol>/')

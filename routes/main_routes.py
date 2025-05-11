@@ -17,7 +17,7 @@ def index():
     logger.info(f"Index-Seite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Nicht angemeldet'}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     logger.debug(f"Index: Dark Mode Active: {dark_mode_active}")
-    return render_template('index.html', darkmode=dark_mode_active)
+    return redirect(url_for('main.dashboard'))
 
 @main_bp.route('/dashboard')
 @login_required
@@ -38,52 +38,60 @@ def dashboard():
     # Generate a dog message based on portfolio or market conditions
     logger.debug("Generiere Hundemeldung...")
     dog_message = generate_dog_message(g.user, portfolio_data)
+
+    asset_values = [item.get('value', 0) for item in portfolio_data.get('portfolio', [])]
     
     # Debug output
     logger.debug(f"Generierte Hundemeldung: '{dog_message}'")
     logger.debug(f"Benutzerdaten für Dashboard: {g.user}")
     logger.debug(f"Portfolio-Daten Erfolg: {portfolio_data.get('success', False)}")
     
+    # Calculate profit_loss_percentage
+    if g.user['balance'] > 0:  # Sicherstellen, dass Division durch 0 vermieden wird
+        g.user['profit_loss_percentage'] = (g.user['profit_loss'] / g.user['balance']) * 100
+    else:
+        g.user['profit_loss_percentage'] = 0.0
+    
     return render_template('dashboard.html', 
                            user=g.user, 
                            darkmode=dark_mode_active,
                            portfolio_data=portfolio_data,
                            recent_transactions=recent_transactions_data.get('transactions', []),
-                           dog_message=dog_message)
+                           dog_message=dog_message, total_asset_values=asset_values,)
 
 # Generate a personalized dog message based on user data and portfolio
 def generate_dog_message(user, portfolio_data):
-    logger.debug(f"generate_dog_message aufgerufen für Benutzer: {user.get('username')}")
+    logger.debug(f"generate_dog_message called for user: {user.get('username')}")
     # Default message if we can't personalize
-    default_message = "Woof! Willkommen zu deinem Dashboard!"
+    default_message = "Woof! Welcome to your dashboard!"
     
     # Check if user has any portfolio data
     if portfolio_data and portfolio_data.get('success') and portfolio_data.get('portfolio'):
         # User has portfolio items
         if len(portfolio_data['portfolio']) > 0:
-            message = f"Hey {user['username']}! Du hast {len(portfolio_data['portfolio'])} Assets in deinem Portfolio. Gute Arbeit!"
-            logger.debug(f"Hundemeldung (Portfolio): {message}")
+            message = f"Hey {user['username']}! You have {len(portfolio_data['portfolio'])} assets in your portfolio. Great job!"
+            logger.debug(f"Dog message (Portfolio): {message}")
             return message
     
     # Check user's profit/loss
     profit_loss = user.get('profit_loss', 0)
     if profit_loss > 0:
-        message = f"Toll gemacht! Du bist im Plus mit €{profit_loss:.2f} Gewinn!"
-        logger.debug(f"Hundemeldung (Gewinn): {message}")
+        message = f"Well done! You're in profit with €{profit_loss:.2f} gain!"
+        logger.debug(f"Dog message (Profit): {message}")
         return message
     elif profit_loss < 0:
-        message = f"Kopf hoch! Dein aktueller Verlust ist €{abs(profit_loss):.2f}. Das wird bald besser!"
-        logger.debug(f"Hundemeldung (Verlust): {message}")
+        message = f"Cheer up! Your current loss is €{abs(profit_loss):.2f}. Things will get better soon!"
+        logger.debug(f"Dog message (Loss): {message}")
         return message
     
     # Check if user is new (few or no trades)
     total_trades = user.get('total_trades', 0)
     if total_trades < 5:
-        message = f"Willkommen bei BuyHigh.io! Starte deine ersten Trades und werde zum Trading-Profi!"
-        logger.debug(f"Hundemeldung (Neuer Benutzer): {message}")
+        message = f"Welcome to BuyHigh.io! Start your first trades and become a trading expert!"
+        logger.debug(f"Dog message (New User): {message}")
         return message
     
-    logger.debug(f"Hundemeldung (Default): {default_message}")
+    logger.debug(f"Dog message (Default): {default_message}")
     return default_message
 
 @main_bp.route('/trade')
@@ -91,7 +99,15 @@ def generate_dog_message(user, portfolio_data):
 def trade():
     logger.info(f"Trade-Seite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
-    return render_template('trade.html', user=g.user, darkmode=dark_mode_active)
+    
+    # Hole Assets aus der Datenbank für die Seitenleiste
+    import database.handler.postgres.postgre_transactions_handler as transactions_handler
+    assets_data = transactions_handler.get_all_assets(active_only=True)
+    assets = assets_data.get('assets', [])
+    
+    logger.debug(f"Geladene Assets für Trade-Seite: {len(assets)}")
+    
+    return render_template('trade.html', user=g.user, darkmode=dark_mode_active, assets=assets)
 
 @main_bp.route('/news')
 @login_required
@@ -177,3 +193,25 @@ def settings():
 
     return render_template('settings.html', user=g.user, darkmode=dark_mode_active)
 
+
+@main_bp.route('/profile')
+@login_required
+def profile():
+    logger.info(f"Profilseite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
+    dark_mode_active = g.user and g.user.get('theme') == 'dark'
+    print(f'[cyan]Profilseite aufgerufen von Benutzer: {g.user}')
+    return render_template('profile.html', user=g.user, darkmode=dark_mode_active)
+
+@main_bp.route('/transactions')
+@login_required
+def transactions():
+    logger.info(f"Transaktionsseite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
+    dark_mode_active = g.user and g.user.get('theme') == 'dark'
+    
+    # Import transactions_handler locally to avoid potential circular imports at top level
+    import database.handler.postgres.postgre_transactions_handler as transactions_handler 
+    logger.debug("Lade Transaktionshistorie...")
+    transactions_data = transactions_handler.get_transactions_by_user_id(g.user['id'])
+    logger.debug(f"Transaktionshistorie geladen für Benutzer {g.user['id']}")
+    
+    return render_template('transactions.html', user=g.user, darkmode=dark_mode_active, transactions=transactions_data)

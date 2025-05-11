@@ -299,5 +299,47 @@ def init_asset_types():
         if conn:
             conn.close()
 
+def get_asset_value(user_id):
+    """
+    Get the total value of the user's assets in EUR.
+    
+    Args:
+        user_id: ID of the user
+        
+    Returns:
+        Dictionary with total asset value and user's current balance from users table
+    """
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                SUM(CASE WHEN transaction_type = 'buy' THEN quantity * price_per_unit ELSE -quantity * price_per_unit END) as total_value
+            FROM transactions
+            WHERE user_id = ?
+        """, (user_id,))
+        
+        asset_value_data = cursor.fetchone()
+        asset_value = asset_value_data['total_value'] if asset_value_data else 0
+        
+        cursor.execute("SELECT balance FROM users WHERE id = ?", (user_id,))
+        user_data = cursor.fetchone()
+        balance = user_data['balance'] if user_data else None
+        
+        return {
+            "success": True,
+            "asset_value": asset_value,
+            "balance": balance
+        }
+        
+    except sqlite3.Error as e:
+        return {"success": False, "message": f"Database error: {e}", "asset_value": 0, "balance": None}
+    finally:
+        if conn:
+            conn.close()
+
 if __name__ == "__main__":
     init_asset_types()
+

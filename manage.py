@@ -27,7 +27,7 @@ logger.info("Umgebungsvariablen aus .env geladen (falls vorhanden).")
 
 # Import firebase_db_handler for specific commands
 try:
-    import database.handler.firebase_db_handler as firebase_db_handler
+    import database.handler.sqlite.firebase_db_handler as firebase_db_handler
     logger.debug("firebase_db_handler Modul erfolgreich importiert.")
 except ImportError:
     firebase_db_handler = None

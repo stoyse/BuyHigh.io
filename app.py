@@ -96,7 +96,7 @@ else:
 USE_FIREBASE = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
 if USE_FIREBASE:
     try:
-        import database.handler.firebase_db_handler as firebase_db_handler
+        import database.handler.sqlite.firebase_db_handler as firebase_db_handler
         if firebase_db_handler.can_use_firebase():
             logger.info("✅ SYSTEM: Verwende Firebase Realtime Database als primäres Daten-Backend.")
         else:

@@ -2,25 +2,90 @@
 
 {% block title %}News - BuyHigh.io{% endblock %}
 
+{% block head_extra %}
+<style>
+  /* News-specific styles */
+  .news-item {
+    transition: all 0.3s ease;
+  }
+  
+  .news-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Filter button styles */
+  .category-filter {
+    transition: all 0.3s ease;
+  }
+  
+  .category-filter.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.3);
+  }
+  
+  /* Image hover effect */
+  .news-image-container {
+    overflow: hidden;
+  }
+  
+  .news-image {
+    transition: transform 0.7s ease;
+  }
+  
+  .news-item:hover .news-image {
+    transform: scale(1.05);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-6 max-w-full">
-  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-6 text-center">MARKET NEWS</h1>
+<div class="container mx-auto">
+  <!-- News Header -->
+  <header class="mb-6 text-center">
+    <h1 class="text-3xl font-pixel gradient-text mb-2 flex justify-center items-center">
+      <svg class="w-8 h-8 mr-2 animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+      </svg>
+      Market News
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400 text-sm max-w-2xl mx-auto">
+      Stay informed with the latest market updates, company announcements, and economic insights.
+    </p>
+  </header>
 
   <!-- News Filter Section -->
-  <div class="mb-6 bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-4">
-    <div class="flex flex-wrap justify-between items-center">
+  <div class="mb-6 glass-card shadow-neo border border-gray-200/10 dark:border-gray-700/20 rounded-2xl p-5 relative overflow-hidden animate-float glow-effect" style="animation-delay: 0.1s">
+    <!-- Decorative elements -->
+    <div class="absolute -top-16 -right-16 w-32 h-32 bg-neo-amber rounded-full opacity-20 blur-3xl"></div>
+    
+    <div class="flex flex-wrap justify-between items-center relative z-10">
       <div class="mb-4 md:mb-0">
-        <h2 class="text-lg font-pixel text-game-blue dark:text-game-blue">Filter News</h2>
+        <h2 class="text-lg font-medium text-gray-800 dark:text-gray-100 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-neo-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+          </svg>
+          Filter News
+        </h2>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button class="category-filter font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-category="all">All</button>
-        <button class="category-filter font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-category="company">Company</button>
-        <button class="category-filter font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-category="market">Market</button>
-        <button class="category-filter font-pixel text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded border-2 border-gray-300 dark:border-gray-600 hover:bg-primary-light hover:text-white hover:border-primary-light dark:hover:bg-primary-dark" data-category="economy">Economy</button>
+        <button class="category-filter text-sm px-3 py-1 glass-card rounded-lg border border-gray-200/20 dark:border-gray-700/20 hover:bg-neo-amber hover:text-white hover:border-neo-amber transition-colors active" data-category="all">All</button>
+        <button class="category-filter text-sm px-3 py-1 glass-card rounded-lg border border-gray-200/20 dark:border-gray-700/20 hover:bg-neo-amber hover:text-white hover:border-neo-amber transition-colors" data-category="company">Company</button>
+        <button class="category-filter text-sm px-3 py-1 glass-card rounded-lg border border-gray-200/20 dark:border-gray-700/20 hover:bg-neo-amber hover:text-white hover:border-neo-amber transition-colors" data-category="market">Market</button>
+        <button class="category-filter text-sm px-3 py-1 glass-card rounded-lg border border-gray-200/20 dark:border-gray-700/20 hover:bg-neo-amber hover:text-white hover:border-neo-amber transition-colors" data-category="economy">Economy</button>
       </div>
       <div class="w-full md:w-auto mt-4 md:mt-0">
-        <input type="search" id="news-search" placeholder="Search news..."
-               class="w-full md:w-64 p-2 border-2 border-gray-300 dark:border-gray-600 rounded font-pixel text-xs dark:bg-gray-700 dark:text-white focus:border-game-blue focus:outline-none">
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+            <svg class="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </span>
+          <input type="search" id="news-search" placeholder="Search news..."
+                 class="w-full md:w-64 p-2 pl-10 glass-card border border-gray-200/20 dark:border-gray-700/20 rounded-lg text-sm dark:bg-gray-800/50 focus:border-neo-amber focus:ring-2 focus:ring-neo-amber/30 focus:outline-none transition-all">
+        </div>
       </div>
     </div>
   </div>
@@ -29,32 +94,56 @@
   <div class="space-y-6" id="news-container">
     {% if news_items %}
       {% for item in news_items %}
-        <div class="news-item bg-white dark:bg-gray-800 shadow-pixel border-4 border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden" data-category="{{ item.category }}">
+        <div class="news-item glass-card shadow-neo border border-gray-200/10 dark:border-gray-700/20 rounded-2xl overflow-hidden transition-all hover:shadow-neo-lg hover:scale-[1.01] animate-float" data-category="{{ item.category }}" style="animation-delay: {{ loop.index * 0.1 }}s">
           <div class="flex flex-col md:flex-row">
             {% if item.image %}
-              <div class="md:w-1/4 h-48 md:h-auto">
-                <img src="{{ item.image }}" alt="{{ item.headline }}" class="w-full h-full object-cover">
+              <div class="md:w-1/4 h-48 md:h-auto relative overflow-hidden news-image-container">
+                <img src="{{ item.image }}" alt="{{ item.headline }}" class="w-full h-full object-cover news-image">
+                <div class="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-transparent"></div>
               </div>
             {% endif %}
-            <div class="p-6 {% if item.image %}md:w-3/4{% else %}w-full{% endif %}">
+            <div class="p-6 {% if item.image %}md:w-3/4{% else %}w-full{% endif %} relative">
+              <!-- Decorative elements -->
+              <div class="absolute -bottom-20 -right-20 w-40 h-40 bg-neo-blue rounded-full opacity-5 blur-3xl"></div>
+              
               <div class="flex justify-between items-start mb-2">
-                <h2 class="text-lg font-pixel text-primary-light dark:text-primary-dark">{{ item.headline }}</h2>
+                <h2 class="text-lg font-medium text-gray-800 dark:text-gray-100 flex items-start">
+                  <svg class="w-5 h-5 mr-2 flex-shrink-0 mt-0.5 text-neo-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                  </svg>
+                  {{ item.headline }}
+                </h2>
                 {% if item.related %}
-                  <span class="px-2 py-1 bg-game-blue text-white text-xs font-pixel rounded-full">{{ item.related }}</span>
+                  <span class="px-2 py-1 bg-neo-blue/10 text-neo-blue text-xs font-medium rounded-full animate-pulse-slow ml-2 flex-shrink-0 border border-neo-blue/20">{{ item.related }}</span>
                 {% endif %}
               </div>
               
-              <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">{{ item.summary }}</p>
+              <p class="text-sm text-gray-600 dark:text-gray-300 mb-4 ml-7">{{ item.summary }}</p>
               
-              <div class="flex flex-wrap justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+              <div class="flex flex-wrap justify-between items-center text-xs text-gray-500 dark:text-gray-400 ml-7">
                 <div class="space-x-2 mb-2 md:mb-0">
-                  <span class="font-pixel bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">{{ item.category }}</span>
-                  <span class="font-pixel">{{ item.datetime|timestamp_to_date }}</span>
+                  <span class="glass-card px-2 py-1 rounded-lg inline-flex items-center">
+                    <svg class="w-3 h-3 mr-1 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                    </svg>
+                    {{ item.category }}
+                  </span>
+                  <span class="flex items-center">
+                    <svg class="w-3 h-3 mr-1 text-neo-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {{ item.datetime|timestamp_to_date }}
+                  </span>
                 </div>
                 <div class="flex items-center">
-                  <span class="font-pixel mr-4">Source: {{ item.source }}</span>
+                  <span class="mr-4 flex items-center">
+                    <svg class="w-3 h-3 mr-1 text-neo-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Source: {{ item.source }}
+                  </span>
                   <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" 
-                     class="font-pixel text-game-green hover:underline inline-flex items-center">
+                     class="text-neo-emerald hover:underline inline-flex items-center transform transition-transform hover:translate-x-1">
                     Read more
                     <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
@@ -67,21 +156,30 @@
         </div>
       {% endfor %}
     {% else %}
-      <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-gray-200 dark:border-gray-700 rounded-lg p-6 text-center">
-        <p class="text-gray-700 dark:text-gray-300 font-pixel">No news items available at the moment.</p>
+      <div class="glass-card shadow-neo border border-gray-200/10 dark:border-gray-700/20 rounded-2xl p-6 text-center">
+        <div class="flex flex-col items-center justify-center py-8">
+          <svg class="w-16 h-16 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+          </svg>
+          <p class="text-sm text-gray-700 dark:text-gray-300">No news items available at the moment.</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Check back later for updates!</p>
+        </div>
       </div>
     {% endif %}
 
     <!-- Loading indicator -->
     <div id="loading-indicator" class="hidden text-center py-8">
-      <div class="inline-block animate-pulse bg-gray-300 dark:bg-gray-700 w-24 h-6"></div>
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-neo-amber"></div>
     </div>
   </div>
 
   <!-- Show more button -->
   <div class="text-center mt-8">
-    <button id="load-more" class="bg-game-blue border-b-4 border-blue-700 text-white font-pixel text-sm px-8 py-3 rounded hover:bg-blue-600 focus:outline-none focus:border-b-2 focus:translate-y-0.5 transform transition-all">
-      LOAD MORE NEWS
+    <button id="load-more" class="neo-button px-6 py-3 bg-neo-amber/10 text-neo-amber border border-neo-amber/20 hover:bg-neo-amber hover:text-white rounded-lg text-sm font-medium transition-all flex items-center mx-auto animate-bounce-slow" style="animation-delay: 2s;">
+      <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7"></path>
+      </svg>
+      Load More News
     </button>
   </div>
 </div>
@@ -94,31 +192,46 @@
     const searchInput = document.getElementById('news-search');
     
     // Set "All" as active by default
-    document.querySelector('[data-category="all"]').classList.add('bg-primary-light', 'text-white', 'border-primary-light');
+    document.querySelector('[data-category="all"]').classList.add('bg-neo-amber', 'text-white', 'border-neo-amber');
     
     // Category filter functionality
     categoryFilters.forEach(filter => {
       filter.addEventListener('click', function() {
         // Remove active class from all filters
         categoryFilters.forEach(f => {
-          f.classList.remove('bg-primary-light', 'text-white', 'border-primary-light', 
-                            'dark:bg-primary-dark', 'dark:border-primary-dark');
-          f.classList.add('bg-gray-200', 'dark:bg-gray-700', 'border-gray-300', 'dark:border-gray-600');
+          f.classList.remove('bg-neo-amber', 'text-white', 'border-neo-amber');
+          f.classList.add('glass-card', 'border-gray-200/20', 'dark:border-gray-700/20');
         });
         
         // Add active class to clicked filter
-        this.classList.add('bg-primary-light', 'text-white', 'border-primary-light', 
-                          'dark:bg-primary-dark', 'dark:border-primary-dark');
-        this.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'border-gray-300', 'dark:border-gray-600');
+        this.classList.add('bg-neo-amber', 'text-white', 'border-neo-amber');
+        this.classList.remove('glass-card', 'border-gray-200/20', 'dark:border-gray-700/20');
+        
+        // Add animation effect
+        this.classList.add('scale-110');
+        setTimeout(() => {
+          this.classList.remove('scale-110');
+        }, 300);
         
         const category = this.getAttribute('data-category');
         
-        // Show/hide news items based on category
-        newsItems.forEach(item => {
+        // Show/hide news items based on category with animation
+        newsItems.forEach((item, index) => {
           if (category === 'all' || item.getAttribute('data-category') === category) {
-            item.style.display = '';
+            item.classList.remove('hidden');
+            item.style.opacity = 0;
+            setTimeout(() => {
+              item.style.opacity = 1;
+              item.style.transform = 'scale(1.01)';
+              item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            }, index * 100);
           } else {
-            item.style.display = 'none';
+            item.style.opacity = 0;
+            item.style.transform = 'translateY(-10px)';
+            item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            setTimeout(() => {
+              item.classList.add('hidden');
+            }, 300);
           }
         });
       });
@@ -128,36 +241,60 @@
     searchInput.addEventListener('input', function() {
       const query = this.value.trim().toLowerCase();
       
-      newsItems.forEach(item => {
+      newsItems.forEach((item, index) => {
         const headline = item.querySelector('h2').textContent.toLowerCase();
         const summary = item.querySelector('p').textContent.toLowerCase();
         
         if (headline.includes(query) || summary.includes(query)) {
-          item.style.display = '';
+          item.classList.remove('hidden');
+          item.style.opacity = 0;
+          setTimeout(() => {
+            item.style.opacity = 1;
+            item.style.transform = 'scale(1.01)';
+            item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+          }, index * 50);
         } else {
-          item.style.display = 'none';
+          item.style.opacity = 0;
+          item.style.transform = 'translateY(-10px)';
+          item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+          setTimeout(() => {
+            item.classList.add('hidden');
+          }, 300);
         }
       });
     });
     
-    // Load more functionality (simulated for frontend demo)
+    // Load more functionality
     const loadMoreBtn = document.getElementById('load-more');
     const loadingIndicator = document.getElementById('loading-indicator');
     
     loadMoreBtn.addEventListener('click', function() {
+      // Show loading indicator with animation
+      loadMoreBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      loadMoreBtn.style.transform = 'scale(0.95)';
+      
       // Show loading indicator
       loadingIndicator.classList.remove('hidden');
-      loadMoreBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      loadingIndicator.classList.add('opacity-0');
+      setTimeout(() => {
+        loadingIndicator.classList.remove('opacity-0');
+        loadingIndicator.classList.add('opacity-100');
+        loadingIndicator.style.transition = 'opacity 0.3s ease';
+      }, 10);
       
       // Simulate loading delay
       setTimeout(() => {
         // Hide loading indicator
-        loadingIndicator.classList.add('hidden');
-        loadMoreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        
-        // You would typically load more news here via AJAX
-        // For demo purposes, we'll just show an alert
-        alert('More news would be loaded here from the backend API');
+        loadingIndicator.classList.add('opacity-0');
+        setTimeout(() => {
+          loadingIndicator.classList.add('hidden');
+          loadMoreBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          loadMoreBtn.style.transform = 'scale(1)';
+          
+          // You would typically load more news here via AJAX
+          // For demo purposes, we'll just show an alert
+          alert('More news would be loaded here from the backend API');
+        }, 300);
       }, 1500);
     });
   });

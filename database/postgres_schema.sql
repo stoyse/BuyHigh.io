@@ -83,3 +83,38 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX IF NOT EXISTS idx_messages_chat_room ON messages(chat_room_id);
 CREATE INDEX IF NOT EXISTS idx_messages_user ON messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_sent_at ON messages(sent_at);
+
+CREATE TABLE IF NOT EXISTS assets (
+    id SERIAL PRIMARY KEY,
+    symbol TEXT NOT NULL UNIQUE,          -- e.g., AAPL, TSLA, BTC
+    name TEXT NOT NULL,                   -- e.g., Apple Inc., Tesla Inc.
+    asset_type TEXT NOT NULL,             -- e.g., stock, crypto, forex
+    exchange TEXT,                        -- e.g., NASDAQ, NYSE
+    currency TEXT DEFAULT 'USD',          -- e.g., USD, EUR
+    sector TEXT,                          -- Optional: e.g., Technology, Energy
+    industry TEXT,                        -- Optional: e.g., Auto Manufacturers
+    logo_url TEXT,                        -- Optional: For UI
+    description TEXT,                     -- Optional: Company summary
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO assets (symbol, name, asset_type, exchange, sector, industry)
+VALUES 
+('AAPL', 'Apple Inc.', 'stock', 'NASDAQ', 'Technology', 'Consumer Electronics'),
+('TSLA', 'Tesla Inc.', 'stock', 'NASDAQ', 'Automotive', 'Auto Manufacturers'),
+('GOOGL', 'Alphabet Inc.', 'stock', 'NASDAQ', 'Technology', 'Internet Content'),
+('BTC', 'Bitcoin', 'crypto', 'Binance', NULL, NULL),
+('ETH', 'Ethereum', 'crypto', 'Binance', NULL, NULL);
+
+CREATE TABLE IF NOT EXISTS portfolio (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    asset_id INTEGER NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
+    quantity REAL NOT NULL DEFAULT 0,               -- total amount held
+    average_buy_price REAL NOT NULL DEFAULT 0,      -- average cost per unit
+    total_invested REAL GENERATED ALWAYS AS (quantity * average_buy_price) STORED,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    UNIQUE(user_id, asset_id)  -- one row per asset per user
+);

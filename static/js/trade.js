@@ -63,6 +63,61 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
   
+  // Neue Funktion, die beim Laden der Seite alle Aktienpreise aktualisiert
+  function updateAllStockPrices() {
+    logDebug("Updating all stock prices from API...");
+    const stockItems = document.querySelectorAll('.stock-item');
+    
+    // Für jede Aktie in der Liste
+    stockItems.forEach(item => {
+      const symbol = item.getAttribute('data-symbol');
+      if (!symbol) return;
+      
+      // API-Aufruf für aktuelle Preisdaten
+      fetch(`/api/stock-data?symbol=${symbol}&timeframe=1D`)
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            const latestData = data[data.length - 1];
+            const price = parseFloat(latestData.close).toFixed(2);
+            
+            // Alten Preis extrahieren für Vergleich
+            const oldPrice = parseFloat(item.getAttribute('data-price'));
+            
+            // Update data-attribute
+            item.setAttribute('data-price', price);
+            
+            // Update UI elements
+            const priceElement = item.querySelector('.stock-price');
+            if (priceElement) {
+              // Optional: Farbanimation für Preisänderung
+              if (price > oldPrice) {
+                priceElement.classList.add('price-flash-up');
+                setTimeout(() => priceElement.classList.remove('price-flash-up'), 1000);
+              } else if (price < oldPrice) {
+                priceElement.classList.add('price-flash-down');
+                setTimeout(() => priceElement.classList.remove('price-flash-down'), 1000);
+              }
+              
+              priceElement.textContent = `$${price}`;
+            }
+            
+            // Wenn diese Aktie aktuell ausgewählt ist, auch deren Details aktualisieren
+            if (currentSymbol === symbol) {
+              currentStockPrice = parseFloat(price);
+              document.getElementById('current-price').textContent = `$${price}`;
+              updateTotalPrice();
+            }
+            
+            logDebug(`✅ Updated price for ${symbol}: $${price}`);
+          }
+        })
+        .catch(error => {
+          logDebug(`⚠️ Error updating price for ${symbol}: ${error.message}`);
+        });
+    });
+  }
+
   // Funktion zum Laden von Aktiendaten
   function loadStockData(symbol, timeframe, preserveInitialPrice = false) {
     logDebug(`Loading stock data for ${symbol}, timeframe: ${timeframe}, preserve price: ${preserveInitialPrice}`);
@@ -303,6 +358,46 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
   
+  // Neue Funktion zum Laden von Asset-Details (Preis, Name, Beschreibung usw.)
+  function loadAssetDetails(symbol) {
+    logDebug(`Loading asset details for symbol: ${symbol}`);
+    
+    fetch(`/api/assets/${symbol}`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success && data.asset) {
+          const asset = data.asset;
+          
+          // Asset-Informationen anzeigen
+          document.getElementById('stock-name').textContent = `${asset.name} (${asset.symbol})`;
+          
+          // Weitere Asset-Informationen, wenn vorhanden
+          if (asset.sector) {
+            // Sektor anzeigen, wenn verfügbar
+            const sectorLabel = document.createElement('span');
+            sectorLabel.className = 'ml-2 text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded';
+            sectorLabel.textContent = asset.sector;
+            document.getElementById('stock-name').appendChild(sectorLabel);
+          }
+          
+          // News-Button mit dem richtigen Symbol aktualisieren
+          document.getElementById('news-button').href = `/news/${asset.symbol}`;
+          
+          logDebug(`✅ Asset details loaded for ${symbol}`, asset);
+        } else {
+          logDebug(`❌ Failed to load asset details for ${symbol}`);
+        }
+      })
+      .catch(error => {
+        logDebug(`⚠️ Error loading asset details: ${error.message}`);
+      });
+  }
+
   // Set up candlestick chart
   function setupChart() {
     if (typeof ApexCharts === "undefined") {
@@ -471,6 +566,12 @@ document.addEventListener('DOMContentLoaded', function() {
   function initializePage() {
     setupChart();
     loadUserBalance();
+    
+    // NEU: Preise von API laden beim Seitenaufruf
+    updateAllStockPrices();
+    
+    // Regelmäßige Aktualisierung der Preise alle 2 Minuten
+    setInterval(updateAllStockPrices, 120000); // 2 Minuten
 
     // Set up event listeners for stock items
     document.querySelectorAll('.stock-item').forEach(item => {
@@ -479,8 +580,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const name = this.getAttribute('data-name');
         const price = this.getAttribute('data-price');
         const change = this.getAttribute('data-change');
+        const assetType = this.getAttribute('data-asset-type') || 'stock';
 
-        logDebug(`Selected stock: ${symbol} (${name}), price from HTML: $${price}, change: ${change}%`);
+        logDebug(`Selected stock: ${symbol} (${name}), price from HTML: $${price}, change: ${change}%, type: ${assetType}`);
 
         // Update current symbol and price
         currentSymbol = symbol;
@@ -491,6 +593,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('stock-name').textContent = `${name} (${symbol})`;
         document.getElementById('stock-price').textContent = `Preis: $${price} (${change}%)`;
         document.getElementById('current-price').textContent = `$${price}`;
+        
+        // Optional: Load additional asset details
+        loadAssetDetails(symbol);
 
         // Update total based on quantity
         updateTotalPrice();

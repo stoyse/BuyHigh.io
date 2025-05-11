@@ -11,10 +11,10 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
     
-    <!-- Google Fonts - Pixelated Fonts -->
+    <!-- Google Fonts - Modern + Pixel Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -34,143 +34,583 @@
             '4xl': '2.25rem',
           },
           extend: {
+            fontFamily: {
+              'sans': ['Inter', 'sans-serif'],
+              'pixel': ['"Press Start 2P"', 'cursive'],
+            },
             colors: {
-              primary: {
-                light: '#6d28d9', // vibrant purple
-                dark: '#8b5cf6', // lighter purple for dark mode
+              'neo': {
+                'purple': '#8b5cf6',
+                'blue': '#3b82f6',
+                'cyan': '#06b6d4',
+                'pink': '#ec4899',
+                'amber': '#f59e0b',
+                'emerald': '#10b981',
+                'red': '#ef4444'
               },
-              secondary: {
-                light: '#0ea5e9', // bright blue
-                dark: '#38bdf8', // sky blue for dark mode
-              },
-              game: {
-                green: '#10b981', // emerald-500
-                red: '#ef4444',   // red-500
-                gold: '#f59e0b',  // amber-500
-                blue: '#3b82f6',  // blue-500
-                pink: '#ec4899',  // pink-500
+              'game': {
+                'green': '#10b981',
+                'red': '#ef4444',
+                'gold': '#f59e0b',
+                'blue': '#3b82f6',
+                'pink': '#ec4899',
               }
             },
-            fontFamily: {
-              'pixel': ['"Press Start 2P"', 'cursive', 'sans-serif'],
-            },
             boxShadow: {
+              'neo': '0 0 10px rgba(139, 92, 246, 0.5), 0 0 20px rgba(139, 92, 246, 0.3)',
+              'neo-lg': '0 0 15px rgba(139, 92, 246, 0.5), 0 0 30px rgba(139, 92, 246, 0.3)',
               'pixel': '4px 4px 0px 0px rgba(0,0,0,0.2)',
-              'pixel-lg': '6px 6px 0px 0px rgba(0,0,0,0.2)',
-              'pixel-xl': '8px 8px 0px 0px rgba(0,0,0,0.2)',
+              'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+            },
+            animation: {
+              'float': 'float 3s ease-in-out infinite',
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'bounce-slow': 'bounce 3s infinite',
+              'spin-slow': 'spin 6s linear infinite',
+              'glow': 'glow 2s ease-in-out infinite alternate',
+              'gradient': 'gradient 15s ease infinite',
+              'blur-in': 'blurIn 0.7s ease forwards',
+            },
+            keyframes: {
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
+              glow: {
+                '0%': { boxShadow: '0 0 5px rgba(139, 92, 246, 0.5), 0 0 10px rgba(139, 92, 246, 0.3)' },
+                '100%': { boxShadow: '0 0 15px rgba(139, 92, 246, 0.6), 0 0 30px rgba(139, 92, 246, 0.4)' }
+              },
+              gradient: {
+                '0%': { backgroundPosition: '0% 50%' },
+                '50%': { backgroundPosition: '100% 50%' },
+                '100%': { backgroundPosition: '0% 50%' }
+              },
+              blurIn: {
+                '0%': { filter: 'blur(10px)', opacity: 0 },
+                '100%': { filter: 'blur(0)', opacity: 1 }
+              }
+            },
+            backdropBlur: {
+              xs: '2px',
             }
           }
         }
       }
     </script>
     <style>
-      /* Fallback Font und wichtige Grundstile */
+      /* Base Styles */
       body {
-        font-family: sans-serif;
+        font-family: 'Inter', sans-serif;
         min-height: 100vh;
         margin: 0;
         padding: 0;
         display: flex;
         flex-direction: column;
-      }
-      .font-pixel {
-        font-family: 'Press Start 2P', cursive, sans-serif;
-      }
-      
-      /* Pixel Border Utility Classes */
-      .pixel-border {
-        border-style: solid;
-        border-width: 4px;
-        image-rendering: pixelated;
+        overflow-x: hidden;
+        scroll-behavior: smooth;
       }
       
-      /* Pixelated Progress Bars */
-      .progress-bar {
-        height: 20px;
-        background-color: #e5e7eb;
-        overflow: hidden;
-      }
-      .progress-bar-fill {
-        height: 100%;
-        background-color: #10b981;
-        transition: width 0.5s;
+      /* Advanced Glass Effects */
+      .glass-card {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
       }
       
-      /* Custom Outline Button */
-      .btn-pixel {
-        border: 3px solid currentColor;
-        box-shadow: 3px 3px 0 0 currentColor;
-        transition: all 0.1s;
+      .dark .glass-card {
+        background: rgba(17, 24, 39, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      
+      .glass-nav {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      
+      .dark .glass-nav {
+        background: rgba(0, 0, 0, 0.2);
+      }
+      
+      /* Neon Elements */
+      .neon-border {
         position: relative;
+      }
+      
+      .neon-border::after {
+        content: '';
+        position: absolute;
         top: 0;
         left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: inherit;
+        box-shadow: 0 0 10px rgba(139, 92, 246, 0.5), 0 0 20px rgba(139, 92, 246, 0.2);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+        z-index: -1;
       }
-      .btn-pixel:active {
-        box-shadow: 0px 0px 0 0 currentColor;
-        top: 3px;
-        left: 3px;
+      
+      .neon-border:hover::after {
+        opacity: 1;
       }
+      
+      /* Gradient Backgrounds */
+      .bg-gradient-neo {
+        background: linear-gradient(-45deg, #8b5cf6, #3b82f6, #06b6d4, #8b5cf6);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
+      }
+      
+      .dark .bg-gradient-neo {
+        background: linear-gradient(-45deg, #4c1d95, #1e40af, #0e7490, #4c1d95);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
+      }
+      
+      /* Custom Grid Background */
+      .neo-grid {
+        background-size: 40px 40px;
+        background-image: 
+          linear-gradient(to right, rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+      }
+      
+      .dark .neo-grid {
+        background-image: 
+          linear-gradient(to right, rgba(139, 92, 246, 0.075) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(139, 92, 246, 0.075) 1px, transparent 1px);
+      }
+      
+      /* Neo Buttons */
+      .neo-button {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+      
+      .neo-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: 0.5s;
+      }
+      
+      .neo-button:hover::before {
+        left: 100%;
+      }
+      
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: rgba(139, 92, 246, 0.5);
+        border-radius: 10px;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(139, 92, 246, 0.7);
+      }
+      
+      /* Text glowing effect */
+      .text-glow {
+        text-shadow: 0 0 10px rgba(139, 92, 246, 0.7);
+      }
+      
+      .dark .text-glow {
+        text-shadow: 0 0 10px rgba(139, 92, 246, 0.9);
+      }
+      
+      /* Dropdown Menu Styles */
+      .dropdown {
+        position: relative;
+        display: inline-block;
+      }
+      
+      .dropdown-content {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 10px);
+        min-width: 220px;
+        visibility: hidden;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.3s ease;
+        z-index: 60;
+      }
+      
+      .dropdown:hover .dropdown-content,
+      .dropdown:focus-within .dropdown-content,
+      .dropdown-content.show {
+        visibility: visible;
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      /* Dropdown arrow */
+      .dropdown-content::before {
+        content: '';
+        position: absolute;
+        top: -6px;
+        right: 20px;
+        width: 12px;
+        height: 12px;
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        transform: rotate(45deg);
+        border-left: 1px solid rgba(255, 255, 255, 0.2);
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      .dark .dropdown-content::before {
+        background: rgba(17, 24, 39, 0.7);
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      
+      /* Dropdown item hover effect */
+      .dropdown-item {
+        transition: all 0.2s ease;
+      }
+      
+      .dropdown-item:hover {
+        background: rgba(139, 92, 246, 0.15);
+        transform: translateX(5px);
+      }
+
+      /* Spezifische Anpassungen für den Dropdown-Glaseffekt */
+      .dropdown .glass-card {
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+      
+      .dark .dropdown .glass-card {
+        background: rgba(17, 24, 39, 0.85);
+      }
+
+      /* Dropdown Abschnitt-Trenner mit höherem Kontrast */
+      .dropdown-content .border-gray-200\/10 {
+        border-color: rgba(229, 231, 235, 0.2);
+      }
+      
+      .dark .dropdown-content .border-gray-700\/20 {
+        border-color: rgba(55, 65, 81, 0.4);
+      }
+      
     </style>
+    {% block head_extra %}{% endblock %}
   </head>
-  <body class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">
-    <nav class="bg-white dark:bg-gray-800 border-b-4 border-primary-light dark:border-primary-dark">
+  <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 neo-grid transition-colors duration-300">
+    <!-- Ambient background orbs -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      <div class="absolute top-1/4 right-1/4 w-96 h-96 bg-purple-500 rounded-full opacity-10 blur-[100px] animate-pulse-slow"></div>
+      <div class="absolute bottom-1/3 left-1/5 w-80 h-80 bg-blue-500 rounded-full opacity-10 blur-[100px] animate-pulse-slow" style="animation-delay: 2s;"></div>
+      <div class="absolute top-2/3 right-1/3 w-72 h-72 bg-pink-500 rounded-full opacity-10 blur-[100px] animate-pulse-slow" style="animation-delay: 3s;"></div>
+    </div>
+    
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 glass-nav border-b border-purple-500/20 dark:border-purple-500/10 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex items-center">
-            <a href="{{ url_for('main.index') }}" class="flex-shrink-0 flex items-center font-pixel text-primary-light dark:text-primary-dark text-lg">
-              BuyHigh.io
+            <a href="{{ url_for('main.index') }}" class="flex-shrink-0 flex items-center group">
+              <div class="relative h-10 w-10 rounded-xl flex items-center justify-center bg-neo-purple/10 backdrop-blur-sm overflow-hidden neon-border group-hover:shadow-neo transition-all duration-500">
+                <div class="absolute inset-0 bg-gradient-neo opacity-30 animate-gradient"></div>
+                <span class="font-pixel text-neo-purple text-sm relative z-10 group-hover:text-white transition-colors">B</span>
+              </div>
+              <span class="ml-2 font-pixel text-xl bg-clip-text text-transparent bg-gradient-to-r from-neo-purple to-neo-blue">BuyHigh.io</span>
             </a>
-            <div class="ml-10 flex items-baseline space-x-6">
+            
+            <div class="hidden sm:ml-10 sm:flex items-baseline space-x-4">
               {% if g.user %}
-              <a href="{{ url_for('main.dashboard') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Dashboard</a>
-              <a href="{{ url_for('main.trade') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Trade</a>
-              <a href="{{ url_for('main.news') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">News</a>
-              <a href="{{ url_for('chat.chat_details', chat_id='-OPvLBJqVopKLHfHGPFF') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Chat</a>
-              <a href="{{ url_for('main.settings') }}" class="px-3 py-2 rounded text-sm font-pixel hover:bg-gray-100 dark:hover:bg-gray-700">Settings</a>
+              <a href="{{ url_for('main.dashboard') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-purple/10 hover:text-neo-purple dark:hover:text-neo-purple transition-all duration-200 flex items-center group">
+                <svg class="w-5 h-5 mr-1.5 text-neo-purple/70 group-hover:text-neo-purple transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                Dashboard
+              </a>
+              <a href="{{ url_for('main.trade') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-blue/10 hover:text-neo-blue dark:hover:text-neo-blue transition-all duration-200 flex items-center group">
+                <svg class="w-5 h-5 mr-1.5 text-neo-blue/70 group-hover:text-neo-blue transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Trade
+              </a>
+              <a href="{{ url_for('main.news') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-amber/10 hover:text-neo-amber dark:hover:text-neo-amber transition-all duration-200 flex items-center group">
+                <svg class="w-5 h-5 mr-1.5 text-neo-amber/70 group-hover:text-neo-amber transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                </svg>
+                News
+              </a>
+              <a href="{{ url_for('chat.chat_details', chat_id='-OPvLBJqVopKLHfHGPFF') }}" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-pink/10 hover:text-neo-pink dark:hover:text-neo-pink transition-all duration-200 flex items-center group">
+                <svg class="w-5 h-5 mr-1.5 text-neo-pink/70 group-hover:text-neo-pink transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+                Chat
+              </a>
               {% endif %}
             </div>
           </div>
-          <div class="flex items-center">
+          
+          <div class="flex items-center space-x-4">
             {% if g.user %}
-              <span class="text-sm font-pixel mr-4">Hi, {{ g.user.username }}!</span>
-              <a href="{{ url_for('auth.logout') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-red text-white hover:bg-red-700">Logout</a>
+              <div class="hidden sm:block dropdown">
+                <div class="glass-card py-1 px-3 rounded-full cursor-pointer flex items-center">
+                  <div class="relative w-8 h-8 rounded-full overflow-hidden mr-2 bg-gradient-to-br from-neo-purple to-neo-blue p-0.5">
+                    <div class="absolute inset-0 bg-gradient-neo opacity-30 animate-gradient"></div>
+                    <div class="w-full h-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center relative z-10">
+                      <span class="font-medium text-sm text-neo-purple">{{ g.user.username[0]|upper }}</span>
+                    </div>
+                  </div>
+                  <span class="text-sm font-medium">{{ g.user.username }}</span>
+                  <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </div>
+                
+                <!-- Dropdown Menu -->
+                <div class="dropdown-content glass-card rounded-xl shadow-neo-lg overflow-hidden border border-gray-200/20 dark:border-gray-700/30">
+                  <div class="p-4 border-b border-gray-200/20 dark:border-gray-700/30">
+                    <p class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ g.user.username }}</p>
+                    <p class="text-xs text-gray-600 dark:text-gray-300">{{ g.user.email }}</p>
+                  </div>
+                  
+                  <div class="p-2">
+                    <a href="{{ url_for('main.settings') }}" class="dropdown-item flex items-center space-x-3 p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-neo-cyan">
+                      <svg class="w-5 h-5 text-neo-cyan/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      </svg>
+                      <span>Settings</span>
+                    </a>
+                    <a href="{{ url_for('main.profile') }}" class="dropdown-item flex items-center space-x-3 p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-neo-purple">
+                      <svg class="w-5 h-5 text-neo-purple/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                      </svg>
+                      <span>My Profile</span>
+                    </a>
+                    <a href="{{ url_for('main.transactions') }}" class="dropdown-item flex items-center space-x-3 p-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-neo-blue">
+                      <svg class="w-5 h-5 text-neo-blue/70" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                      <span>Transaction History</span>
+                    </a>
+                  </div>
+                  
+                  <div class="p-2 border-t border-gray-200/10 dark:border-gray-700/20">
+                    <a href="{{ url_for('auth.logout') }}" class="dropdown-item flex items-center space-x-3 p-2 rounded-lg text-sm font-medium text-neo-red hover:bg-neo-red/5">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                      </svg>
+                      <span>Logout</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+              
+              <a href="{{ url_for('auth.logout') }}" class="neo-button rounded-lg px-4 py-2 text-sm font-medium bg-neo-red/10 text-neo-red border border-neo-red/20 hover:bg-neo-red hover:text-white transition-all duration-300 flex items-center">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                Logout
+              </a>
             {% else %}
-              <a href="{{ url_for('auth.login') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-blue text-white mr-2">Login</a>
-              <a href="{{ url_for('auth.register') }}" class="px-3 py-2 rounded text-sm font-pixel bg-game-green text-white">Register</a>
+              <a href="{{ url_for('auth.login') }}" class="neo-button rounded-lg px-4 py-2 text-sm font-medium bg-neo-blue/10 text-neo-blue border border-neo-blue/20 hover:bg-neo-blue hover:text-white transition-all duration-300 flex items-center">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                </svg>
+                Login
+              </a>
+              <a href="{{ url_for('auth.register') }}" class="neo-button rounded-lg px-4 py-2 text-sm font-medium bg-neo-emerald/10 text-neo-emerald border border-neo-emerald/20 hover:bg-neo-emerald hover:text-white transition-all duration-300 flex items-center">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                </svg>
+                Register
+              </a>
             {% endif %}
           </div>
         </div>
       </div>
+      
+      <!-- Mobile menu button -->
+      <div class="sm:hidden">
+        <button type="button" class="mobile-menu-button p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-neo-purple hover:bg-neo-purple/10 focus:outline-none">
+          <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        
+        <!-- Mobile menu -->
+        <div class="hidden mobile-menu glass-card m-2 p-2 rounded-xl shadow-glass">
+          {% if g.user %}
+            <a href="{{ url_for('main.dashboard') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-purple/10 hover:text-neo-purple">Dashboard</a>
+            <a href="{{ url_for('main.trade') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-blue/10 hover:text-neo-blue">Trade</a>
+            <a href="{{ url_for('main.news') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-amber/10 hover:text-neo-amber">News</a>
+            <a href="{{ url_for('chat.chat_details', chat_id='-OPvLBJqVopKLHfHGPFF') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-pink/10 hover:text-neo-pink">Chat</a>
+            <a href="{{ url_for('main.settings') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-cyan/10 hover:text-neo-cyan">Settings</a>
+          {% endif %}
+        </div>
+      </div>
     </nav>
     
-    <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+    <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow relative animate-blur-in">
+      <!-- Flash messages -->
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <div class="mb-6">
+          <div class="mb-6 space-y-3">
             {% for category, message in messages %}
-              {% set alert_class = {
-                'success': 'bg-game-green border-green-700 text-white',
-                'danger': 'bg-game-red border-red-700 text-white',
-                'info': 'bg-game-blue border-blue-700 text-white',
-                'warning': 'bg-yellow-100 border-yellow-500 text-yellow-700'
+              {% set message_classes = {
+                'success': 'border-l-4 border-neo-emerald bg-neo-emerald/5',
+                'danger': 'border-l-4 border-neo-red bg-neo-red/5',
+                'info': 'border-l-4 border-neo-blue bg-neo-blue/5',
+                'warning': 'border-l-4 border-neo-amber bg-neo-amber/5'
               } %}
-              <div class="{{ alert_class.get(category, 'bg-gray-100 border-gray-500 text-gray-700 dark:bg-gray-800 dark:text-gray-100') }} px-4 py-3 rounded relative border-b-4 shadow-pixel mb-4" role="alert">
-                <span class="block sm:inline font-pixel text-sm">{{ message }}</span>
+              {% set icon_classes = {
+                'success': 'text-neo-emerald',
+                'danger': 'text-neo-red',
+                'info': 'text-neo-blue',
+                'warning': 'text-neo-amber'
+              } %}
+              
+              <div class="glass-card {{ message_classes.get(category, 'border-l-4 border-neo-purple bg-neo-purple/5') }} p-4 rounded-r-xl animate-float" role="alert">
+                <div class="flex">
+                  <div class="flex-shrink-0 {{ icon_classes.get(category, 'text-neo-purple') }}">
+                    {% if category == 'success' %}
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                    {% elif category == 'danger' %}
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                      </svg>
+                    {% elif category == 'info' %}
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                    {% elif category == 'warning' %}
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                      </svg>
+                    {% else %}
+                      <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                    {% endif %}
+                  </div>
+                  <div class="ml-3 font-medium text-sm">{{ message }}</div>
+                </div>
               </div>
             {% endfor %}
           </div>
         {% endif %}
       {% endwith %}
       
-      <main class="bg-white dark:bg-gray-800 shadow-lg rounded border-4 border-gray-300 dark:border-gray-700 p-6">
-        {% block content %}{% endblock %}
+      <!-- Main Content -->
+      <main class="relative glass-card backdrop-blur-xl border border-white/5 dark:border-gray-700/30 rounded-2xl shadow-glass overflow-hidden">
+        <!-- Ambient elements inside container -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none opacity-60">
+          <div class="absolute -top-40 -right-40 w-80 h-80 bg-neo-purple rounded-full opacity-10 blur-[80px]"></div>
+          <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-neo-blue rounded-full opacity-10 blur-[80px]"></div>
+          <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-40 bg-gray-900/10 dark:bg-white/5 blur-[100px]"></div>
+        </div>
+        
+        <!-- Content with relative position -->
+        <div class="relative z-10 p-6">
+          {% block content %}{% endblock %}
+        </div>
       </main>
     </div>
     
-    <footer class="bg-white dark:bg-gray-800 border-t-4 border-primary-light dark:border-primary-dark mt-auto py-4">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500 dark:text-gray-400 text-sm font-pixel">
-        © 2025 BuyHigh.io - Buy High, Sell Low
+    <footer class="mt-auto border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 backdrop-blur-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="flex items-center mb-4 md:mb-0">
+            <div class="h-8 w-8 rounded-lg flex items-center justify-center bg-neo-purple/10 mr-2">
+              <span class="font-pixel text-neo-purple text-xs">B</span>
+            </div>
+            <span class="font-pixel text-neo-purple text-sm">BuyHigh.io</span>
+          </div>
+          
+          <div class="flex space-x-6 mb-4 md:mb-0">
+            <a href="#" class="text-gray-500 hover:text-neo-purple transition-colors">
+              <span class="sr-only">Twitter</span>
+              <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+              </svg>
+            </a>
+            <a href="#" class="text-gray-500 hover:text-neo-purple transition-colors">
+              <span class="sr-only">GitHub</span>
+              <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/>
+              </svg>
+            </a>
+            <a href="#" class="text-gray-500 hover:text-neo-purple transition-colors">
+              <span class="sr-only">Discord</span>
+              <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" d="M20.317 4.492c-1.53-.69-3.17-1.2-4.885-1.49a.075.075 0 0 0-.079.036c-.21.39-.444.898-.608 1.296a19.82 19.82 0 0 0-5.69 0 12.28 12.28 0 0 0-.617-1.296.077.077 0 0 0-.079-.036A20.29 20.29 0 0 0 3.475 4.49C.7 8.966.272 13.331.756 17.632a.083.083 0 0 0 .031.056 20.03 20.03 0 0 0 6.297 3.159.077.077 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.21 13.21 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.39 12.39 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.96 19.96 0 0 0 6.3-3.159.077.077 0 0 0 .032-.055c.578-5.027-.937-9.349-3.957-13.142zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" clip-rule="evenodd"/>
+              </svg>
+            </a>
+          </div>
+          
+          <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
+            &copy; 2025 BuyHigh.io - Buy High, Sell Low
+          </p>
+        </div>
       </div>
     </footer>
+    
+    <!-- Mobile menu script and Dropdown script -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Mobile menu logic
+        const menuButton = document.querySelector('.mobile-menu-button');
+        const mobileMenu = document.querySelector('.mobile-menu');
+        
+        if(menuButton && mobileMenu) {
+          menuButton.addEventListener('click', function() {
+            mobileMenu.classList.toggle('hidden');
+          });
+        }
+        
+        // Handle dropdown menu for mobile
+        const dropdowns = document.querySelectorAll('.dropdown');
+        
+        dropdowns.forEach(dropdown => {
+          // For touch devices, toggle on click instead of hover
+          if (window.matchMedia('(max-width: 768px)').matches) {
+            dropdown.addEventListener('click', function() {
+              const content = this.querySelector('.dropdown-content');
+              content.classList.toggle('show');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+              dropdowns.forEach(d => {
+                if (!d.contains(event.target)) {
+                  d.querySelector('.dropdown-content').classList.remove('show');
+                }
+              });
+            });
+          }
+        });
+      });
+    </script>
   </body>
 </html>

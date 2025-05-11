@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Profil - BuyHigh.io{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-full">
+  <header class="mb-8 text-center">
+    <h1 class="text-3xl font-pixel gradient-text mb-2 flex justify-center items-center">
+      <svg class="w-8 h-8 mr-2 animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+      </svg>
+      Mein Profil
+    </h1>
+    <p class="text-gray-600 dark:text-gray-400 text-sm max-w-2xl mx-auto">
+      Hier findest du deine persönlichen Informationen und Statistiken.
+    </p>
+  </header>
+
+  <div class="max-w-2xl mx-auto glass-card shadow-neo border border-gray-200/10 dark:border-gray-700/20 rounded-2xl p-8 relative overflow-hidden animate-float">
+    <!-- Decorative elements -->
+    <div class="absolute -top-16 -right-16 w-32 h-32 bg-neo-purple rounded-full opacity-10 blur-3xl"></div>
+    <div class="absolute -bottom-16 -left-16 w-32 h-32 bg-neo-blue rounded-full opacity-10 blur-3xl"></div>
+
+    <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
+      <!-- Avatar -->
+      <div class="flex-shrink-0">
+        <div class="w-28 h-28 rounded-full bg-gradient-to-br from-neo-purple to-neo-blue flex items-center justify-center shadow-neo mb-4 md:mb-0">
+          <span class="text-4xl font-pixel text-white">{{ user.username[0]|upper }}</span>
+        </div>
+      </div>
+      <!-- User Info -->
+      <div class="flex-1">
+        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-2 flex items-center">
+          {{ user.username }}
+          {% if user.verified %}
+            <svg class="w-5 h-5 ml-2 text-neo-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
+            </svg>
+          {% endif %}
+        </h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-1 flex items-center">
+          <svg class="w-4 h-4 mr-1 text-neo-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          {{ user.email }}
+        </p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 flex items-center">
+          <svg class="w-4 h-4 mr-1 text-neo-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Mitglied seit: {{ user.created_at.strftime('%d.%m.%Y') if user.created_at else '-' }}
+        </p>
+        <div class="flex flex-wrap gap-4 mt-4">
+          <div class="glass-card p-4 rounded-xl text-center min-w-[120px]">
+            <p class="text-xs text-gray-500 dark:text-gray-400">Level</p>
+            <p class="text-xl font-bold text-neo-purple">{{ user.level|default(1) }}</p>
+          </div>
+          <div class="glass-card p-4 rounded-xl text-center min-w-[120px]">
+            <p class="text-xs text-gray-500 dark:text-gray-400">XP</p>
+            <p class="text-xl font-bold text-neo-blue">{{ user.xp|default(0) }}</p>
+          </div>
+          <div class="glass-card p-4 rounded-xl text-center min-w-[120px]">
+            <p class="text-xs text-gray-500 dark:text-gray-400">Trades</p>
+            <p class="text-xl font-bold text-neo-emerald">{{ user.total_trades|default(0) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

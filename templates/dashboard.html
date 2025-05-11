@@ -2,167 +2,614 @@
 
 {% block title %}Dashboard - BuyHigh.io{% endblock %}
 
+{% block head_extra %}
+<style>
+  /* Dashboard-specific styles */
+  .stat-card {
+    transition: all 0.3s ease;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Special glow effects */
+  .glow-effect {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+  
+  .glow-effect::before {
+    content: '';
+    position: absolute;
+    z-index: -2;
+    left: -50%;
+    top: -50%;
+    width: 200%;
+    height: 200%;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    background-size: 50% 50%, 50% 50%;
+    background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+    background-image: linear-gradient(#8b5cf6, #8b5cf6), linear-gradient(#3b82f6, #3b82f6), 
+                       linear-gradient(#10b981, #10b981), linear-gradient(#ec4899, #ec4899);
+    animation: rotate 10s linear infinite;
+    opacity: 0.1;
+  }
+  
+  .glow-effect::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    left: 1px;
+    top: 1px;
+    width: calc(100% - 2px);
+    height: calc(100% - 2px);
+    background: inherit;
+    border-radius: inherit;
+  }
+  
+  @keyframes rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(to right, #8b5cf6, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  /* Animated number counter */
+  .counter {
+    display: inline-block;
+    animation: countUp 2s ease-out forwards;
+  }
+  
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mx-auto px-4 py-8 max-w-full">
-  <h1 class="text-2xl font-pixel text-primary-light dark:text-primary-dark mb-8 text-center">YOUR DASHBOARD</h1>
-
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    <!-- Account Overview Card -->
-    <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-green rounded-lg p-6">
-      <h2 class="text-lg font-pixel text-game-green dark:text-game-green mb-6 text-center">Account Overview</h2>
-      <div class="space-y-5">
-        <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Current Balance:</p>
-          <p class="text-xl font-pixel text-game-green dark:text-game-green mt-2">
-            €{{ "%.2f"|format(g.user.balance if g.user.balance is not none else 0) }}
-          </p>
-        </div>
-        <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Total Trades:</p>
-          <div class="mt-2 flex items-center">
-            <p class="text-lg font-pixel text-gray-700 dark:text-gray-300">{{ g.user.total_trades }}</p>
-            <div class="ml-4 bg-gray-200 dark:bg-gray-700 h-4 w-full rounded-sm">
-              <div class="bg-game-blue h-4 rounded-sm" style="width: '{% if g.user.total_trades > 100 %}100{% else %}{{ g.user.total_trades }}{% endif %}%';"></div>
-            </div>
+<div class="container mx-auto">
+  <!-- Dashboard Header -->
+  <header class="mb-8 text-center">
+    <h1 class="text-3xl font-pixel gradient-text mb-2">Command Center</h1>
+    <p class="text-gray-600 dark:text-gray-400 text-sm max-w-2xl mx-auto">
+      Welcome to your investment hub. Monitor performance, check balances, and make strategic decisions.
+    </p>
+  </header>
+  
+  <!-- Stats Overview -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Balance Card -->
+    <div class="glass-card p-5 rounded-2xl stat-card relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-neo-purple/10 rounded-full blur-xl"></div>
+      <div class="relative">
+        <div class="flex items-center mb-3">
+          <div class="bg-neo-purple/10 p-2 rounded-lg mr-3">
+            <svg class="w-6 h-6 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
           </div>
-          <p class="text-xxs font-pixel text-gray-500 dark:text-gray-500 mt-1">Level Progress</p>
+          <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300">Current Balance</h3>
         </div>
-        <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Profit/Loss:</p>
-          <p class="text-lg font-pixel {{ 'text-game-green' if g.user.profit_loss >= 0 else 'text-game-red' }} mt-2">
-            €{{ "%.2f"|format(g.user.profit_loss) }}
+        <div class="ml-11">
+          <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-end space-x-1">
+            <span class="counter">€{{ "%.2f"|format(g.user.balance if g.user.balance is not none else 0) }}</span>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Available for trading
           </p>
         </div>
       </div>
-    </div>
-
-    <!-- Pet Companion Card -->
-    <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-gold rounded-lg p-6">
-      <h2 class="text-lg font-pixel text-game-gold dark:text-game-gold mb-6 text-center">Your Companion</h2>
-      <div class="space-y-5">
-        <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Mood Pet:</p>
-          <p class="text-lg font-pixel text-gray-700 dark:text-gray-300 mt-2">{{ g.user.mood_pet }}</p>
-        </div>
-        <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Energy:</p>
-          <div class="mt-2">
-            <div class="flex justify-between mb-1">
-              <span class="text-sm font-pixel">{{ g.user.pet_energy }}/100</span>
-            </div>
-            <div class="w-full bg-gray-300 dark:bg-gray-700 rounded-sm h-6 border-2 border-gray-400 dark:border-gray-600">
-              <div class="bg-game-gold h-full rounded-sm" style="width: {{ g.user.pet_energy|default(0) }}%;"></div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400">Meme Mode:</p>
-          <div class="mt-2 flex items-center">
-            <span class="relative inline-block w-12 h-6 rounded-full bg-gray-300 dark:bg-gray-700 mr-3 {% if g.user.is_meme_mode %}bg-game-pink{% endif %}">
-              <span class="absolute inset-0 flex items-center justify-{% if g.user.is_meme_mode %}end{% else %}start{% endif %}">
-                <span class="inline-block w-4 h-4 transform translate-x-1 rounded-full bg-white shadow"></span>
-              </span>
-            </span>
-            <p class="text-sm font-pixel text-gray-700 dark:text-gray-300">
-              {% if g.user.is_meme_mode %}ENABLED{% else %}DISABLED{% endif %}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Portfolio Overview Card -->
-    <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-blue rounded-lg p-6">
-      <h2 class="text-lg font-pixel text-game-blue dark:text-game-blue mb-6 text-center">Portfolio</h2>
-      {% if portfolio_data and portfolio_data.success and portfolio_data.portfolio %}
-        <div class="space-y-3 max-h-48 overflow-y-auto pr-2">
-          {% for item in portfolio_data.portfolio %}
-            <div class="p-2 border-b-2 border-gray-200 dark:border-gray-700">
-              <div class="flex justify-between items-center">
-                <p class="font-pixel text-xs text-gray-800 dark:text-gray-200">{{ item.symbol }}</p>
-                <p class="font-pixel text-xs text-gray-600 dark:text-gray-400">{{ "%.2f"|format(item.quantity) }} Units</p>
-              </div>
-              <p class="font-pixel text-xxs text-gray-500 dark:text-gray-500">{{ item.type }}</p>
-            </div>
-          {% endfor %}
-        </div>
-      {% elif portfolio_data and not portfolio_data.success %}
-        <div class="flex justify-center items-center h-32">
-          <p class="text-xs font-pixel text-game-red text-center">Error loading portfolio:<br>{{ portfolio_data.message }}</p>
-        </div>
-      {% else %}
-        <div class="flex justify-center items-center h-32">
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 text-center">Your portfolio is empty.</p>
-        </div>
-      {% endif %}
-    </div>
-
-    <!-- Market Mood Card with Dog Message Component -->
-    <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-pink rounded-lg p-6">
-      <h2 class="text-lg font-pixel text-game-pink dark:text-game-pink mb-6 text-center">Market Mood</h2>
-
-      
-      <!-- Including the dog message component -->
-      {% with dog_message=dog_message|default('Hello! I am your market companion!') %}
-        {% include 'components/dog_message_component.html' %}
-      {% endwith %}
     </div>
     
-    <!-- Recent Activity Card -->
-    <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-game-red rounded-lg p-6 md:col-span-2 lg:col-span-1">
-      <h2 class="text-lg font-pixel text-game-red dark:text-game-red mb-6 text-center">Recent Activities</h2>
-      <div class="space-y-3 h-56 overflow-y-auto pr-2">
-        {% if recent_transactions %}
-          {% for tx in recent_transactions %}
-        <div class="border-l-4 {{ 'border-game-green' if tx.transaction_type == 'buy' else 'border-game-red' }} pl-3 py-2">
-          <p class="text-xs font-pixel text-gray-700 dark:text-gray-300">
-            {{ 'Bought' if tx.transaction_type == 'buy' else 'Sold' }}: {{ "%.0f"|format(tx.quantity) }} {{ tx.asset_symbol }} @ ${{ "%.2f"|format(tx.price_per_unit) }}
-          </p>
-          <p class="text-xxs font-pixel text-gray-500 dark:text-gray-400">
-            {{ tx.timestamp.strftime('%Y-%m-%d') }}
-          </p>
-        </div>
-          {% endfor %}
-        {% else %}
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 text-center">No recent activities.</p>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- User Level Card -->
-    <div class="bg-white dark:bg-gray-800 shadow-pixel border-4 border-purple-500 rounded-lg p-6">
-      <h2 class="text-lg font-pixel text-purple-500 dark:text-purple-400 mb-6 text-center">Player Status</h2>
-      <div class="space-y-3">
-        <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1">Trader Level:</p>
-          <div class="flex items-center">
-            <span class="text-lg font-pixel text-purple-500 dark:text-purple-400 mr-2">5</span>
-            <div class="flex-1 bg-gray-200 dark:bg-gray-700 h-4 rounded-sm">
-              <div class="bg-purple-500 dark:bg-purple-400 h-4 rounded-sm" style="width: 45%"></div>
-            </div>
+    <!-- Profit/Loss Card -->
+    <div class="glass-card p-5 rounded-2xl stat-card relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 {{ 'bg-neo-emerald/10' if g.user.profit_loss >= 0 else 'bg-neo-red/10' }} rounded-full blur-xl"></div>
+      <div class="relative">
+        <div class="flex items-center mb-3">
+          <div class="{{ 'bg-neo-emerald/10' if g.user.profit_loss >= 0 else 'bg-neo-red/10' }} p-2 rounded-lg mr-3">
+            <svg class="w-6 h-6 {{ 'text-neo-emerald' if g.user.profit_loss >= 0 else 'text-neo-red' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6' if g.user.profit_loss >= 0 else 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6' }}"></path>
+            </svg>
           </div>
+          <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300">Profit/Loss</h3>
         </div>
-        <div>
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1">XP: 450/1000</p>
-          <div class="text-xxs font-pixel text-gray-500 dark:text-gray-400">+50 XP on the next trade!</div>
-        </div>
-        <div class="mt-6">
-          <p class="text-xs font-pixel text-gray-600 dark:text-gray-400 mb-1">Trader Badges:</p>
-          <div class="flex space-x-2 mt-2">
-            <div class="w-8 h-8 bg-yellow-100 border-2 border-yellow-500 rounded flex items-center justify-center" title="First Trade">
-              <span class="font-pixel text-yellow-500 text-xs">T</span>
-            </div>
-            <div class="w-8 h-8 bg-blue-100 border-2 border-blue-500 rounded flex items-center justify-center" title="5 Days Streak">
-              <span class="font-pixel text-blue-500 text-xs">S</span>
-            </div>
-            <div class="w-8 h-8 bg-gray-100 border-2 border-gray-300 rounded flex items-center justify-center opacity-40" title="Locked">
-              <span class="font-pixel text-gray-500 text-xs">?</span>
-            </div>
+        <div class="ml-11">
+          <div class="text-2xl font-bold {{ 'text-neo-emerald' if g.user.profit_loss >= 0 else 'text-neo-red' }} flex items-end space-x-1">
+            <span class="counter">€{{ "%.2f"|format(g.user.profit_loss) }}</span>
+            <span class="text-sm">
+              {% if g.user.profit_loss_percentage is not none %}
+                  {{ "(+%.1f%%)" % g.user.profit_loss_percentage if g.user.profit_loss >= 0 else "(%.1f%%)" % g.user.profit_loss_percentage }}
+              {% else %}
+                  (N/A)
+              {% endif %}
+            </span>
           </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {{ 'Up since first trade' if g.user.profit_loss >= 0 else 'Down since first trade' }}
+          </p>
         </div>
       </div>
     </div>
+    
+    <!-- Trades Card -->
+    <div class="glass-card p-5 rounded-2xl stat-card relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-neo-blue/10 rounded-full blur-xl"></div>
+      <div class="relative">
+        <div class="flex items-center mb-3">
+          <div class="bg-neo-blue/10 p-2 rounded-lg mr-3">
+            <svg class="w-6 h-6 text-neo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+          </div>
+          <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300">Total Trades</h3>
+        </div>
+        <div class="ml-11">
+          <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 counter">{{ g.user.total_trades }}</div>
+          <div class="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+            <div class="bg-neo-blue h-1.5 rounded-full" style="width: {% if g.user.total_trades > 100 %}100{% else %}{{ g.user.total_trades }}{% endif %}%"></div>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {{ g.user.total_trades }} of 100 for next level
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- XP Level Card -->
+    <div class="glass-card p-5 rounded-2xl stat-card relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 bg-neo-amber/10 rounded-full blur-xl"></div>
+      <div class="relative">
+        <div class="flex items-center mb-3">
+          <div class="bg-neo-amber/10 p-2 rounded-lg mr-3">
+            <svg class="w-6 h-6 text-neo-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+            </svg>
+          </div>
+          <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300">Trader Level</h3>
+        </div>
+        <div class="ml-11">
+          <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 counter">5</div>
+          <div class="mt-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+            <div class="bg-neo-amber h-1.5 rounded-full" style="width: 45%"></div>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            450 XP / 1000 XP
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
 
+  <!-- Main Dashboard Content -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Left Column - Portfolio & Activity -->
+    <div class="lg:col-span-2 space-y-8">
+      <!-- Portfolio Card -->
+      <div class="glass-card rounded-2xl overflow-hidden border border-gray-200/10 dark:border-gray-700/20 glow-effect">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold flex items-center text-gray-800 dark:text-gray-100">
+              <svg class="w-6 h-6 mr-2 text-neo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+              </svg>
+              Portfolio
+              <span class="ml-2 text-xs font-medium text-neo-blue bg-neo-blue/10 px-2 py-0.5 rounded-full">Assets: {{ portfolio_data.get('portfolio', [])|length if portfolio_data and portfolio_data.get('success', False) else 0 }}</span>
+            </h2>
+            <a href="{{ url_for('main.trade') }}" class="neo-button px-3 py-1 rounded-lg text-xs font-medium bg-neo-blue/10 text-neo-blue border border-neo-blue/20 hover:bg-neo-blue hover:text-white flex items-center">
+              <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Trade Now
+            </a>
+          </div>
+
+          {% if portfolio_data and portfolio_data.get('success', False) and portfolio_data.get('portfolio', []) %}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <!-- Asset distribution stats -->
+              <div class="glass-card p-4 rounded-xl backdrop-blur-sm">
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Total Assets Value</span>
+                <p class="text-2xl font-bold text-gray-800 dark:text-gray-200 mt-1">€{{ total_asset_value }}</p>
+              </div>
+              <div class="glass-card p-4 rounded-xl backdrop-blur-sm">
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Best Performer</span>
+                <p class="text-lg font-bold text-neo-emerald mt-1">{{ portfolio_data.get('best_performer', 'N/A') }}</p>
+                <span class="text-xs text-neo-emerald">+{{ "%.2f"|format(portfolio_data.get('best_performer_pct', 0.0)) }}%</span>
+              </div>
+              <div class="glass-card p-4 rounded-xl backdrop-blur-sm">
+                <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Asset Allocation</span>
+                <div class="flex gap-1 mt-2">
+                  <div class="h-2 rounded-full bg-neo-blue" style="width: 45%"></div>
+                  <div class="h-2 rounded-full bg-neo-purple" style="width: 25%"></div>
+                  <div class="h-2 rounded-full bg-neo-emerald" style="width: 15%"></div>
+                  <div class="h-2 rounded-full bg-neo-amber" style="width: 10%"></div>
+                  <div class="h-2 rounded-full bg-neo-pink" style="width: 5%"></div>
+                </div>
+                <div class="flex justify-between text-xxs mt-1">
+                  <span>Stocks</span>
+                  <span>Crypto</span>
+                  <span>ETF</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Portfolio List -->
+            <div class="overflow-hidden">
+              <div class="max-h-[280px] overflow-y-auto pr-1 space-y-2">
+                {% for item in portfolio_data.get('portfolio', []) %}
+                  <div class="glass-card hover:shadow-neo transition-all duration-300 rounded-xl p-3 flex justify-between items-center">
+                    <div class="flex items-center">
+                      <div class="bg-neo-blue/10 dark:bg-neo-blue/20 p-2 rounded-lg mr-3">
+                        <span class="font-medium text-neo-blue">{{ item.symbol[0] if item.symbol else 'X' }}</span>
+                      </div>
+                      <div>
+                        <h4 class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ item.symbol }}</h4>
+                        <p class="text-xs text-gray-500">{{ item.type }}</p>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <p class="font-semibold text-gray-800 dark:text-gray-200">{{ "%.2f"|format(item.quantity) }} units</p>
+                      <p class="text-xs {{ 'text-neo-emerald' if item.get('performance', 0) > 0 else 'text-neo-red' }}">
+                        {{ '+' if item.get('performance', 0) > 0 else '' }}{{ "%.2f"|format(item.get('performance', 0)) }}%
+                      </p>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% else %}
+            <div class="glass-card p-8 rounded-xl flex flex-col items-center justify-center backdrop-blur-sm">
+              <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-300 mb-2">Your Portfolio is Empty</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">Start building your portfolio by making your first trade</p>
+              <a href="{{ url_for('main.trade') }}" class="neo-button px-4 py-2 rounded-lg text-sm font-medium bg-neo-emerald/10 text-neo-emerald border border-neo-emerald/20 hover:bg-neo-emerald hover:text-white flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Start Trading
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Recent Activities Card -->
+      <div class="glass-card rounded-2xl overflow-hidden border border-gray-200/10 dark:border-gray-700/20">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold flex items-center text-gray-800 dark:text-gray-100">
+              <svg class="w-6 h-6 mr-2 text-neo-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Recent Activities
+            </h2>
+            <span class="text-xs font-medium text-neo-pink bg-neo-pink/10 px-2 py-0.5 rounded-full">Last 7 days</span>
+          </div>
+          
+          {% if recent_transactions %}
+            <div class="max-h-[300px] overflow-y-auto pr-1 space-y-3">
+              {% for tx in recent_transactions %}
+                <div class="glass-card hover:shadow-neo transition-all duration-300 rounded-xl p-3 flex items-center justify-between {% if loop.index == 1 %}animate-pulse-slow{% endif %}">
+                  <div class="flex items-center">
+                    <div class="{{ 'bg-neo-emerald/10' if tx.transaction_type == 'buy' else 'bg-neo-red/10' }} p-2 rounded-lg mr-3">
+                      <svg class="w-5 h-5 {{ 'text-neo-emerald' if tx.transaction_type == 'buy' else 'text-neo-red' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ 'M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z' if tx.transaction_type == 'buy' else 'M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z' }}"></path>
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="flex items-center">
+                        <span class="font-medium text-sm text-gray-700 dark:text-gray-300">{{ tx.asset_symbol }}</span>
+                        <span class="ml-2 px-2 py-0.5 rounded-full {{ 'bg-neo-emerald/10 text-neo-emerald' if tx.transaction_type == 'buy' else 'bg-neo-red/10 text-neo-red' }} text-xxs">
+                          {{ 'Bought' if tx.transaction_type == 'buy' else 'Sold' }}
+                        </span>
+                      </div>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        {{ "%.0f"|format(tx.quantity) }} units @ ${{ "%.2f"|format(tx.price_per_unit) }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ tx.timestamp.strftime('%b %d, %H:%M') }}
+                    </p>
+                    <p class="text-xs font-medium {{ 'text-neo-emerald' if tx.transaction_type == 'buy' else 'text-neo-red' }}">
+                      {{ '+' if tx.transaction_type == 'buy' else '-' }}${{ "%.2f"|format(tx.price_per_unit * tx.quantity) }}
+                    </p>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="glass-card p-8 rounded-xl flex flex-col items-center justify-center backdrop-blur-sm">
+              <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-300 mb-2">No Recent Activities</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 text-center">Your transaction history will appear here</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column - Companion and Status -->
+    <div class="space-y-8">
+      <!-- Pet Companion Card -->
+      <div class="glass-card rounded-2xl overflow-hidden border border-gray-200/10 dark:border-gray-700/20 glow-effect">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-5">
+            <h2 class="text-xl font-semibold flex items-center text-gray-800 dark:text-gray-100">
+              <svg class="w-6 h-6 mr-2 text-neo-amber animate-bounce-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              Your Companion
+            </h2>
+          </div>
+          
+          <div class="text-center mb-6">
+            <!-- Bull Avatar - SVG implementation for guaranteed availability -->
+            <div class="w-32 h-32 mx-auto bg-gradient-to-br from-neo-amber/20 to-neo-blue/20 rounded-full flex items-center justify-center mb-3 shadow-neo relative overflow-hidden">
+              <!-- Bull Character SVG -->
+              <div class="w-28 h-28 relative">
+                <!-- Face and Features -->
+                <div class="absolute inset-0">
+                  <!-- Bull Face -->
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full">
+                    <!-- Bull Head -->
+                    <circle cx="50" cy="50" r="40" fill="#794928" />
+                    
+                    <!-- Bull Nose -->
+                    <ellipse cx="50" cy="65" rx="15" ry="10" fill="#594020" />
+                    <circle cx="45" cy="65" r="4" fill="#000" class="animate-pulse-slow" style="animation-delay: 1.2s;" />
+                    <circle cx="55" cy="65" r="4" fill="#000" class="animate-pulse-slow" style="animation-delay: 2.3s;" />
+                    
+                    <!-- Bull Eyes with Sunglasses -->
+                    <rect x="25" y="30" width="50" height="15" rx="5" fill="#000" />
+                    <rect x="20" y="30" width="15" height="15" rx="5" fill="#000" transform="rotate(-10 20 30)" />
+                    <rect x="65" y="30" width="15" height="15" rx="5" fill="#000" transform="rotate(10 65 30)" />
+                    <line x1="50" y1="30" x2="50" y2="45" stroke="#333" stroke-width="1" />
+                    <ellipse cx="35" cy="37" rx="7" ry="5" fill="#1c84ff" class="animate-pulse-slow" style="animation-delay: 1s;" />
+                    <ellipse cx="65" cy="37" rx="7" ry="5" fill="#1c84ff" class="animate-pulse-slow" style="animation-delay: 0.5s;" />
+                    
+                    <!-- Bull Horns -->
+                    <path d="M15 30 Q 10 10, 30 15" stroke="#d8c27a" stroke-width="8" fill="none" />
+                    <path d="M85 30 Q 90 10, 70 15" stroke="#d8c27a" stroke-width="8" fill="none" />
+                    
+                    <!-- Bull Ears -->
+                    <circle cx="25" cy="35" r="7" fill="#593920" />
+                    <circle cx="75" cy="35" r="7" fill="#593920" />
+                  </svg>
+                </div>
+                
+                <!-- Business Accessories -->
+                <div class="absolute -bottom-4 -left-4 -right-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40">
+                    <!-- Suit/Tie -->
+                    <path d="M60 0 L50 15 L60 40 L70 15 Z" fill="#1e293b" />
+                    <path d="M60 0 L55 20 L60 40 L65 20 Z" fill="#e63946" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            
+            <div class="relative">
+              <h3 class="text-lg font-medium text-gray-800 dark:text-gray-200">Mr. Stonks</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Your trading advisor</p>
+              
+              <!-- Status Badge -->
+              <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neo-emerald/10 text-neo-emerald">
+                <span class="relative flex h-2 w-2 mr-1">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-neo-emerald opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-neo-emerald"></span>
+                </span>
+                Bullish Mode
+              </div>
+            </div>
+          </div>
+          
+          <!-- Including the dog message component -->
+          {% with dog_message=dog_message|default('Hello trader! Remember: Buy high, sell higher! Diamond hands only! 💎🙌') %}
+            <div class="glass-card p-4 rounded-xl backdrop-blur-sm mb-5">
+              <div class="flex space-x-2">
+                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-neo-amber/20 flex items-center justify-center">
+                  <span class="text-sm">🐂</span>
+                </div>
+                <div class="flex-1">
+                  <p class="text-xs leading-relaxed text-gray-700 dark:text-gray-300">{{ dog_message }}</p>
+                </div>
+              </div>
+            </div>
+          {% endwith %}
+          
+          <div class="space-y-4">
+            <!-- Energy Bar -->
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Energy</span>
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">{{ g.user.pet_energy }}/100</span>
+              </div>
+              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div class="bg-neo-amber h-2 rounded-full transition-all duration-1000" style="width: {{ g.user.pet_energy|default(0) }}%"></div>
+              </div>
+            </div>
+            
+            <!-- Meme Mode Toggle -->
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Meme Mode</span>
+              <div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" class="sr-only peer" {{ 'checked' if g.user.is_meme_mode else '' }}>
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-neo-amber"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Player Status Card -->
+      <div class="glass-card rounded-2xl overflow-hidden border border-gray-200/10 dark:border-gray-700/20">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold flex items-center text-gray-800 dark:text-gray-100">
+              <svg class="w-6 h-6 mr-2 text-neo-purple animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+              </svg>
+              Player Status
+            </h2>
+          </div>
+          
+          <!-- Level Progress -->
+          <div class="mb-8">
+            <div class="flex justify-between items-end mb-2">
+              <div>
+                <span class="block text-xs text-gray-500 dark:text-gray-400">Trader Level</span>
+                <span class="text-3xl font-bold text-neo-purple">5</span>
+              </div>
+              <div class="text-right">
+                <span class="block text-xs text-gray-500 dark:text-gray-400">Next Level</span>
+                <span class="text-lg font-medium text-gray-600 dark:text-gray-300">6</span>
+              </div>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-1">
+              <div class="bg-neo-purple h-2.5 rounded-full" style="width: 45%"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+              <span>450 XP</span>
+              <span>1000 XP</span>
+            </div>
+            <div class="mt-2 text-xxs text-neo-emerald flex items-center">
+              <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+              +50 XP on next trade!
+            </div>
+          </div>
+          
+          <!-- Badges -->
+          <div>
+            <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+              <svg class="w-4 h-4 mr-1 text-neo-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+              </svg>
+              Trader Badges
+            </h3>
+            
+            <div class="flex flex-wrap gap-2">
+              <!-- First Trade Badge -->
+              <div class="relative group">
+                <div class="w-12 h-12 bg-gradient-to-br from-yellow-300 to-yellow-600 rounded-full flex items-center justify-center transition-transform group-hover:scale-110">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                  </svg>
+                </div>
+                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-neo-blue rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800">
+                  <span class="text-white text-xxs">1</span>
+                </div>
+                <div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xxs rounded p-1 w-24 text-center transition-opacity">
+                  First Trade
+                </div>
+              </div>
+              
+              <!-- Streak Badge -->
+              <div class="relative group">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-300 to-blue-600 rounded-full flex items-center justify-center transition-transform group-hover:scale-110">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                  </svg>
+                </div>
+                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-neo-blue rounded-full flex items-center justify-center border-2 border-white dark:border-gray-800">
+                  <span class="text-white text-xxs">5</span>
+                </div>
+                <div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xxs rounded p-1 w-24 text-center transition-opacity">
+                  5-Day Streak
+                </div>
+              </div>
+              
+              <!-- Locked Badge -->
+              <div class="relative group opacity-50">
+                <div class="w-12 h-12 bg-gray-400 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                  </svg>
+                </div>
+                <div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xxs rounded p-1 w-24 text-center transition-opacity">
+                  Locked Badge
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Quick Actions -->
+  <div class="fixed bottom-8 right-8 hidden lg:block">
+    <div class="glass-card rounded-full p-2 shadow-neo mb-2 hover:shadow-neo-lg transition-all">
+      <a href="{{ url_for('main.trade') }}" class="w-12 h-12 flex items-center justify-center bg-neo-emerald rounded-full text-white hover:scale-110 transition-transform">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+      </a>
+    </div>
   </div>
 </div>
+
+<script>
+  // Animation for counting up numbers
+  document.addEventListener('DOMContentLoaded', function() {
+    // Function to animate counting up
+    function animateCounter(element, targetValue) {
+      const duration = 2000; // Animation duration in ms
+      const startTime = performance.now();
+      const startValue = 0;
+      
+      function updateCounter(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smoother animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const currentValue = Math.floor(startValue + (targetValue - startValue) * easeOutQuart);
+        
+        // If the target has a currency symbol or other formatting, preserve it
+        if (element.textContent.includes('€')) {
+          element.textContent = '€' + currentValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        } else {
+          element.textContent = currentValue;
+        }
+        
+        if (progress < 1) {
+          requestAnimationFrame(updateCounter);
+        }
+      }
+      
+      requestAnimationFrame(updateCounter);
+    }
+    
+    // Find and animate all counter elements
+    const counters = document.querySelectorAll('.counter');
+    counters.forEach(counter => {
+      // Extract the number from the counter element
+      const value = parseFloat(counter.textContent.replace(/[^0-9.-]+/g, ""));
+      animateCounter(counter, value);
+    });
+  });
+</script>
 {% endblock %}

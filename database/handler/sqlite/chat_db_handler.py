@@ -44,7 +44,7 @@ def get_db_connection():
 _firebase_handler_available = False
 if USE_FIREBASE_ENV:
     try:
-        import database.handler.firebase_db_handler as firebase_db_handler
+        import database.handler.sqlite.firebase_db_handler as firebase_db_handler
         if firebase_db_handler.can_use_firebase():
             _firebase_handler_available = True
             logger.info("Firebase DB Handler ist verfügbar und nutzbar.")
@@ -473,7 +473,7 @@ def migrate_data_to_firebase():
         return False
         
     try:
-        import database.handler.firebase_db_handler as firebase_db_handler 
+        import database.handler.sqlite.firebase_db_handler as firebase_db_handler 
         logger.info("Starte Migration von SQLite Chat-Daten zu Firebase.")
         result = firebase_db_handler.migrate_chat_data_from_sqlite_to_firebase()
         if result:

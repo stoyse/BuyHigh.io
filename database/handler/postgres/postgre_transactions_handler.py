@@ -2,6 +2,7 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
+import stock_data  # Import des stock_data Moduls für aktuelle Kurse
 
 load_dotenv()
 
@@ -69,6 +70,90 @@ def get_asset_type_id(asset_type_name):
             else:
                 raise ValueError(f"Asset type '{asset_type_name}' not found in database.")
 
+def get_asset_id_by_symbol(cursor, symbol):
+    """
+    Findet die Asset-ID für ein bestimmtes Symbol.
+    """
+    cursor.execute("SELECT id FROM assets WHERE symbol = %s", (symbol,))
+    asset = cursor.fetchone()
+    if not asset:
+        raise ValueError(f"Asset with symbol '{symbol}' not found.")
+    return asset['id'] if isinstance(asset, dict) else asset[0]
+
+def update_portfolio_on_buy(cursor, user_id, asset_symbol, quantity, price_per_unit):
+    """
+    Aktualisiert das Portfolio beim Kauf von Assets.
+    """
+    # Asset ID abrufen
+    asset_id = get_asset_id_by_symbol(cursor, asset_symbol)
+    
+    # Prüfen, ob das Asset bereits im Portfolio des Benutzers ist
+    cursor.execute("""
+        SELECT quantity, average_buy_price FROM portfolio 
+        WHERE user_id = %s AND asset_id = %s
+    """, (user_id, asset_id))
+    
+    portfolio_entry = cursor.fetchone()
+    
+    if portfolio_entry:
+        # Asset bereits vorhanden, Update durchführen
+        current_quantity = float(portfolio_entry['quantity']) if isinstance(portfolio_entry, dict) else float(portfolio_entry[0])
+        current_avg_price = float(portfolio_entry['average_buy_price']) if isinstance(portfolio_entry, dict) else float(portfolio_entry[1])
+        
+        # Neue Durchschnittskosten berechnen
+        new_quantity = current_quantity + quantity
+        new_avg_price = ((current_quantity * current_avg_price) + (quantity * price_per_unit)) / new_quantity
+        
+        # Portfolio aktualisieren
+        cursor.execute("""
+            UPDATE portfolio 
+            SET quantity = %s, average_buy_price = %s, last_updated = CURRENT_TIMESTAMP
+            WHERE user_id = %s AND asset_id = %s
+        """, (new_quantity, new_avg_price, user_id, asset_id))
+    else:
+        # Neuer Eintrag im Portfolio
+        cursor.execute("""
+            INSERT INTO portfolio (user_id, asset_id, quantity, average_buy_price)
+            VALUES (%s, %s, %s, %s)
+        """, (user_id, asset_id, quantity, price_per_unit))
+
+def update_portfolio_on_sell(cursor, user_id, asset_symbol, quantity):
+    """
+    Aktualisiert das Portfolio beim Verkauf von Assets.
+    """
+    # Asset ID abrufen
+    asset_id = get_asset_id_by_symbol(cursor, asset_symbol)
+    
+    # Aktuelle Portfolio-Position abrufen
+    cursor.execute("""
+        SELECT quantity FROM portfolio 
+        WHERE user_id = %s AND asset_id = %s
+    """, (user_id, asset_id))
+    
+    portfolio_entry = cursor.fetchone()
+    
+    if not portfolio_entry:
+        raise ValueError(f"Asset {asset_symbol} not found in user's portfolio.")
+    
+    current_quantity = float(portfolio_entry['quantity']) if isinstance(portfolio_entry, dict) else float(portfolio_entry[0])
+    new_quantity = current_quantity - quantity
+    
+    if abs(new_quantity) < 0.000001:  # Praktisch 0
+        # Wenn keine Einheiten mehr übrig sind, den Eintrag löschen
+        cursor.execute("""
+            DELETE FROM portfolio 
+            WHERE user_id = %s AND asset_id = %s
+        """, (user_id, asset_id))
+    elif new_quantity > 0:
+        # Menge aktualisieren
+        cursor.execute("""
+            UPDATE portfolio 
+            SET quantity = %s, last_updated = CURRENT_TIMESTAMP
+            WHERE user_id = %s AND asset_id = %s
+        """, (new_quantity, user_id, asset_id))
+    else:
+        raise ValueError(f"Insufficient quantity of {asset_symbol} in portfolio.")
+
 def buy_stock(user_id, asset_symbol, quantity, price_per_unit):
     """
     Führt einen Aktienkauf für den Benutzer durch (PostgreSQL).
@@ -100,6 +185,10 @@ def buy_stock(user_id, asset_symbol, quantity, price_per_unit):
                     RETURNING id, user_id, asset_type_id, asset_symbol, quantity, price_per_unit, transaction_type, timestamp;
                 """, (user_id, asset_type_id, asset_symbol, quantity, price_per_unit))
                 transaction = cur.fetchone()
+                
+                # Portfolio aktualisieren
+                update_portfolio_on_buy(cur, user_id, asset_symbol, quantity, price_per_unit)
+                
                 conn.commit()
                 return {"success": True, "transaction": transaction, "message": f"Successfully purchased {quantity} shares of {asset_symbol} for ${total_cost_usd:.2f} (approx. €{total_cost_eur:.2f})."}
     except Exception as e:
@@ -190,6 +279,10 @@ def sell_stock(user_id, asset_symbol, quantity, price_per_unit):
                     RETURNING id, user_id, asset_type_id, asset_symbol, quantity, price_per_unit, transaction_type, timestamp;
                 """, (user_id, asset_type_id, asset_symbol, quantity, price_per_unit))
                 transaction = cur.fetchone()
+                
+                # Portfolio aktualisieren
+                update_portfolio_on_sell(cur, user_id, asset_symbol, quantity)
+                
                 conn.commit()
                 return {
                     "success": True,
@@ -202,32 +295,55 @@ def sell_stock(user_id, asset_symbol, quantity, price_per_unit):
 def show_user_portfolio(user_id):
     """
     Zeigt das aktuelle Portfolio für einen Benutzer (PostgreSQL).
+    Verwendet aktuelle Marktdaten für die Preise anstatt gespeicherter Werte.
     """
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute("SELECT id, name FROM asset_types")
-                asset_types_map = {row['id']: row['name'] for row in cur.fetchall()}
+                # Portfolio-Positionen laden
                 cur.execute("""
-                    SELECT 
-                        asset_symbol,
-                        asset_type_id,
-                        SUM(CASE WHEN transaction_type = 'buy' THEN quantity ELSE -quantity END) as net_quantity
-                    FROM transactions
-                    WHERE user_id = %s
-                    GROUP BY asset_symbol, asset_type_id
-                    HAVING SUM(CASE WHEN transaction_type = 'buy' THEN quantity ELSE -quantity END) > 0
+                    SELECT p.quantity, p.average_buy_price, 
+                           a.symbol, a.name, a.asset_type, a.sector
+                    FROM portfolio p
+                    JOIN assets a ON p.asset_id = a.id
+                    WHERE p.user_id = %s
                 """, (user_id,))
+                
                 portfolio = []
                 for row in cur.fetchall():
+                    # Aktuelle Marktdaten für dieses Asset abrufen
+                    symbol = row['symbol']
+                    current_price = 0.0
+                    try:
+                        # Versuche, den aktuellen Kurs von der API zu holen
+                        df = stock_data.get_cached_or_live_data(symbol, '1D')
+                        if df is not None and not df.empty:
+                            # Letzten Schlusskurs nehmen
+                            current_price = float(df['Close'].iloc[-1])
+                    except Exception as e:
+                        print(f"Fehler beim Abrufen des Kurses für {symbol}: {e}")
+                        # Verwende den durchschnittlichen Kaufpreis als Fallback
+                        current_price = float(row['average_buy_price'])
+                    
+                    # Wertentwicklung berechnen
+                    avg_price = float(row['average_buy_price'])
+                    performance = ((current_price - avg_price) / avg_price * 100) if avg_price > 0 else 0
+                    
                     portfolio.append({
-                        "symbol": row['asset_symbol'],
-                        "type": asset_types_map.get(row['asset_type_id'], 'unknown'),
-                        "quantity": row['net_quantity']
+                        "symbol": symbol,
+                        "name": row['name'],
+                        "type": row['asset_type'],
+                        "quantity": float(row['quantity']),
+                        "average_price": avg_price,
+                        "current_price": current_price,
+                        "performance": performance,
+                        "sector": row['sector']
                     })
+                
                 cur.execute("SELECT balance FROM users WHERE id = %s", (user_id,))
                 user_data = cur.fetchone()
                 balance = user_data['balance'] if user_data else None
+                
                 return {
                     "success": True,
                     "portfolio": portfolio,
@@ -285,3 +401,94 @@ def delete_transaction(transaction_id):
         with conn.cursor() as cur:
             cur.execute("DELETE FROM transactions WHERE id = %s;", (transaction_id,))
             conn.commit()
+
+def get_asset_value(user_id):
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT SUM(quantity * price_per_unit) AS total_value
+                FROM transactions
+                WHERE user_id = %s
+            """, (user_id,))
+            result = cur.fetchone()
+            return result['total_value'] if result else 0.0
+
+def get_all_assets(active_only=True, asset_type=None):
+    """
+    Ruft alle Assets aus der Datenbank ab.
+    
+    Args:
+        active_only (bool): Wenn True, werden nur aktive Assets zurückgegeben
+        asset_type (str): Optional Filter für Asset-Typ (stock, crypto, forex, etc.)
+        
+    Returns:
+        List[dict]: Liste aller Assets als Dictionary-Objekte
+    """
+    try:
+        with get_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                query = "SELECT * FROM assets"
+                where_clauses = []
+                params = []
+                
+                if active_only:
+                    where_clauses.append("is_active = %s")
+                    params.append(True)
+                
+                if asset_type:
+                    where_clauses.append("asset_type = %s")
+                    params.append(asset_type)
+                
+                if where_clauses:
+                    query += " WHERE " + " AND ".join(where_clauses)
+                
+                query += " ORDER BY symbol"
+                cur.execute(query, params)
+                assets = cur.fetchall()
+                return {"success": True, "assets": assets}
+    except Exception as e:
+        return {"success": False, "message": f"Database error: {e}", "assets": []}
+
+def get_asset_by_symbol(symbol):
+    """
+    Ruft ein Asset anhand seines Symbols ab.
+    
+    Args:
+        symbol (str): Symbol des Assets (z.B. AAPL, BTC)
+        
+    Returns:
+        dict: Asset-Daten oder None, wenn nicht gefunden
+    """
+    try:
+        with get_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("SELECT * FROM assets WHERE symbol = %s", (symbol,))
+                asset = cur.fetchone()
+                if asset:
+                    return {"success": True, "asset": asset}
+                else:
+                    return {"success": False, "message": f"Asset with symbol '{symbol}' not found."}
+    except Exception as e:
+        return {"success": False, "message": f"Database error: {e}"}
+
+def create_asset(symbol, name, asset_type, exchange=None, currency="USD", 
+                sector=None, industry=None, logo_url=None, description=None):
+    """
+    Erstellt ein neues Asset in der Datenbank.
+    
+    Returns:
+        dict: Erstelltes Asset oder Fehlermeldung
+    """
+    try:
+        with get_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    INSERT INTO assets 
+                    (symbol, name, asset_type, exchange, currency, sector, industry, logo_url, description)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    RETURNING *
+                """, (symbol, name, asset_type, exchange, currency, sector, industry, logo_url, description))
+                conn.commit()
+                return {"success": True, "asset": cur.fetchone()}
+    except Exception as e:
+        return {"success": False, "message": f"Database error: {e}"}
