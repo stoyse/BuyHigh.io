@@ -218,7 +218,7 @@
               <!-- Asset distribution stats -->
               <div class="glass-card p-4 rounded-xl backdrop-blur-sm">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Total Assets Value</span>
-                <p class="text-2xl font-bold text-gray-800 dark:text-gray-200 mt-1" id="portfolio-total-value">€{{ "%.2f"|format(portfolio_total_value) }}</p>
+                <p class="text-2xl font-bold text-gray-800 dark:text-gray-200 mt-1 counter" id="portfolio-total-value">€{{ "%.2f"|format(portfolio_total_value) }}</p>
               </div>
               <div class="glass-card p-4 rounded-xl backdrop-blur-sm">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Best Performer</span>
@@ -227,17 +227,42 @@
               </div>
               <div class="glass-card p-4 rounded-xl backdrop-blur-sm">
                 <span class="text-xs font-medium text-gray-500 dark:text-gray-400">Asset Allocation</span>
+                
                 <div class="flex gap-1 mt-2">
-                  <div class="h-2 rounded-full bg-neo-blue" style="width: 45%"></div>
-                  <div class="h-2 rounded-full bg-neo-purple" style="width: 25%"></div>
-                  <div class="h-2 rounded-full bg-neo-emerald" style="width: 15%"></div>
-                  <div class="h-2 rounded-full bg-neo-amber" style="width: 10%"></div>
-                  <div class="h-2 rounded-full bg-neo-pink" style="width: 5%"></div>
+                  {% if asset_allocation and asset_allocation|length > 0 %}
+                    {% set colors = ['bg-neo-blue', 'bg-neo-purple', 'bg-neo-emerald', 'bg-neo-amber', 'bg-neo-pink'] %}
+                    {% for asset in asset_allocation %}
+                      {% set percentage = asset.percentage|round(1) %}
+                      {% if percentage >= 3 %}
+                        <div class="h-2 rounded-full {{ colors[loop.index0 % colors|length] }}" 
+                             style="width: {{ percentage }}%"
+                             title="{{ asset.name }}: {{ percentage }}%"
+                             data-symbol="{{ asset.symbol }}"></div>
+                      {% endif %}
+                    {% endfor %}
+                  {% else %}
+                    <div class="h-2 rounded-full bg-gray-300 dark:bg-gray-600" style="width: 100%"></div>
+                  {% endif %}
                 </div>
-                <div class="flex justify-between text-xxs mt-1">
-                  <span>Stocks</span>
-                  <span>Crypto</span>
-                  <span>ETF</span>
+                
+                <div class="flex gap-1 mt-1 w-full">
+                  {% if asset_allocation and asset_allocation|length > 0 %}
+                    {% set displayed_assets = [] %}
+                    {% for asset in asset_allocation %}
+                      {% set percentage = asset.percentage|round(1) %}
+                      {% if percentage >= 3 %}
+                        <div class="text-xxs text-center overflow-hidden text-ellipsis" style="width: {{ percentage }}%">
+                          {{ asset.symbol }}
+                        </div>
+                        {% set _ = displayed_assets.append(asset.symbol) %}
+                      {% endif %}
+                    {% endfor %}
+                    {% if not displayed_assets %}
+                      <span class="text-xxs">No Assets</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-xxs">No Assets</span>
+                  {% endif %}
                 </div>
               </div>
             </div>
@@ -429,14 +454,14 @@
                 <div class="flex-shrink-0 w-8 h-8 rounded-full bg-neo-amber/20 flex items-center justify-center">
                   <span class="text-sm">🐂</span>
                 </div>
-                <div class="flex-1">
+                <div class="flex-1"></div>
                   <p class="text-xs leading-relaxed text-gray-700 dark:text-gray-300">{{ dog_message }}</p>
                 </div>
               </div>
             </div>
           {% endwith %}
           
-          <div class="space-y-4">
+          <div class="space-y-4 mx-4 md:mx-8">
             <!-- Energy Bar -->
             <div>
               <div class="flex justify-between items-center mb-1">
@@ -574,25 +599,6 @@
 <script>
   // Animation for counting up numbers
   document.addEventListener('DOMContentLoaded', function() {
-    // Calculate portfolio total value from portfolio items
-    function calculatePortfolioTotal() {
-      let total = 0;
-      {% if portfolio_data and portfolio_data.get('portfolio', []) %}
-        {% for item in portfolio_data.get('portfolio', []) %}
-          // Quantity × current price für jedes Asset
-          total += {{ item.quantity|float }} * {{ item.current_price|float }};
-        {% endfor %}
-      {% endif %}
-      return total;
-    }
-    
-    // Setze den berechneten Wert als Portfolio-Gesamtwert (NUR FÜR DIESES ELEMENT)
-    const portfolioTotal = calculatePortfolioTotal();
-    const portfolioTotalDisplay = document.getElementById('portfolio-total-value');
-    if (portfolioTotalDisplay) {
-      portfolioTotalDisplay.textContent = '€' + portfolioTotal.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-    
     // Function to animate counting up
     function animateCounter(element, targetValue) {
       const duration = 2000; // Animation duration in ms
@@ -605,20 +611,48 @@
         
         // Easing function for smoother animation
         const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-        const currentValue = Math.floor(startValue + (targetValue - startValue) * easeOutQuart);
+        let currentValue = startValue + (targetValue - startValue) * easeOutQuart;
         
         // If the target has a currency symbol or other formatting, preserve it
-        if (element.textContent.includes('€')) {
-          element.textContent = '€' + currentValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        } else {
-          element.textContent = currentValue;
+        // For values with decimal points, ensure they are handled correctly
+        if (element.textContent.includes('€') || element.textContent.includes('$')) {
+            const isEuro = element.textContent.includes('€');
+            const symbol = isEuro ? '€' : '$';
+            // Check if the original value had decimals to decide formatting
+            if (targetValue % 1 !== 0 || element.textContent.match(/\.\d{2}/)) {
+                 element.textContent = symbol + currentValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            } else {
+                 element.textContent = symbol + Math.floor(currentValue).toLocaleString('de-DE');
+            }
+        } else if (targetValue % 1 !== 0 || (element.textContent.includes('.') && !element.textContent.match(/[a-zA-Z%]/))) {
+             // Handle non-currency numbers with decimals
+             element.textContent = currentValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        else {
+          element.textContent = Math.floor(currentValue).toLocaleString('de-DE');
         }
         
         if (progress < 1) {
           requestAnimationFrame(updateCounter);
+        } else {
+          // Ensure final value is exact and correctly formatted
+          if (element.textContent.includes('€') || element.textContent.includes('$')) {
+            const isEuro = element.textContent.includes('€');
+            const symbol = isEuro ? '€' : '$';
+            if (targetValue % 1 !== 0 || element.dataset.originalValue.match(/\.\d{2}/)) {
+                element.textContent = symbol + targetValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            } else {
+                element.textContent = symbol + Math.floor(targetValue).toLocaleString('de-DE');
+            }
+          } else if (targetValue % 1 !== 0 || (element.dataset.originalValue && element.dataset.originalValue.includes('.'))) {
+            element.textContent = targetValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          } else {
+            element.textContent = Math.floor(targetValue).toLocaleString('de-DE');
+          }
         }
       }
-      
+      // Store original text content for formatting reference
+      element.dataset.originalValue = element.textContent;
       requestAnimationFrame(updateCounter);
     }
     

@@ -33,9 +33,15 @@ def dashboard():
     
     # Calculate total portfolio value - this was missing
     portfolio_total_value = 0
+    asset_values = []
     if portfolio_data and portfolio_data.get('success') and portfolio_data.get('portfolio'):
         for item in portfolio_data.get('portfolio', []):
-            portfolio_total_value += item.get('quantity', 0) * item.get('current_price', 0)
+            value = item.get('quantity', 0) * item.get('current_price', 0)
+            portfolio_total_value += value
+            # Füge den Wert auch explizit zum Item hinzu, falls er fehlt
+            if 'value' not in item:
+                item['value'] = value
+            asset_values.append(item.get('value', 0))
     
     logger.debug("Lade letzte Transaktionen...")
     recent_transactions_data = transactions_handler.get_recent_transactions(g.user['id'])
@@ -44,8 +50,6 @@ def dashboard():
     # Generate a dog message based on portfolio or market conditions
     logger.debug("Generiere Hundemeldung...")
     dog_message = generate_dog_message(g.user, portfolio_data)
-
-    asset_values = [item.get('value', 0) for item in portfolio_data.get('portfolio', [])]
     
     # Debug output
     logger.debug(f"Generierte Hundemeldung: '{dog_message}'")
@@ -57,14 +61,29 @@ def dashboard():
         g.user['profit_loss_percentage'] = (g.user['profit_loss'] / g.user['balance']) * 100
     else:
         g.user['profit_loss_percentage'] = 0.0
-    
+    print(f'[cyan]Benutzer {g.user["username"]} hat eine Gewinn-/Verlustquote von {g.user["profit_loss_percentage"]:.2f}%')    
+    # Calculate asset allocation (percentage of each asset in portfolio)
+    asset_allocation = []
+    if portfolio_total_value > 0:
+        logger.debug("Berechne Asset-Allocation für das Portfolio...")
+        for item in portfolio_data.get('portfolio', []):
+            allocation = {
+                'symbol': item.get('symbol'),
+                'name': item.get('asset_name', item.get('name', item.get('symbol'))),
+                'percentage': (item.get('value', 0) / portfolio_total_value) * 100
+            }
+            asset_allocation.append(allocation)
+        logger.debug(f"Asset-Allocation berechnet: {len(asset_allocation)} Assets")
+    print(f'[cyan]Asset-Allocation: {asset_allocation}')
     return render_template('dashboard.html', 
                            user=g.user, 
                            darkmode=dark_mode_active,
                            portfolio_data=portfolio_data,
-                           portfolio_total_value=portfolio_total_value,  # Added this variable
+                           portfolio_total_value=portfolio_total_value,
                            recent_transactions=recent_transactions_data.get('transactions', []),
-                           dog_message=dog_message, total_asset_values=asset_values,)
+                           dog_message=dog_message, 
+                           total_asset_values=asset_values,
+                           asset_allocation=asset_allocation)
 
 # Generate a personalized dog message based on user data and portfolio
 def generate_dog_message(user, portfolio_data):

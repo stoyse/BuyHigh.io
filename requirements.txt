@@ -58,3 +58,4 @@ rich
 pandas
 enventlet
 psycopg2
+flask_login

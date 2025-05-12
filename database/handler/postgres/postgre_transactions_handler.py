@@ -334,16 +334,26 @@ def show_user_portfolio(user_id):
                     
                     avg_price = float(row['average_buy_price'])
                     performance = ((current_price - avg_price) / avg_price * 100) if avg_price > 0 else 0
+                    quantity = float(row['quantity'])
+                    
+                    # Stelle sicher, dass asset_type nicht null ist
+                    asset_type = row['asset_type'] 
+                    if asset_type is None or asset_type.strip() == '':
+                        asset_type = 'stock'  # Standardwert, falls asset_type fehlt
+                    
+                    # Berechne den aktuellen Wert des Assets
+                    item_value = quantity * current_price
                     
                     portfolio.append({
                         "symbol": symbol,
                         "name": row['name'],
-                        "type": row['asset_type'],
-                        "quantity": float(row['quantity']),
+                        "type": asset_type,
+                        "quantity": quantity,
                         "average_price": avg_price,
                         "current_price": current_price,
                         "performance": performance,
-                        "sector": row['sector']
+                        "sector": row['sector'],
+                        "value": item_value  # Wert des Assets für Asset Allocation
                     })
                 
                 cur.execute("SELECT balance FROM users WHERE id = %s", (user_id,))
