@@ -30,7 +30,33 @@ def dashboard():
     logger.debug("Lade Portfolio-Daten...")
     portfolio_data = transactions_handler.show_user_portfolio(g.user['id'])
     logger.debug(f"Portfolio-Daten geladen: Erfolg={portfolio_data.get('success', False)}, Anzahl Items={len(portfolio_data.get('portfolio', []))}")
-    
+    user_assets = portfolio_data.get('portfolio', [])
+    print(f'[cyan]User: Assets:', user_assets) 
+    user_assets_types = [asset.get('type') for asset in user_assets]
+    print(f'[cyan]User: Asset Types:', user_assets_types)  
+    # Calculate percentage of each asset type in the portfolio
+    logger.debug("Berechne prozentuale Verteilung der Asset-Typen...")
+    asset_type_distribution = {}
+    total_assets = sum(item.get('quantity', 0) for item in user_assets)
+
+    if total_assets > 0:
+        for asset in user_assets:
+            asset_type = asset.get('type', 'Unknown')
+            asset_quantity = asset.get('quantity', 0)
+            if asset_type in asset_type_distribution:
+                asset_type_distribution[asset_type] += asset_quantity
+            else:
+                asset_type_distribution[asset_type] = asset_quantity
+
+        # Convert quantities to percentages
+        for asset_type in asset_type_distribution:
+            asset_type_distribution[asset_type] = (asset_type_distribution[asset_type] / total_assets) * 100
+
+
+        print(f'[cyan]Asset Type Distribution:', asset_type_distribution)
+
+    logger.debug(f"Asset-Typ-Verteilung berechnet: {asset_type_distribution}")
+    print(f'[cyan]Asset Type Distribution: {asset_type_distribution}')
     # Calculate total portfolio value - this was missing
     portfolio_total_value = 0
     asset_values = []

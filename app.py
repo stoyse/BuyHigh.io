@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)  # Logger für app.py
 # Dateiprotokollierung einrichten
 log_dir = os.path.join(app.root_path, 'logs')
 if not os.path.exists(log_dir):
-    os.makedirs(log_dir)
+    os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, 'app.log')
 
 # Formatter für Dateiprotokolle

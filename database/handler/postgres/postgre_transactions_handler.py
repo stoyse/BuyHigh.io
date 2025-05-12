@@ -518,3 +518,17 @@ def get_default_price_for_symbol(symbol):
             if row and row.get('default_price') is not None:
                 return float(row['default_price'])
             return None
+
+def get_user_assets(user_id):
+    """
+    Holt alle Assets eines Benutzers aus der Datenbank.
+    """
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT a.symbol, a.name, a.asset_type, a.sector, a.industry, a.logo_url, a.description, p.quantity, p.average_buy_price
+                FROM portfolio p
+                JOIN assets a ON p.asset_id = a.id
+                WHERE p.user_id = %s
+            """, (user_id,))
+            return cur.fetchall()
