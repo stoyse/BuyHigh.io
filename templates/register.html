@@ -38,7 +38,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
       </svg>
     </div>
-    <h2 class="text-2xl font-pixel gradient-text">Account erstellen</h2>
+    <h2 class="text-2xl font-pixel gradient-text">Create Account</h2>
   </div>
   
   <div class="max-w-md w-full">
@@ -49,16 +49,16 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
           </svg>
-          Benutzername
+          Username
         </label>
         <input type="text" name="username" id="username" required minlength="3"
                class="input-highlight mt-1 block w-full rounded-xl glass-card border border-gray-200/20 dark:border-gray-700/20 shadow-sm focus:border-neo-purple focus:ring-2 focus:ring-neo-purple/30 dark:bg-gray-800/50 dark:text-white px-4 py-2 transition-all"
-               placeholder="Dein öffentlicher Name">
+               placeholder="Your public name">
         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-center">
           <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          Mindestens 3 Zeichen, wird öffentlich angezeigt
+          At least 3 characters, will be displayed publicly
         </p>
       </div>
       
@@ -71,12 +71,12 @@
         </label>
         <input type="email" name="email" id="email" required 
                class="input-highlight mt-1 block w-full rounded-xl glass-card border border-gray-200/20 dark:border-gray-700/20 shadow-sm focus:border-neo-purple focus:ring-2 focus:ring-neo-purple/30 dark:bg-gray-800/50 dark:text-white px-4 py-2 transition-all"
-               placeholder="deine@email.com">
+               placeholder="your@email.com">
         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-center">
           <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          Wird für Login und wichtige Benachrichtigungen verwendet
+          Used for login and important notifications
         </p>
       </div>
       
@@ -85,12 +85,12 @@
           <svg class="w-4 h-4 mr-2 text-neo-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
           </svg>
-          Passwort
+          Password
         </label>
         <div class="relative">
           <input type="password" name="password" id="password" required minlength="6"
                  class="input-highlight mt-1 block w-full rounded-xl glass-card border border-gray-200/20 dark:border-gray-700/20 shadow-sm focus:border-neo-purple focus:ring-2 focus:ring-neo-purple/30 dark:bg-gray-800/50 dark:text-white px-4 py-2 transition-all"
-                 placeholder="Mindestens 6 Zeichen">
+                 placeholder="At least 6 characters">
           <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" id="eye-icon" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -105,7 +105,7 @@
             <div id="password-strength" class="password-strength h-1 rounded-full bg-neo-red opacity-70" style="width: 0%"></div>
           </div>
           <p class="mt-1 text-xs text-gray-500 dark:text-gray-400 flex items-center">
-            <span id="password-strength-text">Passwort-Stärke: Zu kurz</span>
+            <span id="password-strength-text">Password strength: Too short</span>
           </p>
         </div>
       </div>
@@ -115,13 +115,13 @@
           <svg class="w-4 h-4 mr-2 text-neo-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
           </svg>
-          Passwort bestätigen
+          Confirm password
         </label>
         <input type="password" name="confirm_password" id="confirm_password" required
                class="input-highlight mt-1 block w-full rounded-xl glass-card border border-gray-200/20 dark:border-gray-700/20 shadow-sm focus:border-neo-purple focus:ring-2 focus:ring-neo-purple/30 dark:bg-gray-800/50 dark:text-white px-4 py-2 transition-all"
-               placeholder="Passwort wiederholen">
+               placeholder="Repeat password">
         <p id="password-match" class="mt-1 text-xs text-gray-500 dark:text-gray-400 hidden">
-          Passwörter stimmen überein ✓
+          Passwords match ✓
         </p>
       </div>
       
@@ -132,7 +132,7 @@
                    class="focus:ring-neo-emerald h-4 w-4 text-neo-emerald border-gray-300 rounded transition-all">
           </div>
           <div class="ml-3 text-xs">
-            <span class="text-gray-700 dark:text-gray-300">Ich akzeptiere die <a href="#" class="text-neo-blue hover:underline">Nutzungsbedingungen</a> und <a href="#" class="text-neo-blue hover:underline">Datenschutzrichtlinien</a></span>
+            <span class="text-gray-700 dark:text-gray-300">I accept the <a href="#" class="text-neo-blue hover:underline">Terms of Service</a> and <a href="#" class="text-neo-blue hover:underline">Privacy Policy</a></span>
           </div>
         </label>
       </div>
@@ -142,23 +142,23 @@
           <svg class="w-5 h-5 mr-2 animate-bounce-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
           </svg>
-          Registrieren
+          Register
         </button>
       </div>
     </form>
     
     <div class="mt-6 text-center animate-float" style="animation-delay: 0.8s;">
-      <p class="text-sm text-gray-600 dark:text-gray-400">Oder</p>
+      <p class="text-sm text-gray-600 dark:text-gray-400">Or</p>
       <button id="google-signup-btn" class="mt-3 w-full flex justify-center items-center py-2 px-4 glass-card rounded-xl shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 dark:bg-gray-800/50 dark:text-gray-200 dark:hover:bg-gray-700 transition-all border border-gray-200/20 dark:border-gray-700/20">
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" class="w-5 h-5 mr-2">
-        Mit Google registrieren
+        Register with Google
       </button>
     </div>
     
     <div class="mt-8 text-center animate-float" style="animation-delay: 1s;">
       <p class="text-sm text-gray-600 dark:text-gray-400">
-        Bereits registriert? 
-        <a href="{{ url_for('auth.login') }}" class="font-medium text-neo-purple hover:text-neo-blue transition-colors">Hier einloggen</a>
+        Already registered? 
+        <a href="{{ url_for('auth.login') }}" class="font-medium text-neo-purple hover:text-neo-blue transition-colors">Login here</a>
       </p>
     </div>
   </div>
@@ -231,19 +231,19 @@
         if (password.length === 0) {
           passwordStrength.style.width = "0%";
           passwordStrength.className = "password-strength h-1 rounded-full";
-          passwordStrengthText.textContent = "Passwort-Stärke: Zu kurz";
+          passwordStrengthText.textContent = "Password strength: Too short";
         } else if (strength < 2) {
           passwordStrength.style.width = "33.3%";
           passwordStrength.className = "password-strength h-1 rounded-full strength-weak";
-          passwordStrengthText.textContent = "Passwort-Stärke: Schwach";
+          passwordStrengthText.textContent = "Password strength: Weak";
         } else if (strength < 4) {
           passwordStrength.style.width = "66.6%";
           passwordStrength.className = "password-strength h-1 rounded-full strength-medium";
-          passwordStrengthText.textContent = "Passwort-Stärke: Mittel";
+          passwordStrengthText.textContent = "Password strength: Medium";
         } else {
           passwordStrength.style.width = "100%";
           passwordStrength.className = "password-strength h-1 rounded-full strength-strong";
-          passwordStrengthText.textContent = "Passwort-Stärke: Stark";
+          passwordStrengthText.textContent = "Password strength: Strong";
         }
         
         // Check if passwords match
@@ -262,13 +262,13 @@
         const confirmPass = confirmPasswordInput.value;
         
         if (confirmPass && password === confirmPass) {
-          passwordMatch.textContent = "Passwörter stimmen überein ✓";
+          passwordMatch.textContent = "Passwords match ✓";
           passwordMatch.classList.remove('hidden', 'text-neo-red');
           passwordMatch.classList.add('text-neo-emerald');
           confirmPasswordInput.classList.remove('border-neo-red');
           confirmPasswordInput.classList.add('border-neo-emerald');
         } else if (confirmPass) {
-          passwordMatch.textContent = "Passwörter stimmen nicht überein ✗";
+          passwordMatch.textContent = "Passwords do not match ✗";
           passwordMatch.classList.remove('hidden', 'text-neo-emerald');
           passwordMatch.classList.add('text-neo-red');
           confirmPasswordInput.classList.remove('border-neo-emerald');
@@ -288,7 +288,7 @@
         
         if (password !== confirmPass) {
           event.preventDefault();
-          alert('Die Passwörter stimmen nicht überein.');
+          alert('Passwords do not match.');
         }
       });
     }

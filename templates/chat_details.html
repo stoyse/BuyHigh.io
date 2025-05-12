@@ -57,7 +57,7 @@
           <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
           </svg>
-          <span id="member-count">Mitglieder laden...</span>
+          <span id="member-count">Loading members...</span>
         </p>
       </div>
     </div>
@@ -68,14 +68,14 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
         </svg>
-        Einstellungen
+        Settings
       </a>
       <a href="{{ url_for('chat.chat_collection') }}" 
          class="neo-button px-3 py-2 bg-gray-200/10 text-gray-500 dark:text-gray-400 border border-gray-200/20 dark:border-gray-700/20 hover:bg-gray-200/30 dark:hover:bg-gray-700/30 rounded-lg text-xs flex items-center">
         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
         </svg>
-        Zurück
+        Back
       </a>
     </div>
   </div>
@@ -116,8 +116,8 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 0 1-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <h3 class="text-lg font-medium text-gray-600 dark:text-gray-300 mb-1">Noch keine Nachrichten</h3>
-          <p class="text-sm text-center">Sei der/die Erste, der/die etwas schreibt!</p>
+          <h3 class="text-lg font-medium text-gray-600 dark:text-gray-300 mb-1">No messages yet</h3>
+          <p class="text-sm text-center">Be the first to say something!</p>
         </div>
       {% endif %}
     </div>
@@ -127,7 +127,7 @@
       <form id="message-form" class="flex">
         <input type="text" id="message-input" 
                class="message-input flex-grow p-3 glass-card border border-gray-200/20 dark:border-gray-700/20 rounded-l-xl text-sm dark:bg-gray-800/50 focus:border-neo-pink focus:ring-2 focus:ring-neo-pink/30 focus:outline-none transition-all"
-               placeholder="Nachricht eingeben...">
+               placeholder="Type a message...">
         <button type="submit" 
                 class="neo-button px-5 py-3 bg-neo-pink/10 text-neo-pink border border-neo-pink/20 hover:bg-neo-pink hover:text-white rounded-r-xl text-sm font-medium transition-all flex items-center">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -140,7 +140,7 @@
   
   <!-- Member information -->
   <div class="mt-4 text-xs text-gray-500 dark:text-gray-400 text-center">
-    <p>Drücke Enter zum Senden • Alle Nachrichten werden gespeichert</p>
+    <p>Press Enter to send • All messages are saved</p>
   </div>
 </div>
 
@@ -150,11 +150,11 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('[Frontend] DOMContentLoaded event fired.');
 
   // Set placeholder member count
-  document.getElementById('member-count').textContent = "Chat aktiv";
+  document.getElementById('member-count').textContent = "Chat active";
 
   if (typeof io === 'undefined') {
     console.error('[Frontend] CRITICAL: Socket.IO (io) is not defined. Ensure the library is loaded before this script.');
-    alert('Ein kritischer Fehler ist aufgetreten: Socket.IO konnte nicht geladen werden. Chat funktioniert nicht.');
+    alert('A critical error occurred: Socket.IO could not be loaded. Chat will not work.');
     return;
   }
 
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   socket.on('disconnect', () => {
     console.log('[Frontend] Socket disconnected from /chat.');
-    document.getElementById('member-count').textContent = "Verbindung getrennt";
+    document.getElementById('member-count').textContent = "Disconnected";
   });
 
   function formatTimestampForDisplay(isoString) {
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const date = new Date(isoString);
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch (e) {
-      console.warn("Zeitstempel konnte nicht formatiert werden:", isoString, e);
+      console.warn("Could not format timestamp:", isoString, e);
       const parts = isoString.split('T');
       if (parts.length > 1) {
         const timePart = parts[1].split('.')[0];
@@ -289,18 +289,18 @@ document.addEventListener('DOMContentLoaded', function() {
           messageInput.focus();
         } else {
           response.text().then(text => {
-            alert(`Fehler beim Senden der Nachricht (${response.status}): ${text || response.statusText}`);
+            alert(`Error sending message (${response.status}): ${text || response.statusText}`);
           }).catch(err => {
-            alert(`Fehler beim Senden der Nachricht: ${response.status} ${response.statusText}`);
+            alert(`Error sending message: ${response.status} ${response.statusText}`);
           });
         }
       })
       .catch(error => {
         console.error('[Frontend] Network error:', error);
-        alert('Netzwerkfehler beim Senden der Nachricht.');
+        alert('Network error while sending message.');
       });
     } else {
-      alert("Nicht mit dem Chat-Server verbunden. Bitte versuchen Sie es später erneut.");
+      alert("Not connected to chat server. Please try again later.");
     }
   });
 

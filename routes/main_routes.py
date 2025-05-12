@@ -241,3 +241,47 @@ def transactions():
     logger.debug(f"Transaktionshistorie geladen für Benutzer {g.user['id']}")
     
     return render_template('transactions.html', user=g.user, darkmode=dark_mode_active, transactions=transactions_data)
+
+
+@main_bp.route('/trader_badges')
+@login_required
+def trader_badges():
+    logger.info(f"Trader Badges-Seite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
+    dark_mode_active = g.user and g.user.get('theme') == 'dark'
+    
+    # Import badges handler locally to avoid potential circular imports
+    try:
+        import database.handler.postgres.postgres_badges_handler as badges_handler
+        logger.debug(f"Lade Badges für Benutzer-ID: {g.user['id']}")
+        badges_data = badges_handler.get_user_badges(g.user['id'])
+        
+        if badges_data['success']:
+            badges_by_category = badges_data['badges_by_category']
+            total_earned = badges_data['total_earned']
+            total_available = badges_data['total_available']
+            logger.debug(f"Badges erfolgreich geladen: {total_earned} von {total_available} erworben")
+        else:
+            logger.error(f"Fehler beim Laden der Badges: {badges_data.get('message', 'Unbekannter Fehler')}")
+            badges_by_category = {}
+            total_earned = 0
+            total_available = 0
+            flash(f"Badges konnten nicht geladen werden: {badges_data.get('message', 'Unbekannter Fehler')}", "danger")
+    except ImportError:
+        logger.error("Badge-Handler-Modul konnte nicht importiert werden")
+        badges_by_category = {}
+        total_earned = 0
+        total_available = 0
+        flash("Die Badge-Funktionalität ist nicht verfügbar", "warning")
+    except Exception as e:
+        logger.exception(f"Unerwarteter Fehler beim Laden der Badges: {e}")
+        badges_by_category = {}
+        total_earned = 0
+        total_available = 0
+        flash("Ein unerwarteter Fehler ist beim Laden der Badges aufgetreten", "danger")
+    
+    return render_template('trader_badges.html', 
+                          user=g.user, 
+                          darkmode=dark_mode_active,
+                          badges_by_category=badges_by_category,
+                          total_earned=total_earned,
+                          total_available=total_available)
