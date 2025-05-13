@@ -34,3 +34,5 @@ todo.md
 xnotes/
 
 mac_start_server.sh
+
+.api_key_status.json
