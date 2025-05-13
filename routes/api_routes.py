@@ -135,8 +135,6 @@ def api_stock_data():
         return jsonify({'data': data, 'is_demo': is_demo_data, 'currency': 'USD'})
     except Exception as e:
         print(f"Error in /api/stock-data for {symbol} timeframe {timeframe}: {e}") # Log error
-        import traceback
-        traceback.print_exc()
         return jsonify({'error': str(e), 'currency': 'USD'}), 500
 
 # Neue Hilfsfunktion zum Aktualisieren der Asset-Preise in der Datenbank
