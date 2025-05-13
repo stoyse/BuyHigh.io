@@ -3,6 +3,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 import stock_data  # Import des stock_data Moduls für aktuelle Kurse
+import database.handler.postgres.postgres_db_handler as db_handler  # Import des PostgreSQL DB Handlers
 
 load_dotenv()
 
@@ -190,6 +191,9 @@ def buy_stock(user_id, asset_symbol, quantity, price_per_unit):
                 update_portfolio_on_buy(cur, user_id, asset_symbol, quantity, price_per_unit)
                 
                 conn.commit()
+                db_handler.manage_user_xp("buy", user_id, quantity=quantity)
+                db_handler.check_user_level(user_id, db_handler.get_user_xp(user_id))
+                
                 return {"success": True, "transaction": transaction, "message": f"Successfully purchased {quantity} shares of {asset_symbol} for ${total_cost_usd:.2f} (approx. €{total_cost_eur:.2f})."}
     except Exception as e:
         return {"success": False, "message": f"Database error: {e}"}
@@ -284,6 +288,8 @@ def sell_stock(user_id, asset_symbol, quantity, price_per_unit):
                 update_portfolio_on_sell(cur, user_id, asset_symbol, quantity)
                 
                 conn.commit()
+                db_handler.manage_user_xp("buy", user_id, quantity=quantity)
+                db_handler.check_user_level(user_id, db_handler.get_user_xp(user_id))
                 return {
                     "success": True,
                     "transaction": transaction,

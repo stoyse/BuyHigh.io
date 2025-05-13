@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS users (
     email_verified BOOLEAN DEFAULT FALSE,
     theme TEXT DEFAULT 'light',
     total_trades INTEGER DEFAULT 0,
-    profit_loss REAL DEFAULT 0.0
+    profit_loss REAL DEFAULT 0.0,
+    xp INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 1
 );
 
 -- ASSET TYPES TABLE
@@ -50,9 +52,6 @@ CREATE TABLE IF NOT EXISTS chat_rooms (
     members_can_invite BOOLEAN DEFAULT FALSE
 );
 
-INSERT INTO chat_rooms (id, name)
-VALUES (1, 'General')
-ON CONFLICT (id) DO NOTHING;
 
 -- CHAT ROOM PARTICIPANTS TABLE
 CREATE TABLE IF NOT EXISTS chat_room_participants (
@@ -62,6 +61,10 @@ CREATE TABLE IF NOT EXISTS chat_room_participants (
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (chat_room_id, user_id)
 );
+
+INSERT INTO chat_rooms (id, name)
+VALUES (1, 'General')
+ON CONFLICT (id) DO NOTHING;
 
 -- MESSAGES TABLE
 CREATE TABLE IF NOT EXISTS messages (
@@ -115,3 +118,42 @@ CREATE TABLE IF NOT EXISTS portfolio (
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, asset_id)
 );
+
+CREATE TABLE IF NOT EXISTS xp_levels (
+    level INTEGER PRIMARY KEY,
+    xp_required INTEGER NOT NULL,
+    bonus_percentage REAL NOT NULL
+);
+INSERT INTO xp_levels (level, xp_required, bonus_percentage)
+VALUES 
+(1, 0, 0.0),
+(2, 100, 5.0),
+(3, 300, 10.0),
+(4, 600, 15.0),
+(5, 1000, 20.0),
+(6, 1500, 25.0),
+(7, 2100, 30.0),
+(8, 2800, 35.0),
+(9, 3600, 40.0),
+(10, 4500, 50.0)
+ON CONFLICT (level) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS xp_gains (
+    id SERIAL PRIMARY KEY,
+    action TEXT NOT NULL UNIQUE, -- The action name (e.g., 'buy', 'sell', 'login', 'invite_friend')
+    xp_amount INTEGER NOT NULL, -- The amount of XP awarded for the action
+    description TEXT, -- Optional description of the action
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Example data for XP gains
+INSERT INTO xp_gains (action, xp_amount, description)
+VALUES
+('buy', 50, 'Awarded for buying an asset'),
+('sell', 50, 'Awarded for selling an asset'),
+('login', 5, 'Awarded for daily login'),
+('invite_friend', 100, 'Awarded for inviting a friend'),
+('complete_profile', 50, 'Awarded for completing the user profile')
+ON CONFLICT (action) DO NOTHING;
+
+

@@ -6,6 +6,7 @@ import os
 import time
 import json
 import logging
+from rich import print
 
 # Load environment variables from .env file
 dotenv.load_dotenv()
@@ -210,8 +211,9 @@ def get_stock_data(symbol: str, period: str = None, interval: str = None, start_
         try:
             logger.info(f"Fetching {function_type} data for {symbol} with key #{api_key_manager.current_key_index+1}")
             print(f"Fetching {function_type} data for {symbol} {'with interval ' + interval if interval else ''}...")
-            print(f"Request URL: https://www.alphavantage.co/query with params: {params}")
+            print(f"[purple]Request URL: https://www.alphavantage.co/query with params: {params}")
             response = requests.get("https://www.alphavantage.co/query", params=params)
+
             
             # Check for HTTP errors
             response.raise_for_status()

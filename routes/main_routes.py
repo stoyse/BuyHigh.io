@@ -38,7 +38,39 @@ def dashboard():
     logger.debug("Berechne prozentuale Verteilung der Asset-Typen...")
     asset_type_distribution = {}
     total_assets = sum(item.get('quantity', 0) for item in user_assets)
+    #xp system
+    user_xp = db_handler.get_user_xp(g.user['id'])
+    print(f'[purple]User: XP:', user_xp)
+    # Hole Level und Leveldaten VOR der XP-Prozent-Berechnung
+    user_level = db_handler.get_user_level(g.user['id'])
+    print(f'[purple]User: Level:', user_level)
+    # Hole Leveldaten aus der DB und wandle sie in Dicts um
+    levels_raw = db_handler.get_xp_levels()
+    levels = [
+        {'level': row[0], 'xp_required': row[1], 'bonus_percentage': row[2]}
+        for row in levels_raw
+    ]
+    print(f'[purple]Levels:', levels)
+    def calculate_xp_percentage(current_xp, current_level, levels):
+        """
+        Berechnet den prozentualen Fortschritt zum nächsten Level basierend auf aktuellem XP und XP-Anforderung des nächsten Levels.
+        """
+        current_level_data = next((lvl for lvl in levels if lvl['level'] == current_level), None)
+        next_level_data = next((lvl for lvl in levels if lvl['level'] == current_level + 1), None)
 
+        if not next_level_data:
+            # Max-Level erreicht, immer 100%
+            return 100.0
+
+        xp_needed_for_next_level = next_level_data['xp_required']
+        xp_in_level = current_xp
+        percent = (xp_in_level / xp_needed_for_next_level) * 100
+        # Clamp zwischen 0 und 100
+        return max(0.0, min(percent, 100.0))
+    
+    # Calculate and print the user's XP percentage to the next level
+    xp_percentage = calculate_xp_percentage(user_xp, user_level, levels)
+    print(f'[purple]User percent to next level: {xp_percentage:.2f}%')
     if total_assets > 0:
         for asset in user_assets:
             asset_type = asset.get('type', 'Unknown')
@@ -73,12 +105,8 @@ def dashboard():
     recent_transactions_data = transactions_handler.get_recent_transactions(g.user['id'])
     logger.debug(f"Letzte Transaktionen geladen: Anzahl={len(recent_transactions_data.get('transactions', []))}")
     
-    # Generate a dog message based on portfolio or market conditions
-    logger.debug("Generiere Hundemeldung...")
-    dog_message = generate_dog_message(g.user, portfolio_data)
     
     # Debug output
-    logger.debug(f"Generierte Hundemeldung: '{dog_message}'")
     logger.debug(f"Benutzerdaten für Dashboard: {g.user}")
     logger.debug(f"Portfolio-Daten Erfolg: {portfolio_data.get('success', False)}")
     
@@ -107,9 +135,12 @@ def dashboard():
                            portfolio_data=portfolio_data,
                            portfolio_total_value=portfolio_total_value,
                            recent_transactions=recent_transactions_data.get('transactions', []),
-                           dog_message=dog_message, 
                            total_asset_values=asset_values,
-                           asset_allocation=asset_allocation)
+                           asset_allocation=asset_allocation,
+                           current_user_level=user_level,
+                           current_user_xp=user_xp,
+                           xp_percentage=xp_percentage,
+                           levels=levels)
 
 # Generate a personalized dog message based on user data and portfolio
 def generate_dog_message(user, portfolio_data):

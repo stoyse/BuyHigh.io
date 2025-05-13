@@ -244,3 +244,156 @@ if __name__ == "__main__":
         print("Test abgeschlossen.")
     except Exception as e:
         print(f"Fehler beim Testen von postgres_db_handler.py: {e}")
+
+def get_user_level(user_id):
+    """
+    Gibt den Level eines Benutzers zurück.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT level FROM users WHERE id = %s", (user_id,))
+        level = cur.fetchone()
+        if level:
+            return level[0]
+        return None
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen des Levels für Benutzer ID {user_id}: {e}", exc_info=True)
+        return None
+    finally:
+        cur.close()
+        conn.close()
+
+def get_xp_levels():
+    """
+    Gibt die XP-Level zurück.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT * FROM xp_levels ORDER BY level")
+        levels = cur.fetchall()
+        return levels
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen der XP-Levels: {e}", exc_info=True)
+        return []
+    finally:
+        cur.close()
+        conn.close()
+
+def get_xp_gains(action):
+    """
+    Gibt die XP-Gewinne für eine bestimmte Aktion zurück.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT xp_amount FROM xp_gains WHERE action = %s", (action,))
+        xp_gain = cur.fetchone()
+        if xp_gain:
+            return xp_gain[0]
+        return None
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen der XP-Gewinne für Aktion '{action}': {e}", exc_info=True)
+        return None
+    finally:
+        cur.close()
+        conn.close()
+
+
+def manage_user_xp(action, user_id, quantity):
+    """
+    Verwalte die XP eines Benutzers basierend auf der Aktion.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        xp_gain = get_xp_gains(action)
+        if xp_gain is not None:
+            xp_gain *= quantity
+            cur.execute("UPDATE users SET xp = xp + %s WHERE id = %s", (xp_gain, user_id))
+            conn.commit()
+            return True
+        return False
+    except psycopg2.Error as e:
+        conn.rollback()
+        logger.error(f"Fehler beim Verwalten der XP für Benutzer ID {user_id}: {e}", exc_info=True)
+        print(f"Fehler beim Verwalten der XP für Benutzer ID {user_id}: {e}")
+        return f"Fehler beim Verwalten der XP für Benutzer ID {user_id}: {e}"
+    finally:
+        cur.close()
+        conn.close()
+
+def get_user_xp(user_id):
+    """
+    Gibt die XP eines Benutzers zurück.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT xp FROM users WHERE id = %s", (user_id,))
+        xp = cur.fetchone()
+        if xp:
+            return xp[0]
+        return None
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen der XP für Benutzer ID {user_id}: {e}", exc_info=True)
+        return None
+    finally:
+        cur.close()
+        conn.close()
+
+def get_user_level(user_id):
+    """
+    Gibt den Level eines Benutzers zurück.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT level FROM users WHERE id = %s", (user_id,))
+        level = cur.fetchone()
+        if level:
+            return level[0]
+        return None
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen des Levels für Benutzer ID {user_id}: {e}", exc_info=True)
+        return None
+    finally:
+        cur.close()
+        conn.close()
+
+def check_user_level(user_id, user_xp):
+    """
+    Überprüft die aktuelle XP eines Benutzers und aktualisiert basierend darauf den Level.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Hole alle XP-Level in aufsteigender Reihenfolge
+        cur.execute("SELECT level, xp_required FROM xp_levels ORDER BY level")
+        levels = cur.fetchall()
+
+        # Bestimme den neuen Level basierend auf der aktuellen XP
+        new_level = 1
+        for level, xp_required in levels:
+            if user_xp >= xp_required:
+                new_level = level
+            else:
+                break
+
+        # Aktualisiere den Benutzerlevel, falls er sich geändert hat
+        cur.execute("SELECT level FROM users WHERE id = %s", (user_id,))
+        current_level = cur.fetchone()
+        if current_level and current_level[0] != new_level:
+            cur.execute("UPDATE users SET level = %s WHERE id = %s", (new_level, user_id))
+            conn.commit()
+            logger.info(f"Benutzer ID {user_id} wurde auf Level {new_level} aktualisiert.")
+            return True
+        return False
+    except psycopg2.Error as e:
+        conn.rollback()
+        logger.error(f"Fehler beim Überprüfen und Aktualisieren des Levels für Benutzer ID {user_id}: {e}", exc_info=True)
+        return False
+    finally:
+        cur.close()
+        conn.close()
