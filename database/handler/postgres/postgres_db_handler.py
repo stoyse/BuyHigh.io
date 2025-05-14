@@ -400,3 +400,25 @@ def check_user_level(user_id, user_xp):
         cur.close()
         conn.close()
 
+
+def app_api_request(user_id, source):
+    """
+    Speichert eine API-Anfrage in der Datenbank.
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "INSERT INTO api_requests (user_id, source) VALUES (%s, %s)",
+            (user_id, source)
+        )
+        conn.commit()
+        return True
+    except psycopg2.Error as e:
+        conn.rollback()
+        logger.error(f"Fehler beim Speichern der API-Anfrage für Benutzer ID {user_id}: {e}", exc_info=True)
+        return False
+    finally:
+        cur.close()
+        conn.close()
+

@@ -1,0 +1,558 @@
+{% extends 'dev/base.html' %}
+
+{% block title %}Database Explorer{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Database Explorer</h1>
+        <div class="flex space-x-2">
+            <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md flex items-center" id="btn-refresh-db">
+                <i class="fas fa-sync-alt mr-1"></i> Refresh
+            </button>
+            <button class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded-md flex items-center" id="btn-backup-db">
+                <i class="fas fa-download mr-1"></i> Backup
+            </button>
+        </div>
+    </div>
+
+    <!-- Database Connection Info -->
+    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <h2 class="text-lg font-medium mb-2">Connection Information</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <p class="mb-1"><strong>Database Type:</strong> PostgreSQL</p>
+                <p class="mb-1"><strong>Host:</strong> {{ db_host|default('localhost') }}</p>
+                <p class="mb-1"><strong>Database Name:</strong> {{ db_name|default('buyhigh_db') }}</p>
+            </div>
+            <div>
+                <p class="mb-1"><strong>Status:</strong> <span class="text-green-600">Connected</span></p>
+                <p class="mb-1"><strong>Version:</strong> {{ db_version|default('PostgreSQL 14.5') }}</p>
+                <p class="mb-1"><strong>Size:</strong> {{ db_size|default('256MB') }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables List and Query Editor -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Tables List -->
+        <div class="bg-white border rounded-lg shadow-sm p-4">
+            <h2 class="text-lg font-medium mb-3">Tables</h2>
+            <div class="mb-3">
+                <input type="text" placeholder="Search tables..." class="w-full p-2 border border-gray-300 rounded-md text-sm">
+            </div>
+            <div class="max-h-96 overflow-y-auto">
+                <ul class="divide-y divide-gray-200">
+                    {% if tables %}
+                        {% for table in tables %}
+                        <li class="py-2 hover:bg-gray-50 cursor-pointer px-2 rounded" data-table="{{ table.name }}">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-table text-blue-500 mr-2"></i>
+                                    <span>{{ table.name }}</span>
+                                </div>
+                                <span class="text-xs text-gray-500">{{ table.rows }} rows</span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Sample data -->
+                        <li class="py-2 hover:bg-gray-50 cursor-pointer px-2 rounded" data-table="users">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-table text-blue-500 mr-2"></i>
+                                    <span>users</span>
+                                </div>
+                                <span class="text-xs text-gray-500">2,458 rows</span>
+                            </div>
+                        </li>
+                        <li class="py-2 hover:bg-gray-50 cursor-pointer px-2 rounded" data-table="assets">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-table text-blue-500 mr-2"></i>
+                                    <span>assets</span>
+                                </div>
+                                <span class="text-xs text-gray-500">214 rows</span>
+                            </div>
+                        </li>
+                        <li class="py-2 hover:bg-gray-50 cursor-pointer px-2 rounded" data-table="transactions">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-table text-blue-500 mr-2"></i>
+                                    <span>transactions</span>
+                                </div>
+                                <span class="text-xs text-gray-500">15,782 rows</span>
+                            </div>
+                        </li>
+                        <li class="py-2 hover:bg-gray-50 cursor-pointer px-2 rounded" data-table="portfolios">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-table text-blue-500 mr-2"></i>
+                                    <span>portfolios</span>
+                                </div>
+                                <span class="text-xs text-gray-500">2,458 rows</span>
+                            </div>
+                        </li>
+                        <li class="py-2 hover:bg-gray-50 cursor-pointer px-2 rounded" data-table="developers">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <i class="fas fa-table text-blue-500 mr-2"></i>
+                                    <span>developers</span>
+                                </div>
+                                <span class="text-xs text-gray-500">3 rows</span>
+                            </div>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- SQL Editor -->
+        <div class="lg:col-span-2 bg-white border rounded-lg shadow-sm p-4">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-lg font-medium">SQL Query</h2>
+                <div>
+                    <button class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded mr-2" id="btn-load-sample">
+                        Load Sample
+                    </button>
+                    <button class="text-xs bg-red-100 hover:bg-red-200 text-red-800 px-2 py-1 rounded" id="btn-clear-query">
+                        Clear
+                    </button>
+                </div>
+            </div>
+            <div class="mb-3">
+                <textarea id="sql-editor" class="w-full h-32 p-3 font-mono text-sm bg-gray-50 border border-gray-300 rounded-md" placeholder="SELECT * FROM users LIMIT 10;"></textarea>
+            </div>
+            <div class="flex justify-between items-center mb-3">
+                <div>
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600" checked>
+                        <span class="ml-2 text-sm text-gray-700">Limit to 100 rows</span>
+                    </label>
+                </div>
+                <button id="btn-execute-query" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Execute
+                </button>
+            </div>
+            
+            <!-- Query Results -->
+            <div id="query-results" class="border border-gray-200 rounded-md overflow-hidden">
+                <div class="bg-gray-100 p-2 border-b flex justify-between items-center">
+                    <span class="font-medium">Results</span>
+                    <div>
+                        <span class="text-sm text-gray-600 mr-2" id="query-stats">0 rows in 0ms</span>
+                        <button class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded" id="btn-export-csv">
+                            Export CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto max-h-96">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">id</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">username</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">email</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">created_at</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">balance</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="results-body">
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500" colspan="5">
+                                    Execute a query to see results
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Structure -->
+    <div class="bg-white border rounded-lg shadow-sm p-4" id="table-structure" style="display: none;">
+        <h2 class="text-lg font-medium mb-3">Table Structure: <span id="structure-table-name">users</span></h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Column</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nullable</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Default</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Constraints</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="structure-body">
+                    <!-- This will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Table Data Quick View -->
+    <div class="bg-white border rounded-lg shadow-sm p-4" id="table-preview" style="display: none;">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="text-lg font-medium">Preview: <span id="preview-table-name">users</span></h2>
+            <button class="text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded" id="btn-view-all">
+                View All Rows
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50" id="preview-headers">
+                    <!-- Column headers will be inserted here -->
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="preview-body">
+                    <!-- Preview data will be inserted here -->
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500" colspan="5">
+                            Click a table to preview data
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Showing first 10 rows. Use SQL query for more options.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sample SQL queries
+        const sampleQueries = [
+            "SELECT * FROM users LIMIT 10;",
+            "SELECT symbol, name, default_price FROM assets ORDER BY default_price DESC LIMIT 10;",
+            "SELECT COUNT(*) as transaction_count, SUM(quantity * price) as total_value FROM transactions;",
+            "SELECT u.username, COUNT(t.id) as trade_count FROM users u JOIN transactions t ON u.id = t.user_id GROUP BY u.username ORDER BY trade_count DESC LIMIT 5;",
+            "SELECT a.name, a.symbol, COUNT(t.id) as transaction_count FROM assets a LEFT JOIN transactions t ON a.symbol = t.symbol GROUP BY a.symbol, a.name ORDER BY transaction_count DESC LIMIT 10;"
+        ];
+        
+        // Load sample query button
+        document.getElementById('btn-load-sample').addEventListener('click', function() {
+            const randomQuery = sampleQueries[Math.floor(Math.random() * sampleQueries.length)];
+            document.getElementById('sql-editor').value = randomQuery;
+        });
+        
+        // Clear query button
+        document.getElementById('btn-clear-query').addEventListener('click', function() {
+            document.getElementById('sql-editor').value = '';
+        });
+        
+        // Execute query button - simulate query execution
+        document.getElementById('btn-execute-query').addEventListener('click', function() {
+            const query = document.getElementById('sql-editor').value.trim();
+            if (!query) {
+                alert('Please enter a SQL query');
+                return;
+            }
+            
+            // Show loading state
+            const resultsBody = document.getElementById('results-body');
+            resultsBody.innerHTML = '<tr><td colspan="5" class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">Loading results...</td></tr>';
+            
+            // Simulate API call to execute query
+            setTimeout(() => {
+                // Simulate results
+                let sampleResults;
+                if (query.toLowerCase().includes('users')) {
+                    sampleResults = [
+                        { id: 1, username: 'john_doe', email: 'john@example.com', created_at: '2023-01-15', balance: 5000.00 },
+                        { id: 2, username: 'jane_smith', email: 'jane@example.com', created_at: '2023-02-22', balance: 7500.50 },
+                        { id: 3, username: 'bob_johnson', email: 'bob@example.com', created_at: '2023-03-10', balance: 2750.25 }
+                    ];
+                } else if (query.toLowerCase().includes('assets')) {
+                    sampleResults = [
+                        { symbol: 'AAPL', name: 'Apple Inc.', default_price: 175.50 },
+                        { symbol: 'MSFT', name: 'Microsoft Corporation', default_price: 320.75 },
+                        { symbol: 'GOOGL', name: 'Alphabet Inc.', default_price: 135.25 }
+                    ];
+                } else if (query.toLowerCase().includes('count')) {
+                    sampleResults = [
+                        { transaction_count: 15782, total_value: 4325789.50 }
+                    ];
+                } else if (query.toLowerCase().includes('join')) {
+                    sampleResults = [
+                        { username: 'jane_smith', trade_count: 187 },
+                        { username: 'bob_johnson', trade_count: 143 },
+                        { username: 'john_doe', trade_count: 119 }
+                    ];
+                } else {
+                    sampleResults = [
+                        { result: 'No sample data available for this query' }
+                    ];
+                }
+                
+                // Update query stats
+                document.getElementById('query-stats').textContent = `${sampleResults.length} rows in 125ms`;
+                
+                // Clear previous results
+                resultsBody.innerHTML = '';
+                
+                // Add table headers based on first result object keys
+                const thead = document.querySelector('#query-results table thead tr');
+                thead.innerHTML = '';
+                if (sampleResults.length > 0) {
+                    Object.keys(sampleResults[0]).forEach(key => {
+                        const th = document.createElement('th');
+                        th.className = 'px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                        th.textContent = key;
+                        thead.appendChild(th);
+                    });
+                }
+                
+                // Add results to table
+                sampleResults.forEach(result => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-gray-50';
+                    
+                    Object.values(result).forEach(value => {
+                        const td = document.createElement('td');
+                        td.className = 'px-4 py-2 whitespace-nowrap text-sm text-gray-500';
+                        td.textContent = value;
+                        tr.appendChild(td);
+                    });
+                    
+                    resultsBody.appendChild(tr);
+                });
+                
+                if (sampleResults.length === 0) {
+                    resultsBody.innerHTML = '<tr><td colspan="5" class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">No results found</td></tr>';
+                }
+            }, 800);
+        });
+        
+        // Export to CSV button
+        document.getElementById('btn-export-csv').addEventListener('click', function() {
+            alert('CSV export feature would be implemented here');
+            // In a real implementation, this would generate and download a CSV file
+        });
+        
+        // Refresh database button
+        document.getElementById('btn-refresh-db').addEventListener('click', function() {
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Refreshing...';
+            
+            setTimeout(() => {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-sync-alt mr-1"></i> Refresh';
+                alert('Database information refreshed!');
+            }, 1000);
+        });
+        
+        // Backup database button
+        document.getElementById('btn-backup-db').addEventListener('click', function() {
+            if (confirm('Are you sure you want to create a database backup? This may take some time.')) {
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Backing up...';
+                
+                setTimeout(() => {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-download mr-1"></i> Backup';
+                    alert('Database backup created successfully! File: buyhigh_backup_2023-06-15.sql');
+                }, 2000);
+            }
+        });
+        
+        // Table click handler - show table structure
+        document.querySelectorAll('[data-table]').forEach(item => {
+            item.addEventListener('click', function() {
+                const tableName = this.getAttribute('data-table');
+                
+                // Highlight the selected table
+                document.querySelectorAll('[data-table]').forEach(t => t.classList.remove('bg-blue-50'));
+                this.classList.add('bg-blue-50');
+                
+                // Update table structure section
+                document.getElementById('structure-table-name').textContent = tableName;
+                document.getElementById('table-structure').style.display = 'block';
+                
+                // Update preview section
+                document.getElementById('preview-table-name').textContent = tableName;
+                document.getElementById('table-preview').style.display = 'block';
+                
+                // Scroll to table structure
+                document.getElementById('table-structure').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                // Simulate loading table structure
+                const structureBody = document.getElementById('structure-body');
+                structureBody.innerHTML = '<tr><td colspan="5" class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">Loading structure...</td></tr>';
+                
+                // Simulate loading preview data
+                const previewBody = document.getElementById('preview-body');
+                previewBody.innerHTML = '<tr><td colspan="5" class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">Loading preview...</td></tr>';
+                
+                setTimeout(() => {
+                    // Get sample structure based on table name
+                    let sampleStructure;
+                    if (tableName === 'users') {
+                        sampleStructure = [
+                            { column: 'id', type: 'SERIAL', nullable: 'NO', default: null, constraints: 'PRIMARY KEY' },
+                            { column: 'username', type: 'VARCHAR(50)', nullable: 'NO', default: null, constraints: 'UNIQUE' },
+                            { column: 'email', type: 'VARCHAR(100)', nullable: 'NO', default: null, constraints: 'UNIQUE' },
+                            { column: 'password_hash', type: 'VARCHAR(255)', nullable: 'NO', default: null, constraints: '' },
+                            { column: 'created_at', type: 'TIMESTAMP', nullable: 'NO', default: 'CURRENT_TIMESTAMP', constraints: '' },
+                            { column: 'balance', type: 'NUMERIC(12,2)', nullable: 'NO', default: '0.00', constraints: '' }
+                        ];
+                    } else if (tableName === 'assets') {
+                        sampleStructure = [
+                            { column: 'id', type: 'SERIAL', nullable: 'NO', default: null, constraints: 'PRIMARY KEY' },
+                            { column: 'symbol', type: 'VARCHAR(20)', nullable: 'NO', default: null, constraints: 'UNIQUE' },
+                            { column: 'name', type: 'VARCHAR(100)', nullable: 'NO', default: null, constraints: '' },
+                            { column: 'asset_type', type: 'VARCHAR(20)', nullable: 'NO', default: 'stock', constraints: '' },
+                            { column: 'default_price', type: 'NUMERIC(12,2)', nullable: 'YES', default: null, constraints: '' },
+                            { column: 'sector', type: 'VARCHAR(50)', nullable: 'YES', default: null, constraints: '' },
+                            { column: 'active', type: 'BOOLEAN', nullable: 'NO', default: 'true', constraints: '' }
+                        ];
+                    } else if (tableName === 'transactions') {
+                        sampleStructure = [
+                            { column: 'id', type: 'SERIAL', nullable: 'NO', default: null, constraints: 'PRIMARY KEY' },
+                            { column: 'user_id', type: 'INTEGER', nullable: 'NO', default: null, constraints: 'FOREIGN KEY (users.id)' },
+                            { column: 'symbol', type: 'VARCHAR(20)', nullable: 'NO', default: null, constraints: '' },
+                            { column: 'quantity', type: 'NUMERIC(12,6)', nullable: 'NO', default: null, constraints: '' },
+                            { column: 'price', type: 'NUMERIC(12,2)', nullable: 'NO', default: null, constraints: '' },
+                            { column: 'transaction_type', type: 'VARCHAR(10)', nullable: 'NO', default: null, constraints: 'CHECK (type IN ("buy", "sell"))' },
+                            { column: 'transaction_date', type: 'TIMESTAMP', nullable: 'NO', default: 'CURRENT_TIMESTAMP', constraints: '' }
+                        ];
+                    } else if (tableName === 'portfolios') {
+                        sampleStructure = [
+                            { column: 'id', type: 'SERIAL', nullable: 'NO', default: null, constraints: 'PRIMARY KEY' },
+                            { column: 'user_id', type: 'INTEGER', nullable: 'NO', default: null, constraints: 'FOREIGN KEY (users.id)' },
+                            { column: 'symbol', type: 'VARCHAR(20)', nullable: 'NO', default: null, constraints: '' },
+                            { column: 'quantity', type: 'NUMERIC(12,6)', nullable: 'NO', default: '0.00', constraints: '' },
+                            { column: 'avg_price', type: 'NUMERIC(12,2)', nullable: 'NO', default: '0.00', constraints: '' },
+                            { column: 'last_updated', type: 'TIMESTAMP', nullable: 'NO', default: 'CURRENT_TIMESTAMP', constraints: '' }
+                        ];
+                    } else if (tableName === 'developers') {
+                        sampleStructure = [
+                            { column: 'id', type: 'SERIAL', nullable: 'NO', default: null, constraints: 'PRIMARY KEY' },
+                            { column: 'user_id', type: 'INTEGER', nullable: 'NO', default: null, constraints: 'FOREIGN KEY (users.id)' },
+                            { column: 'permissions', type: 'JSONB', nullable: 'YES', default: '{}', constraints: '' },
+                            { column: 'created_at', type: 'TIMESTAMP', nullable: 'NO', default: 'CURRENT_TIMESTAMP', constraints: '' }
+                        ];
+                    } else {
+                        sampleStructure = [
+                            { column: 'id', type: 'SERIAL', nullable: 'NO', default: null, constraints: 'PRIMARY KEY' },
+                            { column: 'name', type: 'VARCHAR(100)', nullable: 'NO', default: null, constraints: '' },
+                            { column: 'description', type: 'TEXT', nullable: 'YES', default: null, constraints: '' }
+                        ];
+                    }
+                    
+                    // Update structure table
+                    structureBody.innerHTML = '';
+                    sampleStructure.forEach(col => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-gray-50';
+                        
+                        const tdColumn = document.createElement('td');
+                        tdColumn.className = 'px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-800';
+                        tdColumn.textContent = col.column;
+                        tr.appendChild(tdColumn);
+                        
+                        const tdType = document.createElement('td');
+                        tdType.className = 'px-4 py-2 whitespace-nowrap text-sm text-gray-500';
+                        tdType.textContent = col.type;
+                        tr.appendChild(tdType);
+                        
+                        const tdNullable = document.createElement('td');
+                        tdNullable.className = 'px-4 py-2 whitespace-nowrap text-sm text-gray-500';
+                        tdNullable.textContent = col.nullable;
+                        tr.appendChild(tdNullable);
+                        
+                        const tdDefault = document.createElement('td');
+                        tdDefault.className = 'px-4 py-2 whitespace-nowrap text-sm text-gray-500';
+                        tdDefault.textContent = col.default || 'NULL';
+                        tr.appendChild(tdDefault);
+                        
+                        const tdConstraints = document.createElement('td');
+                        tdConstraints.className = 'px-4 py-2 whitespace-nowrap text-sm text-gray-500';
+                        tdConstraints.textContent = col.constraints || '';
+                        tr.appendChild(tdConstraints);
+                        
+                        structureBody.appendChild(tr);
+                    });
+                    
+                    // Generate sample preview data based on the table
+                    let sampleData;
+                    if (tableName === 'users') {
+                        sampleData = [
+                            { id: 1, username: 'john_doe', email: 'john@example.com', password_hash: '$2a$12$...', created_at: '2023-01-15 08:23:45', balance: 5000.00 },
+                            { id: 2, username: 'jane_smith', email: 'jane@example.com', password_hash: '$2a$12$...', created_at: '2023-02-22 14:12:33', balance: 7500.50 },
+                            { id: 3, username: 'bob_johnson', email: 'bob@example.com', password_hash: '$2a$12$...', created_at: '2023-03-10 19:05:21', balance: 2750.25 }
+                        ];
+                    } else if (tableName === 'assets') {
+                        sampleData = [
+                            { id: 1, symbol: 'AAPL', name: 'Apple Inc.', asset_type: 'stock', default_price: 175.50, sector: 'Technology', active: true },
+                            { id: 2, symbol: 'MSFT', name: 'Microsoft Corporation', asset_type: 'stock', default_price: 320.75, sector: 'Technology', active: true },
+                            { id: 3, symbol: 'GOOGL', name: 'Alphabet Inc.', asset_type: 'stock', default_price: 135.25, sector: 'Technology', active: true }
+                        ];
+                    } else if (tableName === 'transactions') {
+                        sampleData = [
+                            { id: 1, user_id: 1, symbol: 'AAPL', quantity: 10, price: 175.50, transaction_type: 'buy', transaction_date: '2023-04-15 09:45:22' },
+                            { id: 2, user_id: 2, symbol: 'MSFT', quantity: 5, price: 320.75, transaction_type: 'buy', transaction_date: '2023-04-16 13:22:45' },
+                            { id: 3, user_id: 1, symbol: 'AAPL', quantity: 3, price: 180.25, transaction_type: 'sell', transaction_date: '2023-04-18 10:15:30' }
+                        ];
+                    } else if (tableName === 'portfolios') {
+                        sampleData = [
+                            { id: 1, user_id: 1, symbol: 'AAPL', quantity: 7, avg_price: 175.50, last_updated: '2023-04-18 10:15:30' },
+                            { id: 2, user_id: 1, symbol: 'MSFT', quantity: 3, avg_price: 308.25, last_updated: '2023-03-25 11:45:12' },
+                            { id: 3, user_id: 2, symbol: 'MSFT', quantity: 5, avg_price: 320.75, last_updated: '2023-04-16 13:22:45' }
+                        ];
+                    } else if (tableName === 'developers') {
+                        sampleData = [
+                            { id: 1, user_id: 1, permissions: '{"admin": true, "database": true}', created_at: '2023-01-01 00:00:00' },
+                            { id: 2, user_id: 2, permissions: '{"database": true}', created_at: '2023-03-15 08:30:00' },
+                            { id: 3, user_id: 5, permissions: '{"admin": true}', created_at: '2023-04-20 14:45:00' }
+                        ];
+                    } else {
+                        sampleData = [
+                            { id: 1, name: 'Sample 1', description: 'This is a sample description' },
+                            { id: 2, name: 'Sample 2', description: 'Another sample description' },
+                            { id: 3, name: 'Sample 3', description: null }
+                        ];
+                    }
+                    
+                    // Update preview headers
+                    const previewHeaders = document.getElementById('preview-headers');
+                    previewHeaders.innerHTML = '';
+                    const headerRow = document.createElement('tr');
+                    
+                    if (sampleData.length > 0) {
+                        Object.keys(sampleData[0]).forEach(key => {
+                            const th = document.createElement('th');
+                            th.className = 'px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
+                            th.textContent = key;
+                            headerRow.appendChild(th);
+                        });
+                    }
+                    
+                    previewHeaders.appendChild(headerRow);
+                    
+                    // Update preview body
+                    previewBody.innerHTML = '';
+                    
+                    sampleData.forEach(row => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-gray-50';
+                        
+                        Object.values(row).forEach(value => {
+                            const td = document.createElement('td');
+                            td.className = 'px-4 py-2 whitespace-nowrap text-sm text-gray-500';
+                            td.textContent = value !== null ? value : 'NULL';
+                            tr.appendChild(td);
+                        });
+                        
+                        previewBody.appendChild(tr);
+                    });
+                }, 800);
+            });
+        });
+    });
+</script>
+{% endblock %}

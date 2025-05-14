@@ -121,8 +121,54 @@ def get_dayly_quiz_attempt_day(user_id, date):
         if conn:
             conn.close()
 
-if __name__ == "__main__":
-    # Teste die Funktionen hier, wenn nötig
-    insert_daily_quiz_attempt(1, 2, '2', True)
-    #print(get_daily_quiz_attempts(1))
-    print(get_dayly_quiz_attempt_day(2, '2025-05-13'))
+def create_daily_quiz(date, question, possible_answer_1, possible_answer_2, possible_answer_3, correct_answer):
+    """
+    Erstellt ein neues tägliches Quiz in der PostgreSQL-Datenbank.
+    """
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO daily_quiz (date, question, possible_answer_1, possible_answer_2, possible_answer_3, correct_answer)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (date, question, possible_answer_1, possible_answer_2, possible_answer_3, correct_answer))
+            conn.commit()
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Erstellen des täglichen Quiz: {e}", exc_info=True)
+        raise
+    finally:
+        if conn:
+            conn.close()
+
+def get_all_daily_quizzes():
+    """
+    Lädt alle täglichen Quiz aus der PostgreSQL-Datenbank.
+    """
+    try:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM daily_quiz")
+            quizzes = cursor.fetchall()
+            return [dict(quiz) for quiz in quizzes]
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen aller täglichen Quiz: {e}", exc_info=True)
+        raise
+    finally:
+        if conn:
+            conn.close()
+
+def delete_daily_quiz(quiz_id):
+    """
+    Löscht ein tägliches Quiz aus der PostgreSQL-Datenbank.
+    """
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("DELETE FROM daily_quiz WHERE id = %s", (quiz_id,))
+            conn.commit()
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Löschen des täglichen Quiz mit ID {quiz_id}: {e}", exc_info=True)
+        raise
+    finally:
+        if conn:
+            conn.close()

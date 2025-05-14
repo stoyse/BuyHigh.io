@@ -1,0 +1,703 @@
+{% extends "dev/base.html" %}
+
+{% block title %}Daily Quiz Manager{% endblock %}
+
+{% block breadcrumb %}
+<li><span class="text-gray-700">Daily Quiz Manager</span></li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Form styling */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #4b5563;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        background-color: #f9fafb;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        line-height: 1.25;
+    }
+    
+    .form-control:focus {
+        outline: 2px solid rgba(59, 130, 246, 0.5);
+        border-color: #3b82f6;
+    }
+    
+    .is-invalid {
+        border-color: #ef4444;
+        background-color: #fee2e2;
+    }
+    
+    .invalid-feedback {
+        color: #ef4444;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    
+    /* Card styling */
+    .quiz-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .quiz-card:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .quiz-card.active {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    }
+    
+    /* Correct answer highlighting */
+    .answer-option {
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid #e5e7eb;
+        background-color: white;
+    }
+    
+    .answer-option.correct {
+        border-color: #10b981;
+        background-color: rgba(16, 185, 129, 0.1);
+    }
+    
+    /* Tab styling */
+    .tab-button {
+        padding: 0.75rem 1rem;
+        border-bottom: 2px solid transparent;
+        font-weight: 500;
+    }
+    
+    .tab-button.active {
+        color: #3b82f6;
+        border-color: #3b82f6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Daily Quiz Manager</h1>
+        <div class="flex space-x-2">
+            <button id="refresh-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center">
+                <i class="fas fa-sync-alt mr-1"></i> Refresh
+            </button>
+            <button id="add-quiz-btn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md flex items-center">
+                <i class="fas fa-plus mr-1"></i> New Quiz
+            </button>
+        </div>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="border-b border-gray-200">
+        <div class="flex space-x-4">
+            <button class="tab-button active" data-tab="upcoming">Upcoming Quizzes</button>
+            <button class="tab-button" data-tab="past">Past Quizzes</button>
+            <button class="tab-button" data-tab="all">All Quizzes</button>
+        </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- Filter and Search -->
+        <div class="flex flex-wrap md:flex-nowrap gap-4 mb-4">
+            <div class="w-full md:w-1/3">
+                <input type="text" id="searchQuiz" class="form-control" placeholder="Search quizzes...">
+            </div>
+            <div class="w-full md:w-1/3">
+                <select id="monthFilter" class="form-control">
+                    <option value="">All Months</option>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+            <div class="w-full md:w-1/3">
+                <select id="yearFilter" class="form-control">
+                    <option value="">All Years</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                    <option value="2027">2027</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Quiz List -->
+        <div id="quizList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Existing quizzes will be loaded here -->
+            {% for i in range(5) %}
+            <div class="quiz-card p-4 {{ 'active' if i == 0 else '' }}">
+                <div class="flex justify-between">
+                    <span class="font-semibold text-gray-500">{{ '2025-05-%02d'|format(9+i) }}</span>
+                    <div class="space-x-2">
+                        <button class="text-blue-600 hover:text-blue-800" onclick="editQuiz({{ i }})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="text-red-600 hover:text-red-800" onclick="deleteQuiz({{ i }})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <h3 class="text-lg font-semibold my-2">{{ ['What is the capital of France?', 'Which planet is known as the Red Planet?', 'What is the largest ocean on Earth?', 'Who wrote "Romeo and Juliet"?', 'What is the chemical symbol for water?'][i] }}</h3>
+                <div class="space-y-2 mt-3">
+                    <div class="answer-option {{ 'correct' if i == 0 and 'Paris' == 'Paris' else '' }}">{{ ['Berlin', 'Earth', 'Atlantic Ocean', 'William Shakespeare', 'H2O'][i] }}</div>
+                    <div class="answer-option {{ 'correct' if i == 1 and 'Mars' == 'Mars' else '' }}">{{ ['Madrid', 'Mars', 'Indian Ocean', 'Charles Dickens', 'CO2'][i] }}</div>
+                    <div class="answer-option {{ 'correct' if i == 2 and 'Pacific Ocean' == 'Pacific Ocean' else '' }}">{{ ['Paris', 'Venus', 'Pacific Ocean', 'Mark Twain', 'O2'][i] }}</div>
+                </div>
+                <div class="text-xs text-gray-500 mt-3">
+                    Correct answer: {{ ['Paris', 'Mars', 'Pacific Ocean', 'William Shakespeare', 'H2O'][i] }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Quiz Form Modal -->
+<div id="quizModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 id="modalTitle" class="text-xl font-bold">Add New Quiz</h2>
+            <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <form id="quizForm" class="space-y-4" action="{{ url_for('dev.daily_quiz') }}" method="post">
+            <input type="hidden" id="quizId" name="quiz_id" value="">
+            
+            <div class="form-group">
+                <label for="quizDate">Date*</label>
+                <input type="date" id="quizDate" name="date" class="form-control" required>
+                <div class="invalid-feedback">Please select a date</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="question">Question*</label>
+                <textarea id="question" name="question" class="form-control" rows="3" required></textarea>
+                <div class="invalid-feedback">Please enter a question</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="answer1">Answer Option 1*</label>
+                <input type="text" id="answer1" name="answer1" class="form-control" required>
+                <div class="invalid-feedback">Please provide an answer option</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="answer2">Answer Option 2*</label>
+                <input type="text" id="answer2" name="answer2" class="form-control" required>
+                <div class="invalid-feedback">Please provide an answer option</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="answer3">Answer Option 3*</label>
+                <input type="text" id="answer3" name="answer3" class="form-control" required>
+                <div class="invalid-feedback">Please provide an answer option</div>
+            </div>
+            
+            <div class="form-group">
+                <label for="correct_answer">Correct Answer*</label>
+                <select id="correct_answer" name="correct_answer" class="form-control" required>
+                    <option value="">-- Select Correct Answer --</option>
+                    <option value="">Answer 1</option>
+                    <option value="">Answer 2</option>
+                    <option value="">Answer 3</option>
+                </select>
+                <div class="invalid-feedback">Please select the correct answer</div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4">
+                <button type="button" id="cancelBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md">
+                    Cancel
+                </button>
+                <button type="submit" id="submitBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Save Quiz
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+        <div class="mb-4">
+            <h2 class="text-xl font-bold">Confirm Deletion</h2>
+            <p class="text-gray-600 mt-2">Are you sure you want to delete this quiz? This action cannot be undone.</p>
+        </div>
+        
+        <div class="flex justify-end space-x-3">
+            <button id="cancelDelete" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md">
+                Cancel
+            </button>
+            <button id="confirmDelete" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add this hidden form for quiz deletion after the confirmation modal -->
+<form id="deleteQuizForm" method="POST" style="display: none;">
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Global variables
+        let quizData = [];
+        let currentTab = 'upcoming';
+        let quizToDelete = null;
+        
+        // Load quiz data from server
+        loadQuizzes();
+        
+        // Initialize tab functionality
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentTab = this.dataset.tab;
+                filterQuizzes();
+            });
+        });
+        
+        // Event listeners for buttons
+        document.getElementById('refresh-btn').addEventListener('click', function() {
+            this.classList.add('animate-pulse');
+            setTimeout(() => {
+                this.classList.remove('animate-pulse');
+                loadQuizzes();
+            }, 300);
+        });
+        
+        document.getElementById('add-quiz-btn').addEventListener('click', function() {
+            openQuizModal();
+        });
+        
+        document.getElementById('closeModal').addEventListener('click', function() {
+            closeQuizModal();
+        });
+        
+        document.getElementById('cancelBtn').addEventListener('click', function() {
+            closeQuizModal();
+        });
+        
+        document.getElementById('cancelDelete').addEventListener('click', function() {
+            closeConfirmModal();
+        });
+        
+        document.getElementById('confirmDelete').addEventListener('click', function() {
+            if (quizToDelete !== null) {
+                deleteQuizConfirmed(quizToDelete);
+            }
+            closeConfirmModal();
+        });
+        
+        // Form submission - Modified to only validate but allow normal form submission
+        document.getElementById('quizForm').addEventListener('submit', function(e) {
+            if (!validateForm()) {
+                e.preventDefault(); // Only prevent submission if validation fails
+                return false;
+            }
+            
+            // Update the correct_answer field with the actual text value before submission
+            const correctAnswerField = document.getElementById('correct_answer');
+            const selectedOption = correctAnswerField.options[correctAnswerField.selectedIndex];
+            correctAnswerField.value = selectedOption.textContent;
+        });
+        
+        // Search and filter functionality
+        document.getElementById('searchQuiz').addEventListener('input', filterQuizzes);
+        document.getElementById('monthFilter').addEventListener('change', filterQuizzes);
+        document.getElementById('yearFilter').addEventListener('change', filterQuizzes);
+        
+        // Dynamic answer selection - Updated to set the text content as the value
+        document.getElementById('correct_answer').addEventListener('change', function() {
+            updateCorrectAnswerLabels();
+        });
+        
+        // Input fields for answers
+        ['answer1', 'answer2', 'answer3'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function() {
+                updateCorrectAnswerLabels();
+            });
+        });
+        
+        // Functions
+        function loadQuizzes() {
+            // Get quiz data from the server
+            let quizzes = {{ all_quizzes|default('[]')|tojson }};
+            console.log("Raw quiz data:", quizzes);
+            
+            if (quizzes && quizzes.length > 0) {
+                // Map database field names to form field names for consistency
+                quizData = quizzes.map(quiz => {
+                    console.log("Processing quiz:", quiz);
+                    return {
+                        id: quiz.id,
+                        date: quiz.date,
+                        question: quiz.question,
+                        answer1: quiz.possible_answer_1,
+                        answer2: quiz.possible_answer_2,
+                        answer3: quiz.possible_answer_3,
+                        correct_answer: quiz.correct_answer
+                    };
+                });
+                console.log("Processed quiz data:", quizData);
+            } else {
+                // Fallback to sample data if no server data
+                quizData = [
+                    {
+                        id: 1,
+                        date: '2025-05-09',
+                        question: 'What is the capital of France?',
+                        answer1: 'Berlin',
+                        answer2: 'Madrid',
+                        answer3: 'Paris',
+                        correct_answer: 'Paris'
+                    },
+                    {
+                        id: 2,
+                        date: '2025-05-10',
+                        question: 'Which planet is known as the Red Planet?',
+                        answer1: 'Earth',
+                        answer2: 'Mars',
+                        answer3: 'Venus',
+                        correct_answer: 'Mars'
+                    },
+                    {
+                        id: 3,
+                        date: '2025-05-11',
+                        question: 'What is the largest ocean on Earth?',
+                        answer1: 'Atlantic Ocean',
+                        answer2: 'Indian Ocean',
+                        answer3: 'Pacific Ocean',
+                        correct_answer: 'Pacific Ocean'
+                    },
+                    {
+                        id: 4,
+                        date: '2025-05-12',
+                        question: 'Who wrote "Romeo and Juliet"?',
+                        answer1: 'William Shakespeare',
+                        answer2: 'Charles Dickens',
+                        answer3: 'Mark Twain',
+                        correct_answer: 'William Shakespeare'
+                    },
+                    {
+                        id: 5,
+                        date: '2025-05-13',
+                        question: 'What is the chemical symbol for water?',
+                        answer1: 'H2O',
+                        answer2: 'CO2',
+                        answer3: 'O2',
+                        correct_answer: 'H2O'
+                    }
+                ];
+            }
+            
+            filterQuizzes();
+        }
+        
+        function filterQuizzes() {
+            const searchTerm = document.getElementById('searchQuiz').value.toLowerCase();
+            const monthFilter = document.getElementById('monthFilter').value;
+            const yearFilter = document.getElementById('yearFilter').value;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            let filteredQuizzes = quizData.filter(quiz => {
+                // Text search
+                const matchesSearch = quiz.question.toLowerCase().includes(searchTerm) || 
+                    quiz.answer1.toLowerCase().includes(searchTerm) ||
+                    quiz.answer2.toLowerCase().includes(searchTerm) ||
+                    quiz.answer3.toLowerCase().includes(searchTerm) ||
+                    quiz.correct_answer.toLowerCase().includes(searchTerm);
+                
+                // Date filters
+                const quizDate = new Date(quiz.date);
+                const quizMonth = quizDate.getMonth() + 1; // getMonth() returns 0-11
+                const quizYear = quizDate.getFullYear();
+                
+                const matchesMonth = monthFilter === '' || quizMonth.toString() === monthFilter;
+                const matchesYear = yearFilter === '' || quizYear.toString() === yearFilter;
+                
+                // Tab filters
+                let matchesTab = true;
+                if (currentTab === 'upcoming') {
+                    matchesTab = quizDate >= today;
+                } else if (currentTab === 'past') {
+                    matchesTab = quizDate < today;
+                }
+                
+                return matchesSearch && matchesMonth && matchesYear && matchesTab;
+            });
+            
+            // Sort by date
+            filteredQuizzes.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            renderQuizzes(filteredQuizzes);
+        }
+        
+        function renderQuizzes(quizzes) {
+            const quizList = document.getElementById('quizList');
+            quizList.innerHTML = '';
+            
+            if (quizzes.length === 0) {
+                quizList.innerHTML = `
+                    <div class="col-span-full p-8 text-center bg-gray-50 rounded-lg border border-gray-200">
+                        <i class="fas fa-search text-gray-400 text-4xl mb-3"></i>
+                        <p class="text-gray-600">No quizzes found matching your search criteria.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            quizzes.forEach(quiz => {
+                console.log("Rendering quiz:", quiz);
+                const card = document.createElement('div');
+                card.className = 'quiz-card p-4';
+                
+                const isAnswer1Correct = quiz.answer1 === quiz.correct_answer;
+                const isAnswer2Correct = quiz.answer2 === quiz.correct_answer;
+                const isAnswer3Correct = quiz.answer3 === quiz.correct_answer;
+                
+                // Manually ensure values aren't undefined
+                const answer1 = quiz.answer1 || "No answer provided";
+                const answer2 = quiz.answer2 || "No answer provided";
+                const answer3 = quiz.answer3 || "No answer provided";
+                
+                card.innerHTML = `
+                    <div class="flex justify-between">
+                        <span class="font-semibold text-gray-500">${quiz.date}</span>
+                        <div class="space-x-2">
+                            <button class="text-blue-600 hover:text-blue-800" onclick="editQuiz(${quiz.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="text-red-600 hover:text-red-800" onclick="deleteQuiz(${quiz.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-semibold my-2">${quiz.question}</h3>
+                    <div class="space-y-2 mt-3">
+                        <div class="answer-option ${isAnswer1Correct ? 'correct' : ''}">${answer1}</div>
+                        <div class="answer-option ${isAnswer2Correct ? 'correct' : ''}">${answer2}</div>
+                        <div class="answer-option ${isAnswer3Correct ? 'correct' : ''}">${answer3}</div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-3">
+                        Correct answer: ${quiz.correct_answer}
+                    </div>
+                `;
+                
+                quizList.appendChild(card);
+            });
+        }
+        
+        function openQuizModal(quizId = null) {
+            const modal = document.getElementById('quizModal');
+            const form = document.getElementById('quizForm');
+            const modalTitle = document.getElementById('modalTitle');
+            
+            // Reset form
+            form.reset();
+            clearValidationErrors();
+            
+            if (quizId) {
+                // Edit mode
+                const quiz = quizData.find(q => q.id === quizId);
+                if (quiz) {
+                    modalTitle.textContent = 'Edit Quiz';
+                    document.getElementById('quizId').value = quiz.id;
+                    document.getElementById('quizDate').value = quiz.date;
+                    document.getElementById('question').value = quiz.question;
+                    document.getElementById('answer1').value = quiz.answer1;
+                    document.getElementById('answer2').value = quiz.answer2;
+                    document.getElementById('answer3').value = quiz.answer3;
+                    
+                    // Update correct answer dropdown options
+                    updateCorrectAnswerLabels();
+                    
+                    // Select the correct answer in the dropdown
+                    const correctAnswerSelect = document.getElementById('correct_answer');
+                    for (let i = 0; i < correctAnswerSelect.options.length; i++) {
+                        if (correctAnswerSelect.options[i].textContent === quiz.correct_answer) {
+                            correctAnswerSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // Add mode
+                modalTitle.textContent = 'Add New Quiz';
+                document.getElementById('quizId').value = '';
+                
+                // Set default date to tomorrow
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                document.getElementById('quizDate').value = tomorrow.toISOString().split('T')[0];
+                
+                // Initialize the dropdown options
+                updateCorrectAnswerLabels();
+            }
+            
+            modal.classList.remove('hidden');
+        }
+        
+        function closeQuizModal() {
+            const modal = document.getElementById('quizModal');
+            modal.classList.add('hidden');
+        }
+        
+        function openConfirmModal(quizId) {
+            quizToDelete = quizId;
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('hidden');
+        }
+        
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.add('hidden');
+            quizToDelete = null;
+        }
+        
+        function validateForm() {
+            const form = document.getElementById('quizForm');
+            const fields = ['quizDate', 'question', 'answer1', 'answer2', 'answer3', 'correct_answer'];
+            let isValid = true;
+            
+            clearValidationErrors();
+            
+            fields.forEach(field => {
+                const input = document.getElementById(field);
+                if (!input.value) {
+                    input.classList.add('is-invalid');
+                    const feedback = input.nextElementSibling;
+                    if (feedback && feedback.classList.contains('invalid-feedback')) {
+                        feedback.style.display = 'block';
+                    }
+                    isValid = false;
+                }
+            });
+            
+            return isValid;
+        }
+        
+        function clearValidationErrors() {
+            const form = document.getElementById('quizForm');
+            form.querySelectorAll('.is-invalid').forEach(el => {
+                el.classList.remove('is-invalid');
+            });
+            
+            form.querySelectorAll('.invalid-feedback').forEach(el => {
+                el.style.display = 'none';
+            });
+        }
+        
+        // Updated function to set the actual answer text as the option value
+        function updateCorrectAnswerLabels() {
+            const answer1 = document.getElementById('answer1').value;
+            const answer2 = document.getElementById('answer2').value;
+            const answer3 = document.getElementById('answer3').value;
+            const dropdown = document.getElementById('correct_answer');
+            
+            // Update dropdown options with the actual answer text as both text and value
+            if (dropdown.options.length >= 4) {
+                dropdown.options[1].text = answer1 || 'Answer 1';
+                dropdown.options[1].value = answer1 || '';
+                
+                dropdown.options[2].text = answer2 || 'Answer 2';
+                dropdown.options[2].value = answer2 || '';
+                
+                dropdown.options[3].text = answer3 || 'Answer 3';
+                dropdown.options[3].value = answer3 || '';
+            }
+        }
+        
+        function saveQuiz() {
+            const quizId = document.getElementById('quizId').value;
+            const date = document.getElementById('quizDate').value;
+            const question = document.getElementById('question').value;
+            const answer1 = document.getElementById('answer1').value;
+            const answer2 = document.getElementById('answer2').value;
+            const answer3 = document.getElementById('answer3').value;
+            const correctAnswerField = document.getElementById('correct_answer').value;
+            
+            // Get the actual correct answer text based on the selected option
+            let correctAnswer = '';
+            if (correctAnswerField === 'answer1') correctAnswer = answer1;
+            else if (correctAnswerField === 'answer2') correctAnswer = answer2;
+            else if (correctAnswerField === 'answer3') correctAnswer = answer3;
+            
+            const quizItem = {
+                id: quizId ? parseInt(quizId) : Date.now(), // Use timestamp as temp ID
+                date,
+                question,
+                answer1,
+                answer2,
+                answer3,
+                correctAnswer
+            };
+            
+            // In a real app, this would be an API call
+            if (quizId) {
+                // Update existing quiz
+                const index = quizData.findIndex(q => q.id === parseInt(quizId));
+                if (index !== -1) {
+                    quizData[index] = quizItem;
+                }
+            } else {
+                // Add new quiz
+                quizData.push(quizItem);
+            }
+            
+            // Update the UI
+            filterQuizzes();
+        }
+        
+        function deleteQuizConfirmed(quizId) {
+            // Create and submit form to the delete route
+            const deleteForm = document.getElementById('deleteQuizForm');
+            deleteForm.action = `/dev/daily-quiz/delete/${quizId}`;
+            deleteForm.submit();
+        }
+        
+        // Make functions available globally for onclick handlers
+        window.editQuiz = function(quizId) {
+            openQuizModal(quizId);
+        };
+        
+        window.deleteQuiz = function(quizId) {
+            openConfirmModal(quizId);
+        };
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,263 @@
+{% extends 'dev/base.html' %}
+
+{% block title %}Logs Viewer{% endblock %}
+
+{% block extra_css %}
+<style>
+    .log-entry {
+        font-family: monospace;
+        padding: 0.5rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .log-entry:hover {
+        background-color: rgba(59, 130, 246, 0.05);
+    }
+    
+    .log-level-DEBUG {
+        border-left: 4px solid #9ca3af;
+    }
+    
+    .log-level-INFO {
+        border-left: 4px solid #3b82f6;
+    }
+    
+    .log-level-WARNING {
+        border-left: 4px solid #f59e0b;
+    }
+    
+    .log-level-ERROR {
+        border-left: 4px solid #ef4444;
+    }
+    
+    .log-level-CRITICAL {
+        border-left: 4px solid #7f1d1d;
+        background-color: rgba(239, 68, 68, 0.05);
+    }
+    
+    .log-container {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    .filter-btn.active {
+        background-color: #3b82f6;
+        color: white;
+    }
+    
+    .timestamp {
+        color: #6b7280;
+    }
+    
+    .module {
+        color: #1e40af;
+        font-weight: 600;
+    }
+    
+    .level-debug {
+        color: #6b7280;
+    }
+    
+    .level-info {
+        color: #3b82f6;
+    }
+    
+    .level-warning {
+        color: #f59e0b;
+        font-weight: 600;
+    }
+    
+    .level-error {
+        color: #ef4444;
+        font-weight: 700;
+    }
+    
+    .level-critical {
+        color: #b91c1c;
+        font-weight: 700;
+    }
+    
+    .message {
+        white-space: pre-wrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Logs Viewer</h1>
+        <div class="flex space-x-2">
+            <button id="refresh-logs-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center">
+                <i class="fas fa-sync-alt mr-1"></i> Refresh
+            </button>
+            <button id="download-logs-btn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md flex items-center">
+                <i class="fas fa-download mr-1"></i> Download
+            </button>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="bg-white border rounded-lg shadow-sm p-4">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-gray-700 font-medium">Filter by level:</span>
+            <button class="filter-btn px-3 py-1 rounded-md border active" data-level="all">All</button>
+            <button class="filter-btn px-3 py-1 rounded-md border" data-level="debug">Debug</button>
+            <button class="filter-btn px-3 py-1 rounded-md border" data-level="info">Info</button>
+            <button class="filter-btn px-3 py-1 rounded-md border" data-level="warning">Warning</button>
+            <button class="filter-btn px-3 py-1 rounded-md border" data-level="error">Error</button>
+            <button class="filter-btn px-3 py-1 rounded-md border" data-level="critical">Critical</button>
+            
+            <div class="ml-auto flex items-center gap-2">
+                <label for="search-logs" class="text-gray-700 font-medium">Search:</label>
+                <input type="text" id="search-logs" class="border rounded-md px-3 py-1 focus:ring-blue-500 focus:border-blue-500" placeholder="Search logs...">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Logs Display -->
+    <div class="bg-white border rounded-lg shadow-sm">
+        <div class="p-4 border-b bg-gray-50">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold">Application Logs</h2>
+                <span class="text-sm text-gray-500">Showing <span id="log-count">{{ logs|length }}</span> entries</span>
+            </div>
+        </div>
+        
+        <div class="log-container p-2">
+            {% if logs %}
+                {% for log in logs %}
+                    {% set log_text = log %}
+                    {% set log_level = "" %}
+                    {% if "DEBUG:" in log %}
+                        {% set log_level = "DEBUG" %}
+                    {% elif "INFO:" in log %}
+                        {% set log_level = "INFO" %}
+                    {% elif "WARNING:" in log %}
+                        {% set log_level = "WARNING" %}
+                    {% elif "ERROR:" in log %}
+                        {% set log_level = "ERROR" %}
+                    {% elif "CRITICAL:" in log %}
+                        {% set log_level = "CRITICAL" %}
+                    {% endif %}
+                    
+                    <div class="log-entry log-level-{{ log_level }} {% if 'ERROR' in log_level or 'CRITICAL' in log_level %}bg-red-50{% endif %}" data-level="{{ log_level.lower() }}">
+                        <pre class="whitespace-pre-wrap text-xs">{{ log_text }}</pre>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="p-4 text-center text-gray-500">
+                    <i class="fas fa-info-circle mr-1"></i> No logs found
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filter logs by level
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const logEntries = document.querySelectorAll('.log-entry');
+        const logCount = document.getElementById('log-count');
+        const searchInput = document.getElementById('search-logs');
+        
+        function updateLogCount() {
+            const visibleLogs = document.querySelectorAll('.log-entry:not(.hidden)').length;
+            logCount.textContent = visibleLogs;
+        }
+        
+        // Filter functionality
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Update active button
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                const level = this.dataset.level;
+                
+                logEntries.forEach(entry => {
+                    if (level === 'all') {
+                        entry.classList.remove('hidden');
+                    } else {
+                        if (entry.dataset.level === level) {
+                            entry.classList.remove('hidden');
+                        } else {
+                            entry.classList.add('hidden');
+                        }
+                    }
+                });
+                
+                updateLogCount();
+            });
+        });
+        
+        // Search functionality
+        searchInput.addEventListener('input', function() {
+            const searchText = this.value.toLowerCase();
+            
+            logEntries.forEach(entry => {
+                if (entry.textContent.toLowerCase().includes(searchText)) {
+                    entry.classList.remove('hidden-by-search');
+                } else {
+                    entry.classList.add('hidden-by-search');
+                }
+            });
+            
+            updateLogCount();
+        });
+        
+        // Refresh logs
+        document.getElementById('refresh-logs-btn').addEventListener('click', function() {
+            this.classList.add('animate-pulse');
+            
+            // Use fetch to reload logs without refreshing the page
+            fetch(window.location.href)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newLogs = doc.querySelector('.log-container').innerHTML;
+                    document.querySelector('.log-container').innerHTML = newLogs;
+                    
+                    // Reapply filters
+                    const activeFilter = document.querySelector('.filter-btn.active').dataset.level;
+                    document.querySelectorAll('.log-entry').forEach(entry => {
+                        if (activeFilter !== 'all' && entry.dataset.level !== activeFilter) {
+                            entry.classList.add('hidden');
+                        }
+                    });
+                    
+                    updateLogCount();
+                    this.classList.remove('animate-pulse');
+                })
+                .catch(error => {
+                    console.error("Error refreshing logs:", error);
+                    this.classList.remove('animate-pulse');
+                });
+        });
+        
+        // Download logs
+        document.getElementById('download-logs-btn').addEventListener('click', function() {
+            // Create a text file with all logs
+            const logTexts = Array.from(logEntries).map(entry => entry.textContent.trim()).join('\n');
+            const blob = new Blob([logTexts], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            // Create download link
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `application_logs_${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Cleanup
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    });
+</script>
+{% endblock %}

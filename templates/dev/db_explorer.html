@@ -1,0 +1,659 @@
+{% extends "dev/base.html" %}
+
+{% block title %}Database Explorer{% endblock %}
+
+{% block breadcrumb %}
+<li><span class="text-gray-700">Database Explorer</span></li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Fix Bootstrap conflicts */
+    .nav-tabs {
+        border-bottom: none !important;
+    }
+    
+    .nav-tabs .nav-link {
+        margin-bottom: 0 !important;
+        border: none !important;
+        border-bottom: 2px solid transparent !important;
+    }
+    
+    .nav-tabs .nav-link.active {
+        background-color: rgba(59, 130, 246, 0.1) !important;
+        color: rgb(37, 99, 235) !important;
+        border-bottom: 2px solid rgb(37, 99, 235) !important;
+    }
+    
+    /* Improved button reset - more specific to avoid text link styling */
+    button {
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        cursor: pointer;
+        outline: inherit;
+        text-decoration: none !important;
+        color: inherit;
+    }
+    
+    /* Button text styles reset */
+    button, button:link, button:visited {
+        text-decoration: none !important;
+        color: inherit;
+    }
+    
+    /* Restore Tailwind button styles */
+    button.bg-blue-600, 
+    button.bg-green-600,
+    button.bg-gray-200,
+    button.pagination-prev,
+    button.pagination-next {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        text-decoration: none !important;
+    }
+    
+    button.bg-blue-600 {
+        background-color: rgb(37, 99, 235);
+        color: white !important;
+    }
+    
+    button.bg-blue-600:hover {
+        background-color: rgb(29, 78, 216);
+        color: white !important;
+    }
+    
+    button.bg-green-600 {
+        background-color: rgb(22, 163, 74);
+        color: white !important;
+    }
+    
+    button.bg-green-600:hover {
+        background-color: rgb(21, 128, 61);
+        color: white !important;
+    }
+    
+    button.bg-gray-200 {
+        background-color: rgb(229, 231, 235);
+        color: rgb(55, 65, 81) !important;
+    }
+    
+    button.bg-gray-200:hover {
+        background-color: rgb(209, 213, 219);
+        color: rgb(55, 65, 81) !important;
+    }
+    
+    /* Fix tab buttons specifically */
+    #tableTabs button {
+        text-decoration: none !important;
+        color: rgb(75, 85, 99) !important;
+    }
+    
+    #tableTabs button.active {
+        color: rgb(37, 99, 235) !important;
+    }
+
+    /* Table style fixes */
+    .table-container {
+        transition: all 0.3s ease;
+        overflow-x: auto;
+        max-width: 100%;
+    }
+    
+    .search-highlight {
+        background-color: rgba(255, 255, 0, 0.3);
+    }
+    
+    .sortable-header {
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    
+    .sortable-header:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Fix table width issues */
+    .table-data {
+        width: 100%;
+        table-layout: auto;
+    }
+    
+    /* Bootstrap override for tab-pane */
+    .tab-content>.tab-pane {
+        display: none;
+    }
+    
+    .tab-content>.active {
+        display: block;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .flex-controls {
+            flex-direction: column;
+        }
+        
+        .flex-controls > * {
+            margin-bottom: 0.5rem;
+            width: 100%;
+        }
+        
+        .pagination-container {
+            margin-top: 1rem;
+            justify-content: center;
+        }
+    }
+    
+    /* Prevent text overflow in cells */
+    td {
+        max-width: 20rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    td:hover {
+        white-space: normal;
+        word-break: break-word;
+    }
+    
+    /* Table title styles */
+    .table-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 0.75rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .table-title h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+    }
+    
+    .table-title h2 i {
+        margin-right: 0.5rem;
+    }
+    
+    .table-info {
+        display: flex;
+        gap: 1rem;
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .table-info span {
+        display: flex;
+        align-items: center;
+    }
+    
+    .table-info i {
+        margin-right: 0.25rem;
+    }
+    
+    /* Content fit improvements */
+    .content-wrapper {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    /* Tab navigation improvements */
+    .nav-tabs {
+        scrollbar-width: thin;
+    }
+    
+    .nav-tabs::-webkit-scrollbar {
+        height: 4px;
+    }
+    
+    .nav-tabs::-webkit-scrollbar-thumb {
+        background-color: rgba(156, 163, 175, 0.5);
+        border-radius: 2px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header - no container wrapper needed since base.html already provides one -->
+<div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold">Database Explorer</h1>
+    <div class="flex space-x-2">
+        <button id="refresh-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center">
+            <i class="fas fa-sync-alt mr-1"></i> Refresh
+        </button>
+        <button id="export-btn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md flex items-center">
+            <i class="fas fa-file-export mr-1"></i> Export
+        </button>
+    </div>
+</div>
+
+<!-- Main content with proper width constraints -->
+<div class="content-wrapper">
+    {% if tables %}
+        <!-- Global Search -->
+        <div class="mb-4">
+            <div class="flex flex-wrap md:flex-nowrap gap-2">
+                <input type="text" id="globalSearch" class="flex-grow px-3 py-2 bg-gray-50 border border-gray-300 rounded-md" 
+                       placeholder="Search across all tables...">
+                <select id="searchLimit" class="px-3 py-2 bg-gray-50 border border-gray-300 rounded-md">
+                    <option value="10">10 rows</option>
+                    <option value="25" selected>25 rows</option>
+                    <option value="50">50 rows</option>
+                    <option value="100">100 rows</option>
+                    <option value="all">All rows</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Table Navigation - Improved scrollable tabs -->
+        <div class="overflow-x-auto mb-4">
+            <ul class="nav nav-tabs flex flex-nowrap border-b-0 pl-0" id="tableTabs" role="tablist">
+                {% for table in tables %}
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link {% if loop.first %}active{% endif %} 
+                                whitespace-nowrap px-4 py-2 rounded-t-lg border-b-2 
+                                {% if loop.first %}bg-blue-50 text-blue-600 border-blue-600{% else %}border-transparent hover:border-gray-300 hover:bg-gray-50{% endif %}"
+                                id="tab-{{ table }}" 
+                                data-bs-toggle="tab" 
+                                data-bs-target="#table-{{ table }}" 
+                                type="button" 
+                                role="tab" 
+                                aria-controls="table-{{ table }}" 
+                                aria-selected="{{ 'true' if loop.first else 'false' }}">
+                            {{ table }}
+                        </button>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Table Content -->
+        <div class="tab-content" id="tableTabsContent">
+            {% for table in tables %}
+                <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
+                     id="table-{{ table }}" 
+                     role="tabpanel" 
+                     aria-labelledby="tab-{{ table }}">
+                    
+                    {% set rows = table_data[table] %}
+                    
+                    <!-- Table Title and Info -->
+                    <div class="table-title">
+                        <h2>
+                            <i class="fas fa-table text-blue-500"></i>
+                            {{ table|replace('_', ' ')|title }} Table
+                        </h2>
+                        <div class="table-info">
+                            <span><i class="fas fa-database"></i> {{ rows|length }} rows</span>
+                            <span><i class="fas fa-columns"></i> {{ rows[0].keys()|list|length if rows and rows|length > 0 else 0 }} columns</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Table-specific Search -->
+                    <div class="mb-4 flex flex-wrap md:flex-nowrap gap-2">
+                        <input type="text" 
+                               id="search-{{ table }}" 
+                               class="table-search flex-grow px-3 py-2 bg-gray-50 border border-gray-300 rounded-md" 
+                               placeholder="Search in {{ table|replace('_', ' ')|title }}...">
+                        <button class="table-reset-btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-md flex items-center">
+                            <i class="fas fa-times mr-1"></i> Clear
+                        </button>
+                    </div>
+                    
+                    {% if rows and rows|length > 0 %}
+                        <!-- Table container with proper width constraints -->
+                        <div class="table-container rounded-lg border">
+                            <table class="table-data divide-y divide-gray-200">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        {% for col in rows[0].keys() %}
+                                            <th class="sortable-header px-4 py-2 text-left text-gray-600 text-sm font-medium" 
+                                                data-column="{{ col }}" 
+                                                data-table="{{ table }}">
+                                                {{ col }} <i class="fas fa-sort text-gray-400 ml-1"></i>
+                                            </th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    {% for row in rows %}
+                                        <tr class="hover:bg-gray-50">
+                                            {% for value in row.values() %}
+                                                <td class="px-4 py-3">{{ value }}</td>
+                                            {% endfor %}
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination - more responsive -->
+                        <div class="mt-4 flex flex-wrap items-center justify-between">
+                            <div class="text-sm text-gray-500">
+                                Showing <span class="table-current-range">1-{{ rows|length }}</span> of <span class="table-total">{{ rows|length }}</span> entries
+                            </div>
+                            <div class="flex pagination-container mt-2 md:mt-0">
+                                <button disabled class="pagination-prev px-3 py-1 bg-gray-100 text-gray-400 rounded-l-md border">
+                                    Previous
+                                </button>
+                                <div class="pagination-pages px-4 py-1 bg-white border-t border-b">
+                                    <span class="current-page">1</span> / <span class="total-pages">1</span>
+                                </div>
+                                <button disabled class="pagination-next px-3 py-1 bg-gray-100 text-gray-400 rounded-r-md border">
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="bg-gray-50 p-8 text-center rounded-lg border border-gray-200">
+                            <i class="fas fa-database text-gray-400 text-4xl mb-3"></i>
+                            <p class="text-gray-600">No data available in this table.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-gray-50 p-8 text-center rounded-lg border border-gray-200">
+            <i class="fas fa-exclamation-circle text-gray-400 text-4xl mb-3"></i>
+            <p class="text-gray-600">No database tables found.</p>
+            <p class="text-sm text-gray-500 mt-2">Check your database connection or create some tables.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Search Results Template -->
+<template id="search-results-template">
+    <div class="table-title">
+        <h2>
+            <i class="fas fa-search text-blue-500"></i>
+            Search Results
+        </h2>
+        <div class="table-info">
+            <span><i class="fas fa-filter"></i> <span class="results-count">0</span> matches</span>
+            <span><i class="fas fa-key"></i> Across all tables</span>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fix for Bootstrap classes that might have broken styling
+        document.querySelectorAll('.btn, .btn-primary, .btn-secondary').forEach(btn => {
+            btn.classList.remove('btn', 'btn-primary', 'btn-secondary');
+        });
+        
+        // Initialize Bootstrap tabs
+        const triggerTabList = [].slice.call(document.querySelectorAll('#tableTabs button'));
+        const tabList = triggerTabList.map(function (triggerEl) {
+            const tabTrigger = new bootstrap.Tab(triggerEl);
+            
+            triggerEl.addEventListener('click', function(event) {
+                event.preventDefault();
+                tabTrigger.show();
+            });
+            
+            return tabTrigger;
+        });
+        
+        // Refresh button functionality
+        document.getElementById('refresh-btn').addEventListener('click', function() {
+            this.classList.add('animate-pulse');
+            setTimeout(() => {
+                this.classList.remove('animate-pulse');
+                window.location.reload();
+            }, 300);
+        });
+        
+        // Export button functionality
+        document.getElementById('export-btn').addEventListener('click', function() {
+            const activeTab = document.querySelector('.tab-pane.active');
+            const tableName = activeTab.id.replace('table-', '');
+            alert(`Exporting ${tableName} data...`);
+            // Here you would implement actual export functionality
+        });
+        
+        // Table search functionality
+        document.querySelectorAll('.table-search').forEach(searchInput => {
+            searchInput.addEventListener('input', function() {
+                const tableId = this.id.replace('search-', 'table-');
+                const tableBody = document.querySelector(`#${tableId} tbody`);
+                const rows = tableBody.querySelectorAll('tr');
+                const searchTerm = this.value.toLowerCase();
+                
+                let visibleCount = 0;
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const match = searchTerm === '' || text.includes(searchTerm);
+                    
+                    row.style.display = match ? '' : 'none';
+                    if (match) visibleCount++;
+                    
+                    // Highlight matching text
+                    if (searchTerm !== '') {
+                        row.querySelectorAll('td').forEach(cell => {
+                            const cellText = cell.textContent;
+                            if (cellText.toLowerCase().includes(searchTerm)) {
+                                const regex = new RegExp(searchTerm, 'gi');
+                                cell.innerHTML = cellText.replace(
+                                    regex, 
+                                    match => `<span class="search-highlight">${match}</span>`
+                                );
+                            }
+                        });
+                    } else {
+                        // Remove highlights if search is cleared
+                        row.querySelectorAll('td').forEach(cell => {
+                            cell.innerHTML = cell.textContent;
+                        });
+                    }
+                });
+                
+                // Update counter
+                const rangeDisplay = document.querySelector(`#${tableId} .table-current-range`);
+                const totalDisplay = document.querySelector(`#${tableId} .table-total`);
+                
+                if (rangeDisplay && totalDisplay) {
+                    rangeDisplay.textContent = visibleCount > 0 ? `1-${visibleCount}` : '0';
+                    totalDisplay.textContent = rows.length;
+                }
+            });
+        });
+        
+        // Clear search button
+        document.querySelectorAll('.table-reset-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const searchInput = this.previousElementSibling;
+                searchInput.value = '';
+                searchInput.dispatchEvent(new Event('input'));
+            });
+        });
+        
+        // Sortable headers
+        document.querySelectorAll('.sortable-header').forEach(header => {
+            header.addEventListener('click', function() {
+                const column = this.dataset.column;
+                const tableId = 'table-' + this.dataset.table;
+                const table = document.querySelector(`#${tableId} table`);
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                // Get all headers for this table
+                const headers = table.querySelectorAll('.sortable-header');
+                
+                // Find column index
+                const columnIndex = Array.from(headers).findIndex(h => h.dataset.column === column);
+                
+                // Determine sort direction
+                let sortDir = this.dataset.sort || 'asc';
+                sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+                this.dataset.sort = sortDir;
+                
+                // Update icons for all headers
+                headers.forEach(h => {
+                    h.querySelector('i').className = 'fas fa-sort text-gray-400 ml-1';
+                });
+                
+                // Update icon for clicked header
+                this.querySelector('i').className = `fas fa-sort-${sortDir === 'asc' ? 'up' : 'down'} text-blue-600 ml-1`;
+                
+                // Sort rows
+                rows.sort((a, b) => {
+                    const aValue = a.cells[columnIndex].textContent.trim();
+                    const bValue = b.cells[columnIndex].textContent.trim();
+                    
+                    // Try to sort as numbers if possible
+                    const aNum = parseFloat(aValue);
+                    const bNum = parseFloat(bValue);
+                    
+                    if (!isNaN(aNum) && !isNaN(bNum)) {
+                        return sortDir === 'asc' ? aNum - bNum : bNum - aNum;
+                    }
+                    
+                    // Fall back to string comparison
+                    return sortDir === 'asc' 
+                        ? aValue.localeCompare(bValue) 
+                        : bValue.localeCompare(aValue);
+                });
+                
+                // Add sorted rows back to table
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+        
+        // Global search functionality
+        document.getElementById('globalSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const limit = document.getElementById('searchLimit').value;
+            
+            // If empty search, restore default view
+            if (searchTerm === '') {
+                document.querySelectorAll('.tab-pane').forEach(tab => {
+                    tab.classList.remove('show', 'active');
+                });
+                
+                // Get first tab and make it active
+                const firstTab = document.querySelector('#tableTabs button');
+                if (firstTab) {
+                    const firstTabTrigger = new bootstrap.Tab(firstTab);
+                    firstTabTrigger.show();
+                }
+                return;
+            }
+            
+            // Search through all tables
+            let results = [];
+            
+            document.querySelectorAll('.tab-pane').forEach(tablePane => {
+                const tableName = tablePane.id.replace('table-', '');
+                const rows = tablePane.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    if (row.textContent.toLowerCase().includes(searchTerm)) {
+                        results.push({
+                            table: tableName,
+                            row: row.cloneNode(true)
+                        });
+                    }
+                });
+            });
+            
+            // Create or update results tab
+            let resultsTab = document.getElementById('table-search-results');
+            let resultsTabTrigger = document.getElementById('tab-search-results');
+            
+            if (!resultsTab) {
+                // Create results tab content
+                resultsTab = document.createElement('div');
+                resultsTab.id = 'table-search-results';
+                resultsTab.className = 'tab-pane fade';
+                document.getElementById('tableTabsContent').appendChild(resultsTab);
+                
+                // Create tab trigger
+                resultsTabTrigger = document.createElement('li');
+                resultsTabTrigger.className = 'nav-item';
+                resultsTabTrigger.innerHTML = `
+                    <button class="nav-link inline-block px-4 py-2 rounded-t-lg border-b-2" 
+                            id="tab-search-results" 
+                            data-bs-toggle="tab" 
+                            data-bs-target="#table-search-results"
+                            type="button" role="tab"
+                            aria-controls="table-search-results">
+                        Search Results <span class="results-count bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"></span>
+                    </button>
+                `;
+                document.getElementById('tableTabs').appendChild(resultsTabTrigger);
+            }
+            
+            // Apply limit if needed
+            if (limit !== 'all') {
+                results = results.slice(0, parseInt(limit));
+            }
+            
+            // Update results tab with search results
+            resultsTab.innerHTML = `
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600">Found ${results.length} results for "${searchTerm}"</p>
+                </div>
+                ${results.length > 0 ? `
+                <div class="table-container overflow-x-auto bg-white rounded-lg border">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-gray-600 text-sm font-medium">Table</th>
+                                <th class="px-4 py-2 text-left text-gray-600 text-sm font-medium">Data</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            ${results.map(result => `
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-4 py-3 font-medium">${result.table}</td>
+                                    <td class="px-4 py-3">
+                                        <table class="min-w-full">
+                                            ${result.row.outerHTML}
+                                        </table>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                ` : `
+                <div class="bg-gray-50 p-8 text-center rounded-lg border border-gray-200">
+                    <i class="fas fa-search text-gray-400 text-4xl mb-3"></i>
+                    <p class="text-gray-600">No matching records found.</p>
+                </div>
+                `}
+            `;
+            
+            // Update tab counts and make active
+            const countBadge = resultsTabTrigger.querySelector('.results-count');
+            if (countBadge) {
+                countBadge.textContent = results.length;
+            }
+            
+            // Make results tab active
+            if (resultsTabTrigger && resultsTab) {
+                // Create a Bootstrap Tab instance for the search results tab
+                const tabTrigger = new bootstrap.Tab(resultsTabTrigger.querySelector('.nav-link'));
+                tabTrigger.show();
+            }
+        });
+    });
+</script>
+{% endblock %}

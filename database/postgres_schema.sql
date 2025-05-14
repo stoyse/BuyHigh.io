@@ -100,11 +100,12 @@ CREATE TABLE IF NOT EXISTS assets (
 
 INSERT INTO assets (symbol, name, asset_type, exchange, sector, industry, default_price)
 VALUES 
+('^GSPC', 'S&P 500 Index', 'index', 'NYSE', 'Index', 'Market Index', 5200),
 ('AAPL', 'Apple Inc.', 'stock', 'NASDAQ', 'Technology', 'Consumer Electronics', 170),
 ('TSLA', 'Tesla Inc.', 'stock', 'NASDAQ', 'Automotive', 'Auto Manufacturers', 250),
 ('GOOGL', 'Alphabet Inc.', 'stock', 'NASDAQ', 'Technology', 'Internet Content', 140),
-('BTC', 'Bitcoin', 'crypto', 'Binance', NULL, NULL, 30000),
-('ETH', 'Ethereum', 'crypto', 'Binance', NULL, NULL, 2000)
+('NVDA', 'NVIDIA Corporation', 'stock', 'NASDAQ', 'Technology', 'Semiconductors', 950),
+('NOC', 'Northrop Grumman Corporation', 'stock', 'NYSE', 'Industrials', 'Aerospace & Defense', 470)
 ON CONFLICT (symbol) DO UPDATE SET default_price = EXCLUDED.default_price;
 
 -- PORTFOLIO TABLE
@@ -188,3 +189,19 @@ VALUES
 ('2025-5-13', 'What is the chemical symbol for water?', 'H2O', 'CO2', 'O2', 'H2O')
 ON CONFLICT (date) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS developers (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+-- Insert a developer into the developers table
+INSERT INTO developers (user_id, name)
+VALUES ('1', 'Julian')
+ON CONFLICT (user_id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS api_requests (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    source TEXT NOT NULL
+);

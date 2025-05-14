@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dev Dashboard{% endblock %} - BuyHigh.io</title>
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon-dev.png') }}" type="image/x-icon">
+    
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS - putting this before Bootstrap to establish base rules -->
+    <style>
+        /* Dev environment warning bar */
+        .dev-warning {
+            background: repeating-linear-gradient(
+                45deg,
+                #ffd700,
+                #ffd700 10px,
+                #000000 10px,
+                #000000 20px
+            );
+            color: white;
+            text-shadow: 1px 1px 2px black;
+        }
+        
+        /* Sidebar styles */
+        .sidebar-item:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .sidebar-item.active {
+            border-left: 4px solid #3b82f6;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Fix Sidebar and Navigation Links */
+        a.sidebar-item {
+            color: #4b5563 !important;
+            text-decoration: none !important;
+        }
+        
+        a.sidebar-item:hover {
+            color: #1f2937 !important;
+            text-decoration: none !important;
+        }
+        
+        a.sidebar-item.active {
+            border-left: 4px solid #3b82f6 !important;
+            background-color: rgba(59, 130, 246, 0.1) !important;
+            color: #1e40af !important;
+        }
+        
+        /* Header navigation links */
+        nav a {
+            color: white !important;
+            text-decoration: none !important;
+        }
+        
+        nav a:hover {
+            text-decoration: underline !important;
+        }
+        
+        /* Generic link reset for all other links in the layout */
+        .bg-white a:not(.sidebar-item):not([class*="bg-"]) {
+            color: #3b82f6 !important;
+            text-decoration: none !important;
+        }
+        
+        .bg-white a:not(.sidebar-item):not([class*="bg-"]):hover {
+            color: #2563eb !important;
+            text-decoration: underline !important;
+        }
+        
+        /* Animated components */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        /* Ensure Bootstrap doesn't break our styling */
+        .btn, button {
+            all: unset;
+        }
+        
+        /* Button style fixes */
+        button {
+            background: none;
+            border: none;
+            padding: 0;
+            font: inherit;
+            cursor: pointer;
+            outline: inherit;
+            text-decoration: none !important;
+            color: inherit !important;
+        }
+        
+        /* Remove link styling from buttons */
+        button, button:link, button:visited, button:hover, button:active {
+            text-decoration: none !important;
+            color: inherit;
+        }
+        
+        /* Fix color inheritance for colored buttons */
+        button.bg-blue-600, button.bg-blue-600:link, button.bg-blue-600:visited {
+            color: white !important;
+        }
+        
+        button.bg-green-600, button.bg-green-600:link, button.bg-green-600:visited {
+            color: white !important;
+        }
+        
+        /* Fix Bootstrap button overrides */
+        .btn-primary, .btn-secondary, .btn-success, .btn-danger, .btn-warning {
+            text-decoration: none !important;
+        }
+        
+        /* Tab styling consistency */
+        .tab-content>.tab-pane {
+            display: none;
+        }
+        
+        .tab-content>.active {
+            display: block;
+        }
+        
+        .nav-tabs .nav-link {
+            cursor: pointer;
+            text-decoration: none !important;
+            color: rgb(75, 85, 99) !important;
+        }
+    </style>
+    
+    <!-- Bootstrap CSS (load after our custom styles) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Extra overrides to ensure our styles take precedence -->
+    <style>
+        /* Extra specificity to override Bootstrap */
+        body .sidebar-item {
+            color: #4b5563 !important;
+            text-decoration: none !important;
+        }
+        
+        body nav.bg-blue-600 a {
+            color: white !important;
+            text-decoration: none !important;
+        }
+        
+        body nav.bg-blue-600 a:hover {
+            text-decoration: underline !important;
+        }
+    </style>
+    
+    <!-- Page-specific CSS -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Dev Environment Warning -->
+    <div class="dev-warning text-center py-1 font-bold text-sm">
+        <i class="fas fa-exclamation-triangle"></i> DEVELOPER ENVIRONMENT <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    
+    <!-- Top Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center">
+                <a href="{{ url_for('dev.index') }}" class="text-xl font-bold flex items-center">
+                    <i class="fas fa-code mr-2"></i> BuyHigh.io Dev
+                </a>
+                <span class="ml-4 bg-green-500 text-xs px-2 py-1 rounded-full">v{{ g.version|default('1.0.0') }}</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="{{ url_for('main.index') }}" class="hover:underline flex items-center">
+                    <i class="fas fa-globe mr-1"></i> Live Site
+                </a>
+                <span class="text-sm">
+                    <i class="fas fa-user"></i> {{ g.user.username if g.user else 'Not logged in' }}
+                </span>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container mx-auto px-4 py-8 flex flex-col md:flex-row">
+        <!-- Sidebar -->
+        <div class="w-full md:w-64 mb-8 md:mb-0">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="p-4 bg-blue-600 text-white">
+                    <h2 class="font-bold">Developer Tools</h2>
+                </div>
+                <div class="divide-y">
+                    <a href="{{ url_for('dev.index') }}" class="sidebar-item block p-4 hover:bg-blue-50 {% if request.path == url_for('dev.index') %}active{% endif %}">
+                        <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('dev.db_explorer') }}" class="sidebar-item block p-4 hover:bg-blue-50">
+                        <i class="fas fa-database mr-2"></i> Database Explorer
+                    </a>
+                    <a href="#" class="sidebar-item block p-4 hover:bg-blue-50">
+                        <i class="fas fa-exchange-alt mr-2"></i> API Explorer
+                    </a>
+                    <a href="{{ url_for('dev.logs') }}" class="sidebar-item block p-4 hover:bg-blue-50 {% if request.path == url_for('dev.logs') %}active{% endif %}">
+                        <i class="fas fa-list-alt mr-2"></i> Logs Viewer
+                    </a>
+                    <a href="#" class="sidebar-item block p-4 hover:bg-blue-50">
+                        <i class="fas fa-users mr-2"></i> User Management
+                    </a>
+                    <a href="#" class="sidebar-item block p-4 hover:bg-blue-50">
+                        <i class="fas fa-cogs mr-2"></i> System Settings
+                    </a>
+                    <a href="#" class="sidebar-item block p-4 hover:bg-blue-50">
+                        <i class="fas fa-tasks mr-2"></i> Background Tasks
+                    </a>
+                </div>
+            </div>
+            
+            <!-- System Status -->
+            <div class="bg-white rounded-lg shadow-md mt-6 overflow-hidden">
+                <div class="p-4 bg-gray-800 text-white">
+                    <h2 class="font-bold">System Status</h2>
+                </div>
+                <div class="p-4 space-y-3">
+                    <div class="flex justify-between">
+                        <span>Server Status:</span>
+                        <span class="text-green-600"><i class="fas fa-circle text-xs"></i> Online</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>API Status:</span>
+                        <span class="text-{{ 'green' if g.api_status|default(True) else 'red' }}-600">
+                            <i class="fas fa-circle text-xs"></i> {{ 'Online' if g.api_status|default(True) else 'Offline' }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Database:</span>
+                        <span class="text-{{ 'green' if g.db_status|default(True) else 'red' }}-600">
+                            <i class="fas fa-circle text-xs"></i> {{ 'Connected' if g.db_status|default(True) else 'Error' }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Cache:</span>
+                        <span class="text-{{ 'green' if g.cache_status|default(True) else 'yellow' }}-600">
+                            <i class="fas fa-circle text-xs"></i> {{ 'Active' if g.cache_status|default(True) else 'Inactive' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="md:ml-8 flex-grow">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white text-center p-4 mt-12">
+        <div class="container mx-auto">
+            <p>BuyHigh.io Developer Portal &copy; 2025</p>
+            <p class="text-sm text-gray-400 mt-1">
+                Server Time: {{ now.strftime('%Y-%m-%d %H:%M:%S') if now else 'Unknown' }} | 
+                Environment: {{ g.environment|default('development') }} | 
+                Memory Usage: {{ g.memory_usage|default('N/A') }}
+            </p>
+        </div>
+    </footer>
+    
+    <!-- Core JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fix any Bootstrap classes that affect styling
+            document.querySelectorAll('.btn, .btn-primary, .btn-secondary').forEach(btn => {
+                btn.classList.remove('btn', 'btn-primary', 'btn-secondary');
+            });
+            
+            // Remove link styling from buttons
+            document.querySelectorAll('button').forEach(button => {
+                button.style.textDecoration = 'none';
+            });
+            
+            // Fix sidebar links
+            document.querySelectorAll('.sidebar-item').forEach(link => {
+                link.style.color = '#4b5563';
+                link.style.textDecoration = 'none';
+            });
+            
+            // Fix navigation links
+            document.querySelectorAll('nav a').forEach(link => {
+                link.style.color = 'white';
+                link.style.textDecoration = 'none';
+            });
+            
+            // Initialize tooltips, popovers, etc.
+            console.log('Dev dashboard initialized');
+            
+            // Check for URL hash to show appropriate section
+            if(window.location.hash) {
+                const hash = window.location.hash.substring(1);
+                try {
+                    document.getElementById(hash).scrollIntoView();
+                } catch(e) {
+                    console.error("Element with id " + hash + " not found");
+                }
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

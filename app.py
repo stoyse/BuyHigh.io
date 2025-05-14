@@ -20,9 +20,11 @@ from routes.main_routes import main_bp
 from routes.auth_routes import auth_bp
 from routes.api_routes import api_bp  # Korrigiert von "api" zu "api_bp"
 from routes.chat_routes import chat_bp
+from routes.dev_routes import dev_bp
+
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'ein-sehr-geheimer-und-statischer-schluessel-fuer-buyhigh'  # TODO: In Produktionsumgebung sicher verwalten!
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # TODO: In Produktionsumgebung sicher verwalten!
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=7)  # Session für 7 Tage gültig
 
 # Configure logging early to use it immediately
@@ -211,6 +213,7 @@ app.register_blueprint(main_bp)
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(api_bp, url_prefix='/api')  # Korrigiert von "api" zu "api_bp"
 app.register_blueprint(chat_bp, url_prefix='/chat')
+app.register_blueprint(dev_bp, url_prefix='/dev')
 logger.info("Blueprints registriert.")
 
 from routes.chat_routes import register_chat_events

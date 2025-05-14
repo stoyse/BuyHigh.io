@@ -6,6 +6,9 @@ import os
 import time
 import logging
 from rich import print
+from flask import g
+
+from database.handler.postgres.postgres_db_handler import app_api_request
 
 # Load environment variables from .env file
 dotenv.load_dotenv()
@@ -148,7 +151,8 @@ def get_stock_data(symbol: str, period: str = None, interval: str = None, start_
         print(f"Fetching Twelve Data for {symbol} (interval: {td_interval}, from: {start_date} to: {end_date})...")
         
         response = requests.get("https://api.twelvedata.com/time_series", params=params)
-        
+        app_api_request(user_id=g.user['id'], source="Twelve Data")
+        print(f"[red]API request to Twelve Data completed for {symbol}.")
         # Fehlerbehandlung für HTTP-Fehler
         if response.status_code == 429:  # Rate limit exceeded
             logger.warning(f"Rate limit exceeded for Twelve Data API key.")

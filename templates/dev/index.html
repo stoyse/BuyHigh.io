@@ -1,0 +1,367 @@
+{% extends 'dev/base.html' %}
+
+{% block title %}Developer Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .action-card {
+        transition: all 0.3s ease;
+    }
+    
+    .action-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Developer Dashboard</h1>
+        <div class="flex space-x-2">
+            <button id="refresh-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center">
+                <i class="fas fa-sync-alt mr-1"></i> Refresh
+            </button>
+            <button id="tools-btn" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md flex items-center">
+                <i class="fas fa-tools mr-1"></i> Tools
+            </button>
+        </div>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="stats-card bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-medium mb-2">Total Users</h3>
+            <p class="text-3xl font-bold">{{ user_count|default('2,458') }}</p>
+            <p class="text-sm mt-2">
+                <i class="fas fa-user-plus"></i> +{{ new_users_today|default('Not supported yet') }} today
+            </p>
+        </div>
+        
+        <div class="stats-card bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-medium mb-2">API Requests</h3>
+            <p class="text-3xl font-bold">{{ api_requests['api_calls'] }}</p>
+            <p class="text-sm mt-2">
+                <i class="fas fa-exchange-alt"></i> {{ api_requests['avg_per_minute'] }}/min
+            </p>
+        </div>
+        
+        <div class="stats-card bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-medium mb-2">Database Size</h3>
+            <p class="text-3xl font-bold">{{ db_size['db_size'] }}</p>
+            <p class="text-sm mt-2">
+                <i class="fas fa-database"></i> {{ db_size['table_count']}} tables
+            </p>
+        </div>
+        
+        <div class="stats-card bg-gradient-to-br from-red-500 to-red-600 text-white p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-medium mb-2">Errors (24h)</h3>
+            <p class="text-3xl font-bold">{{ error_count|default('12') }}</p>
+            <p class="text-sm mt-2">
+                <i class="fas fa-exclamation-triangle"></i> {{ critical_errors|default('2') }} critical
+            </p>
+        </div>
+    </div>
+    <!-- Quick Actions -->
+    <div class="bg-white border rounded-lg shadow-sm p-6">
+        <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <a href="{{ url_for('dev.db_explorer') }}" class="action-card block bg-blue-50 hover:bg-blue-100 p-4 rounded-lg text-center border border-blue-200">
+                <i class="fas fa-database text-3xl text-blue-600 mb-2"></i>
+                <h3 class="font-medium">Database Explorer</h3>
+                <p class="text-xs text-gray-600 mt-1">Query and manage database</p>
+            </a>
+            
+            <a href="#" class="action-card block bg-green-50 hover:bg-green-100 p-4 rounded-lg text-center border border-green-200">
+                <i class="fas fa-list-alt text-3xl text-green-600 mb-2"></i>
+                <h3 class="font-medium">Logs Viewer</h3>
+                <p class="text-xs text-gray-600 mt-1">View application logs</p>
+            </a>
+            
+            <a href="#" class="action-card block bg-purple-50 hover:bg-purple-100 p-4 rounded-lg text-center border border-purple-200">
+                <i class="fas fa-exchange-alt text-3xl text-purple-600 mb-2"></i>
+                <h3 class="font-medium">API Explorer</h3>
+                <p class="text-xs text-gray-600 mt-1">Test API endpoints</p>
+            </a>
+            
+            <a href="{{ url_for('dev.daily_quiz') }}" class="action-card block bg-red-50 hover:bg-red-100 p-4 rounded-lg text-center border border-red-200">
+                <i class="fas fa-pen-alt text-3xl text-red-600 mb-2"></i>
+                <h3 class="font-medium">Daily Quiz</h3>
+                <p class="text-xs text-gray-600 mt-1">Add Daily Quiz questions</p>
+            </a>
+            
+            <a href="#" class="action-card block bg-yellow-50 hover:bg-yellow-100 p-4 rounded-lg text-center border border-yellow-200">
+                <i class="fas fa-users text-3xl text-yellow-600 mb-2"></i>
+                <h3 class="font-medium">User Management</h3>
+                <p class="text-xs text-gray-600 mt-1">Manage user accounts</p>
+            </a>
+            
+            <a href="#" class="action-card block bg-indigo-50 hover:bg-indigo-100 p-4 rounded-lg text-center border border-indigo-200">
+                <i class="fas fa-chart-line text-3xl text-indigo-600 mb-2"></i>
+                <h3 class="font-medium">Stock Data</h3>
+                <p class="text-xs text-gray-600 mt-1">Test stock data API</p>
+            </a>
+            
+            <a href="#" class="action-card block bg-gray-50 hover:bg-gray-100 p-4 rounded-lg text-center border border-gray-200">
+                <i class="fas fa-cogs text-3xl text-gray-600 mb-2"></i>
+                <h3 class="font-medium">App Settings</h3>
+                <p class="text-xs text-gray-600 mt-1">Configure app settings</p>
+            </a>
+            
+            <a href="#" class="action-card block bg-pink-50 hover:bg-pink-100 p-4 rounded-lg text-center border border-pink-200">
+                <i class="fas fa-tasks text-3xl text-pink-600 mb-2"></i>
+                <h3 class="font-medium">Background Tasks</h3>
+                <p class="text-xs text-gray-600 mt-1">Manage background jobs</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Errors -->
+    <div class="bg-white border rounded-lg shadow-sm p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Recent Errors</h2>
+            <a href="#" class="text-blue-600 hover:underline text-sm">View All</a>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full table-auto">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="px-4 py-2 text-left">Timestamp</th>
+                        <th class="px-4 py-2 text-left">Level</th>
+                        <th class="px-4 py-2 text-left">Module</th>
+                        <th class="px-4 py-2 text-left">Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if errors %}
+                        {% for error in errors %}
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">{{ error.timestamp }}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded-full text-xs text-white bg-{{ error.level_color }}">
+                                    {{ error.level }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3">{{ error.module }}</td>
+                            <td class="px-4 py-3">{{ error.message }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Sample Data -->
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">2023-06-15 14:32:45</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded-full text-xs text-white bg-red-500">ERROR</span>
+                            </td>
+                            <td class="px-4 py-3">api_routes.py</td>
+                            <td class="px-4 py-3">Failed to fetch stock data for TSLA: API key limit reached</td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">2023-06-15 13:21:17</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 rounded-full text-xs text-white bg-yellow-500">WARNING</span>
+                            </td>
+                            <td class="px-4 py-3">auth.py</td>
+                            <td class="px-4 py-3">Multiple failed login attempts for user: admin</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Debug Tools -->
+    <div class="bg-white border rounded-lg shadow-sm p-6" id="debug-tools">
+        <h2 class="text-xl font-bold mb-4">Debug Tools</h2>
+        <div class="space-y-4">
+            <!-- Command Runner -->
+            <div>
+                <h3 class="text-lg font-medium mb-2">Command Runner</h3>
+                <div class="flex space-x-2">
+                    <select class="flex-grow px-3 py-2 bg-gray-50 border border-gray-300 rounded-md">
+                        <option>-- Select Command --</option>
+                        <option>Clear all cache</option>
+                        <option>Run database migrations</option>
+                        <option>Generate sample data</option>
+                        <option>Reset admin password</option>
+                        <option>Check API keys</option>
+                    </select>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                        Run
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Environment Variables -->
+            <div>
+                <h3 class="text-lg font-medium mb-2">Environment Variables</h3>
+                <div class="bg-gray-50 p-4 rounded-md h-32 overflow-y-auto">
+                    <pre class="text-xs text-gray-800">
+FLASK_APP=app.py
+FLASK_ENV=development
+DEBUG=True
+DATABASE_URL=postgresql://user:password@localhost:5432/buyhigh
+ALPHA_VANTAGE_API_KEY=********
+TWELVE_DATA_API_KEY=********
+SECRET_KEY=********
+REDIS_URL=redis://localhost:6379/0
+                    </pre>
+                </div>
+            </div>
+            
+            <!-- API Test -->
+            <div>
+                <h3 class="text-lg font-medium mb-2">Quick API Test</h3>
+                <div class="flex space-x-2 mb-2">
+                    <select class="flex-grow px-3 py-2 bg-gray-50 border border-gray-300 rounded-md">
+                        <option value="GET">[GET] /api/stock-data?symbol=AAPL&timeframe=1M</option>
+                        <option value="GET">[GET] /api/portfolio</option>
+                        <option value="GET">[GET] /api/assets</option>
+                        <option value="POST">[POST] /api/trade/buy</option>
+                    </select>
+                    <button id="test-api-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
+                        Test
+                    </button>
+                </div>
+                <div class="bg-gray-50 border border-gray-300 rounded-md h-32 overflow-y-auto p-4">
+                    <pre id="api-result" class="text-xs text-gray-800">API response will appear here...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // CPU Chart
+        const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+        const cpuChart = new Chart(cpuCtx, {
+            type: 'line',
+            data: {
+                labels: ['5m ago', '4m ago', '3m ago', '2m ago', '1m ago', 'Now'],
+                datasets: [{
+                    label: 'CPU Usage %',
+                    data: [15, 22, 18, 25, 23, 28],
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+        
+        // Memory Chart
+        const memoryCtx = document.getElementById('memoryChart').getContext('2d');
+        const memoryChart = new Chart(memoryCtx, {
+            type: 'line',
+            data: {
+                labels: ['5m ago', '4m ago', '3m ago', '2m ago', '1m ago', 'Now'],
+                datasets: [{
+                    label: 'Memory Usage (MB)',
+                    data: [128, 134, 142, 156, 168, 172],
+                    borderColor: 'rgb(139, 92, 246)',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Refresh button
+        document.getElementById('refresh-btn').addEventListener('click', function() {
+            this.classList.add('animate-pulse');
+            setTimeout(() => {
+                this.classList.remove('animate-pulse');
+                // Here you would fetch fresh data
+                alert('Dashboard refreshed!');
+                // Simulate updating charts
+                cpuChart.data.datasets[0].data = [
+                    Math.floor(Math.random() * 30) + 10,
+                    Math.floor(Math.random() * 30) + 10,
+                    Math.floor(Math.random() * 30) + 10,
+                    Math.floor(Math.random() * 30) + 10,
+                    Math.floor(Math.random() * 30) + 10,
+                    Math.floor(Math.random() * 30) + 10
+                ];
+                cpuChart.update();
+                
+                memoryChart.data.datasets[0].data = [
+                    Math.floor(Math.random() * 50) + 120,
+                    Math.floor(Math.random() * 50) + 120,
+                    Math.floor(Math.random() * 50) + 120,
+                    Math.floor(Math.random() * 50) + 120,
+                    Math.floor(Math.random() * 50) + 120,
+                    Math.floor(Math.random() * 50) + 120
+                ];
+                memoryChart.update();
+            }, 800);
+        });
+        
+        // Tools button
+        document.getElementById('tools-btn').addEventListener('click', function() {
+            document.getElementById('debug-tools').scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+        
+        // Test API button
+        document.getElementById('test-api-btn').addEventListener('click', function() {
+            const resultElement = document.getElementById('api-result');
+            resultElement.textContent = 'Loading...';
+            
+            // Simulate API test
+            setTimeout(() => {
+                resultElement.textContent = JSON.stringify({
+                    "success": true,
+                    "data": [
+                        {"date": "2023-06-01", "open": 172.48, "high": 173.90, "low": 171.69, "close": 173.75, "volume": 46325987},
+                        {"date": "2023-06-02", "open": 173.60, "high": 175.10, "low": 172.85, "close": 174.98, "volume": 42678521},
+                        {"date": "2023-06-03", "open": 174.75, "high": 176.12, "low": 174.25, "close": 175.65, "volume": 38945672}
+                    ]
+                }, null, 2);
+            }, 1500);
+        });
+    });
+</script>
+{% endblock %}

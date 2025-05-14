@@ -1,0 +1,80 @@
+from flask import Blueprint, render_template, g, request, flash, redirect, url_for
+from utils import dev_required, login_required
+import logging
+import database.handler.postgres.postgre_dev_handler as dev_handler
+import database.handler.postgres.postgre_education_handler as edu_handler
+from rich import print
+
+logger = logging.getLogger(__name__)
+
+dev_bp = Blueprint('dev', __name__)
+
+@dev_bp.route('/')
+@login_required
+@dev_required
+def index():
+    logger.debug("Rendering developer dashboard page")
+    
+    return render_template(
+        'dev/index.html',
+        user_count=dev_handler.get_total_user_count(),
+        db_size=dev_handler.get_db_size(),
+        api_requests=dev_handler.get_api_calls()
+    )
+
+@dev_bp.route('/db_explorer')
+@login_required
+@dev_required
+def db_explorer():
+    logger.debug("Rendering database explorer page")
+    tables = dev_handler.get_all_tables()
+    table_data = {}
+    for table in tables:
+        data = dev_handler.get_table_data(table)
+        table_data[table] = data
+        logger.debug(f"Data for table {table}: {data}")
+
+    return render_template(
+        'dev/db_explorer.html',
+        tables=tables,
+        table_data=table_data
+    )
+
+@dev_bp.route('/daily-quiz', methods=['GET', 'POST'])
+def daily_quiz():
+    logger.debug("Handling daily quiz submission")
+    if request.method == 'POST':
+        quizDate = request.form.get('date')
+        question = request.form.get('question')
+        answer1 = request.form.get('answer1')
+        answer2 = request.form.get('answer2')
+        answer3 = request.form.get('answer3')
+        correct_answer = request.form.get('correct_answer')
+        print(f"[purple]Quiz Date: {quizDate}, Question: {question}, Answer1: {answer1}, Answer2: {answer2}, Answer3: {answer3}, Correct Answer: {correct_answer}")
+        edu_handler.create_daily_quiz(quizDate, question, answer1, answer2, answer3, correct_answer)
+        flash('Quiz submitted successfully!', 'success')
+        return redirect(url_for('dev.daily_quiz'))
+    
+    quizes = edu_handler.get_all_daily_quizzes()
+    return render_template('dev/daily_quiz.html', all_quizzes=quizes)
+
+@dev_bp.route('/daily-quiz/delete/<int:quiz_id>', methods=['GET', 'POST'])
+@login_required
+@dev_required
+def delete_daily_quiz(quiz_id):
+    logger.debug(f"Deleting daily quiz with ID: {quiz_id}")
+    if request.method == 'POST':
+        edu_handler.delete_daily_quiz(quiz_id)
+        flash('Quiz deleted successfully!', 'success')
+        return redirect(url_for('dev.daily_quiz'))
+    
+    quiz = edu_handler.get_daily_quiz_by_id(quiz_id)
+    return render_template('dev/daily_quiz.html', quiz=quiz)
+
+@dev_bp.route('/logs',)
+@login_required
+@dev_required
+def logs():
+    logger.debug("Rendering logs page")
+    logs = open('logs/app.log', 'r').readlines()
+    return render_template('dev/logs.html', logs=logs)
