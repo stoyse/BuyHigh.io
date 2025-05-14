@@ -6,6 +6,7 @@ import stock_news
 from rich import print
 import database.handler.postgres.postgre_education_handler as edu_handler
 import datetime
+import stock_data_api as stock_data  # <-- NEU: Importiere das neue Modul
 
 # Configure basic logging
 # logging.basicConfig(level=logging.DEBUG) # Wird jetzt in app.py global konfiguriert

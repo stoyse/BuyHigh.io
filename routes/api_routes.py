@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, g
 from datetime import datetime, timedelta
 from utils import login_required
-import stock_data
+import stock_data_api as stock_data  # <-- NEU: Importiere das neue Modul
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
 import pandas as pd # Import pandas for pd.notna()
 import logging # Import logging module
@@ -60,13 +60,17 @@ def api_stock_data():
     try:
         # Immer direkt von der API laden, ohne Cache zu verwenden, wenn force_fresh gesetzt ist
         if force_fresh:
+            logger.info(f"Force fresh data for {symbol}, timeframe: {timeframe}")
             df = stock_data.get_stock_data(symbol, period=period_param_for_1min, interval=interval_param, 
                                           start_date=start_date_str, end_date=end_date_str)
         else:
+            logger.info(f"Getting cached or live data for {symbol}, timeframe: {timeframe}")
             df = stock_data.get_cached_or_live_data(symbol, timeframe)
         
         is_demo_data = getattr(df, 'is_demo', True) # Default to True if attribute missing or df is None
-
+        
+        logger.info(f"Data received for {symbol}: Demo = {is_demo_data}, Points = {len(df) if df is not None and not df.empty else 0}")
+        
         if df is None or df.empty:
             # This block might be redundant if get_cached_or_live_data always returns a df (even demo)
             # For safety, ensure demo data is generated if df is still None or empty.
@@ -82,7 +86,7 @@ def api_stock_data():
             
             if df is None or df.empty: 
                 logger.error(f"No data (including fallback demo) found for {symbol}. Returning empty list.")
-                return jsonify({'data': [], 'is_demo': True, 'currency': 'USD'})
+                return jsonify({'data': [], 'is_demo': True, 'currency': 'USD', 'demo_reason': 'API key missing' if not stock_data.TWELVE_DATA_API_KEY else 'API request failed or empty data'})
 
 
         data = []
@@ -132,7 +136,8 @@ def api_stock_data():
                 # Nur loggen, nicht abbrechen wenn Update fehlschlägt
                 logger.error(f"Error updating asset price in database: {e}")
         
-        return jsonify({'data': data, 'is_demo': is_demo_data, 'currency': 'USD'})
+        # Änderung: Direkt das Array zurückgeben, nicht in einem Objekt verpacken
+        return jsonify(data)
     except Exception as e:
         print(f"Error in /api/stock-data for {symbol} timeframe {timeframe}: {e}") # Log error
         return jsonify({'error': str(e), 'currency': 'USD'}), 500
@@ -252,6 +257,15 @@ def api_get_asset(symbol):
             result['asset']['default_price'] = 100.0  # Fallback-Wert
     
     return jsonify(result) if result['success'] else (jsonify(result), 404)
+
+@api_bp.route('/status')
+@login_required
+def api_status():
+    """API-Endpunkt, um den Status der API-Keys zu prüfen"""
+    return jsonify({
+        'api_key_configured': bool(stock_data.TWELVE_DATA_API_KEY),
+        'timestamp': datetime.now().isoformat()
+    })
 
 # Dummy route from original app.py, can be removed if not used
 @api_bp.route('/trade/<symbol>/')

@@ -200,7 +200,6 @@ document.addEventListener('DOMContentLoaded', function() {
     logDebug(`🔄 Fallback-Preis (Demo/Default aus DB) für ${symbol} verwendet: $${fallbackPrice}`);
   }
 
-  // Funktion zum Laden von Aktiendaten
   function loadStockData(symbol, timeframe, preserveInitialPrice = false) {
     logDebug(`Loading stock data for ${symbol}, timeframe: ${timeframe}, preserve price: ${preserveInitialPrice}`);
     
@@ -231,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
       logDebug(`📌 Preserving initial price: $${initialStockPrice.toFixed(2)} for ${symbol}`);
     }
 
-    fetch(`/api/stock-data?symbol=${symbol}&timeframe=${timeframe}`)
+    fetch(`/api/stock-data?symbol=${symbol}&timeframe=${timeframe}&fresh=true`) // Force fresh aktivieren!
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -245,9 +244,26 @@ document.addEventListener('DOMContentLoaded', function() {
           throw new Error(data && data.error ? data.error : 'API returned invalid data');
         }
 
-        logDebug(`✅ API Success: Received ${data.length} data points for ${symbol}`);
+        // Wenn data ein leeres Array ist, werfe einen Fehler, damit wir zu den Demo-Daten fallen
+        if (data.length === 0) {
+          logDebug(`❌ API returned empty data array for ${symbol}`);
+          throw new Error('Empty data array returned');
+        }
+
+        logDebug(`API Success: Received ${data.length} data points for ${symbol}`);
         
-        // Immer updateChartAndStats aufrufen, damit die Candles aktualisiert werden!
+        // Vor der Chart-Aktualisierung darauf hinweisen, dass es Testdaten sein könnten
+        if (data.length > 0 && data[0].currency === 'USD') {
+          // Datum-Format-Check
+          try {
+            // Teste, ob ein gültiges Datum vorhanden ist
+            new Date(data[0].date).toISOString();
+          } catch (e) {
+            logDebug(`⚠️ Invalid date format in API data for ${symbol}`);
+            throw new Error('Invalid date format in API data');
+          }
+        }
+        
         updateChartAndStats(symbol, data);
         
         document.getElementById('candlestick-chart').classList.remove('opacity-50');
@@ -285,83 +301,171 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
   }
-  
+
+  // Hinzugefügt: Prüfe API-Key-Status
+  function checkApiStatus() {
+    logDebug(`Checking API status...`);
+    fetch('/api/status')  // Diese Route müssen Sie noch implementieren
+    .then(response => response.json())
+    .then(data => {
+        if (data.api_key_configured) {
+            logDebug(`✅ TwelveData API key configured correctly`);
+        } else {
+            logDebug(`⚠️ No TwelveData API key configured! Using demo data only.`);
+            alert("Hinweis: Es ist kein TwelveData API-Key konfiguriert. Die Anwendung verwendet Demo-Daten.");
+        }
+    })
+    .catch(error => {
+        logDebug(`⚠️ Error checking API status: ${error.message}`);
+    });
+  }
+
   // Neue Funktion: Aktualisiert nur das Chart ohne den Kaufpreis zu ändern
   function updateChartOnly(symbol, apiData) {
     const maxPoints = 300;
+    
     // Filtere ungültige Candles heraus (inkl. Datumsprüfung)
     const validData = apiData.filter(item => {
-      const dateObj = new Date(item.date);
-      return !isNaN(dateObj.getTime()) &&
-             item.open !== null && item.high !== null && item.low !== null && item.close !== null &&
-             isFinite(item.open) && isFinite(item.high) && isFinite(item.low) && isFinite(item.close);
+      // Erweiterte Validierung
+      if (!item || typeof item !== 'object') return false;
+      if (!item.date || !item.open || !item.high || !item.low || !item.close) return false;
+      
+      try {
+        const dateObj = new Date(item.date);
+        return !isNaN(dateObj.getTime()) &&
+              item.open !== null && item.high !== null && item.low !== null && item.close !== null &&
+              isFinite(parseFloat(item.open)) && isFinite(parseFloat(item.high)) && 
+              isFinite(parseFloat(item.low)) && isFinite(parseFloat(item.close));
+      } catch (e) {
+        return false;
+      }
     });
+    
+    if (validData.length === 0) {
+      logDebug(`❌ No valid data points found for updateChartOnly`);
+      return;
+    }
+    
     const slicedData = validData.length > maxPoints ? validData.slice(-maxPoints) : validData;
 
-    const chartData = slicedData.map(item => ({
-      x: new Date(item.date),
-      y: [
-        parseFloat(item.open).toFixed(2),
-        parseFloat(item.high).toFixed(2),
-        parseFloat(item.low).toFixed(2),
-        parseFloat(item.close).toFixed(2)
-      ]
-    }));
+    try {
+      const chartData = slicedData.map(item => ({
+        x: new Date(item.date),
+        y: [
+          parseFloat(item.open),
+          parseFloat(item.high),
+          parseFloat(item.low),
+          parseFloat(item.close)
+        ]
+      }));
+      
+      // Überprüfe noch einmal für ungültige Werte
+      const cleanChartData = chartData.filter(point => 
+        !point.y.some(val => isNaN(val)) && 
+        !isNaN(point.x.getTime())
+      );
 
-    chart.updateSeries([{
-      name: symbol,
-      data: chartData
-    }]);
+      if (cleanChartData.length === 0) return;
 
-    if (slicedData.length > 0) {
-      const lastDataPoint = slicedData[slicedData.length - 1];
-      document.getElementById('stock-high').textContent = `$${parseFloat(lastDataPoint.high).toFixed(2)}`;
-      document.getElementById('stock-low').textContent = `$${parseFloat(lastDataPoint.low).toFixed(2)}`;
-      document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
-      const marketCap = typeof calculateMarketCap === 'function' ? calculateMarketCap(symbol, parseFloat(lastDataPoint.close)) : 'N/A';
-      document.getElementById('stock-market-cap').textContent = typeof formatCurrency === 'function' ? formatCurrency(marketCap) : marketCap;
-      logDebug(`📊 Chart updated for ${symbol}, using chartData close: $${parseFloat(lastDataPoint.close).toFixed(2)}, but keeping purchase price at $${currentStockPrice.toFixed(2)}`);
+      chart.updateSeries([{
+        name: symbol,
+        data: cleanChartData
+      }]);
+
+      if (slicedData.length > 0) {
+        const lastDataPoint = slicedData[slicedData.length - 1];
+        document.getElementById('stock-high').textContent = `$${parseFloat(lastDataPoint.high).toFixed(2)}`;
+        document.getElementById('stock-low').textContent = `$${parseFloat(lastDataPoint.low).toFixed(2)}`;
+        document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
+        const marketCap = typeof calculateMarketCap === 'function' ? calculateMarketCap(symbol, parseFloat(lastDataPoint.close)) : 'N/A';
+        document.getElementById('stock-market-cap').textContent = typeof formatCurrency === 'function' ? formatCurrency(marketCap) : marketCap;
+        logDebug(`📊 Chart updated for ${symbol}, using chartData close: $${parseFloat(lastDataPoint.close).toFixed(2)}, but keeping purchase price at $${currentStockPrice.toFixed(2)}`);
+      }
+    } catch(e) {
+      logDebug(`❌ Error updating chart only: ${e.message}`);
     }
   }
 
   // Funktion: Chart und Stats aktualisieren (wie updateChartOnly, aber setzt auch currentStockPrice)
   function updateChartAndStats(symbol, apiData) {
     const maxPoints = 300;
+    
+    // Debug-Info zum Format der Daten anzeigen
+    if (apiData && apiData.length > 0) {
+      logDebug(`Data format sample:`, apiData[0]);
+    }
+    
     // Filtere ungültige Candles heraus (inkl. Datumsprüfung)
     const validData = apiData.filter(item => {
-      const dateObj = new Date(item.date);
-      return !isNaN(dateObj.getTime()) &&
-             item.open !== null && item.high !== null && item.low !== null && item.close !== null &&
-             isFinite(item.open) && isFinite(item.high) && isFinite(item.low) && isFinite(item.close);
+      // Erweiterte Validierung
+      if (!item || typeof item !== 'object') return false;
+      if (!item.date || !item.open || !item.high || !item.low || !item.close) return false;
+      
+      try {
+        const dateObj = new Date(item.date);
+        return !isNaN(dateObj.getTime()) &&
+              item.open !== null && item.high !== null && item.low !== null && item.close !== null &&
+              isFinite(parseFloat(item.open)) && isFinite(parseFloat(item.high)) && 
+              isFinite(parseFloat(item.low)) && isFinite(parseFloat(item.close));
+      } catch (e) {
+        logDebug(`Invalid data point detected:`, item);
+        return false;
+      }
     });
+    
+    if (validData.length === 0) {
+      logDebug(`❌ No valid data points found in API response for ${symbol}`);
+      useDemoData(symbol, currentTimeframe);
+      return;
+    }
+    
+    logDebug(`Valid data points: ${validData.length} out of ${apiData.length}`);
+    
     const slicedData = validData.length > maxPoints ? validData.slice(-maxPoints) : validData;
 
-    const chartData = slicedData.map(item => ({
-      x: new Date(item.date),
-      y: [
-        parseFloat(item.open).toFixed(2),
-        parseFloat(item.high).toFixed(2),
-        parseFloat(item.low).toFixed(2),
-        parseFloat(item.close).toFixed(2)
-      ]
-    }));
+    try {
+      const chartData = slicedData.map(item => ({
+        x: new Date(item.date),
+        y: [
+          parseFloat(item.open),
+          parseFloat(item.high),
+          parseFloat(item.low),
+          parseFloat(item.close)
+        ]
+      }));
 
-    chart.updateSeries([{
-      name: symbol,
-      data: chartData
-    }]);
+      // Überprüfe noch einmal für ungültige Werte, die NaN sein könnten
+      const cleanChartData = chartData.filter(point => 
+        !point.y.some(val => isNaN(val)) && 
+        !isNaN(point.x.getTime())
+      );
 
-    if (slicedData.length > 0) {
-      const lastDataPoint = slicedData[slicedData.length - 1];
-      currentStockPrice = parseFloat(lastDataPoint.close);
-      document.getElementById('current-price').textContent = `$${currentStockPrice.toFixed(2)}`;
-      document.getElementById('stock-high').textContent = `$${parseFloat(lastDataPoint.high).toFixed(2)}`;
-      document.getElementById('stock-low').textContent = `$${parseFloat(lastDataPoint.low).toFixed(2)}`;
-      document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
-      const marketCap = typeof calculateMarketCap === 'function' ? calculateMarketCap(symbol, currentStockPrice) : 'N/A';
-      document.getElementById('stock-market-cap').textContent = typeof formatCurrency === 'function' ? formatCurrency(marketCap) : marketCap;
-      updateTotalPrice();
-      logDebug(`📊 Chart and stats updated for ${symbol}, close: $${currentStockPrice.toFixed(2)}`);
+      if (cleanChartData.length === 0) {
+        logDebug(`❌ No valid chart data points after conversion for ${symbol}`);
+        useDemoData(symbol, currentTimeframe);
+        return;
+      }
+
+      chart.updateSeries([{
+        name: symbol,
+        data: cleanChartData
+      }]);
+
+      if (slicedData.length > 0) {
+        const lastDataPoint = slicedData[slicedData.length - 1];
+        currentStockPrice = parseFloat(lastDataPoint.close);
+        document.getElementById('current-price').textContent = `$${currentStockPrice.toFixed(2)}`;
+        document.getElementById('stock-high').textContent = `$${parseFloat(lastDataPoint.high).toFixed(2)}`;
+        document.getElementById('stock-low').textContent = `$${parseFloat(lastDataPoint.low).toFixed(2)}`;
+        document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
+        const marketCap = typeof calculateMarketCap === 'function' ? calculateMarketCap(symbol, currentStockPrice) : 'N/A';
+        document.getElementById('stock-market-cap').textContent = typeof formatCurrency === 'function' ? formatCurrency(marketCap) : marketCap;
+        updateTotalPrice();
+        logDebug(`📊 Chart and stats updated for ${symbol}, close: $${currentStockPrice.toFixed(2)}`);
+      }
+    } catch(e) {
+      logDebug(`❌ Error updating chart: ${e.message}`);
+      useDemoData(symbol, currentTimeframe);
     }
   }
 
@@ -763,19 +867,9 @@ document.addEventListener('DOMContentLoaded', function() {
         logDebug(`Timeframe changed to: ${timeframe}`);
 
         // KORREKTUR: Beim Wechsel des Zeitrahmens preserveInitialPrice = false!
-        loadStockData(currentSymbol, currentTimeframe, false);
+        loadStockData(currentSymbol, timeframe, false);
       });
     });
-
-    // Set up event listeners for quantity input
-    document.getElementById('quantity').addEventListener('input', updateTotalPrice);
-    
-    // Setup trade buttons
-    document.getElementById('buy-button').addEventListener('click', () => handleTrade('buy'));
-    document.getElementById('sell-button').addEventListener('click', () => handleTrade('sell'));
-
-    // Select first stock item by default
-    document.querySelector('.stock-item').click();
   }
 
   initializePage();
