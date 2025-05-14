@@ -3,6 +3,7 @@ import psycopg2.extras
 import logging
 from datetime import datetime
 import os
+from rich import print
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ def is_int(val):
 
 def get_db_connection():
     """Verbindung zur PostgreSQL-Datenbank herstellen"""
+    print('[bold blue]Connection to DB from Chat Handler[/bold blue]')
     try:
         conn = psycopg2.connect(
             host=os.getenv('POSTGRES_HOST'),

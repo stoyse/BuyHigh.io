@@ -2,11 +2,13 @@ import psycopg2
 import psycopg2.extras
 import logging
 import os
+from rich import print
 
 logger = logging.getLogger(__name__)
 
 def get_db_connection():
     """Stellt eine Verbindung zur PostgreSQL-Datenbank her."""
+    print('[bold blue]Connection to DB from Badge Handler[/bold blue]')
     try:
         conn = psycopg2.connect(
             host=os.getenv('POSTGRES_HOST'),

@@ -73,6 +73,97 @@
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
+
+  /* Quiz Button Styles - neu gestaltet */
+  .quiz-btn {
+    @apply font-medium border transition-all duration-200;
+    padding: 1.1rem 2.2rem; /* Mehr Padding: oben/unten 1.1rem, rechts/links 2.2rem */
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    min-width: 220px;
+    text-align: left;
+    border-radius: 1rem; /* rounded-xl */
+    background: rgba(255, 255, 255, 0.07);
+    color: #1e293b;
+    border: 1.5px solid rgba(139, 92, 246, 0.2);
+    box-shadow: 0 2px 8px 0 rgba(139, 92, 246, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dark .quiz-btn {
+    background: rgba(31, 41, 55, 0.4);
+    color: #e5e7eb;
+    border-color: rgba(139, 92, 246, 0.3);
+  }
+
+  .quiz-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
+    transition: 0.5s;
+  }
+
+  .quiz-btn:hover::before {
+    left: 100%;
+  }
+
+  .quiz-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px 0 rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.5);
+    background: rgba(139, 92, 246, 0.08);
+  }
+
+  .dark .quiz-btn:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.6);
+  }
+
+  .quiz-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .quiz-btn.neo-button-emerald {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: #10b981 !important;
+    color: #065f46 !important;
+  }
+
+  .dark .quiz-btn.neo-button-emerald {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border-color: #10b981 !important;
+    color: #a7f3d0 !important;
+  }
+
+  .quiz-btn.neo-button-red {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border-color: #ef4444 !important;
+    color: #991b1b !important;
+  }
+
+  .dark .quiz-btn.neo-button-red {
+    background: rgba(239, 68, 68, 0.2) !important;
+    border-color: #ef4444 !important;
+    color: #fca5a5 !important;
+  }
+
+  .quiz-btn.neo-button-purple {
+    background: rgba(139, 92, 246, 0.15) !important;
+    border-color: #8b5cf6 !important;
+    color: #5b21b6 !important;
+  }
+
+  .dark .quiz-btn.neo-button-purple {
+    background: rgba(139, 92, 246, 0.2) !important;
+    border-color: #8b5cf6 !important;
+    color: #c4b5fd !important;
+  }
 </style>
 {% endblock %}
 
@@ -406,8 +497,8 @@
                     
                     <!-- Bull Eyes with Sunglasses -->
                     <rect x="25" y="30" width="50" height="15" rx="5" fill="#000" />
-                    <rect x="20" y="30" width="15" height="15" rx="5" fill="#000" transform="rotate(-10 20 30)" />
-                    <rect x="65" y="30" width="15" height="15" rx="5" fill="#000" transform="rotate(10 65 30)" />
+                    <rect x="20" y="30" width="15" height="15" rx="5" transform="rotate(-10 20 30)" />
+                    <rect x="65" y="30" width="15" height="15" rx="5" transform="rotate(10 65 30)" />
                     <line x1="50" y1="30" x2="50" y2="45" stroke="#333" stroke-width="1" />
                     <ellipse cx="35" cy="37" rx="7" ry="5" fill="#1c84ff" class="animate-pulse-slow" style="animation-delay: 1s;" />
                     <ellipse cx="65" cy="37" rx="7" ry="5" fill="#1c84ff" class="animate-pulse-slow" style="animation-delay: 0.5s;" />
@@ -456,7 +547,6 @@
                   <span class="text-sm">🐂</span>
                 </div>
                 <div class="flex-1"></div>
-                  <p class="text-xs leading-relaxed text-gray-700 dark:text-gray-300">{{ dog_message }}</p>
                 </div>
               </div>
             </div>
@@ -485,6 +575,61 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Daily Quiz Card -->
+      <div class="glass-card rounded-2xl overflow-hidden border border-gray-200/10 dark:border-gray-700/20 transition-all duration-300 hover:shadow-neo">
+        <div class="p-6 relative">
+          <!-- Ambient Background Effect -->
+          <div class="absolute -top-20 -right-20 w-40 h-40 bg-neo-purple/10 rounded-full blur-3xl"></div>
+          
+          <div class="flex justify-between items-center mb-5">
+            <h2 class="text-xl font-semibold flex items-center text-gray-800 dark:text-gray-100">
+              <svg class="w-6 h-6 mr-2 text-neo-purple animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Daily Quiz
+            </h2>
+            <span class="text-xs font-medium text-neo-purple bg-neo-purple/10 px-2 py-0.5 rounded-full">XP +50</span>
+          </div>
+          
+          {% if quiz and not quiz.attempted %}
+            <!-- Quiz anzeigen -->
+            <!-- Quizfrage anzeigen -->
+            <div class="mb-4">
+              <p class="text-base font-semibold text-gray-800 dark:text-gray-100">
+                {{ quiz.question }}
+              </p>
+              {% if quiz.explanation %}
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {{ quiz.explanation }}
+                </p>
+              {% endif %}
+            </div>
+            <form method="post" action="{{ url_for('main.daily_quiz') }}">
+              <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
+              <input type="hidden" name="possible_answer_1" value="{{ quiz.possible_answer_1 }}">
+              <input type="hidden" name="possible_answer_2" value="{{ quiz.possible_answer_2 }}">
+              <input type="hidden" name="possible_answer_3" value="{{ quiz.possible_answer_3 }}">
+              <div class="flex flex-col space-y-2.5">
+                <button type="submit" name="quiz_answer" value="{{ quiz.possible_answer_1 }}" class="quiz-btn neo-button">
+                  {{ quiz.possible_answer_1 }}
+                </button>
+                <button type="submit" name="quiz_answer" value="{{ quiz.possible_answer_2 }}" class="quiz-btn neo-button">
+                  {{ quiz.possible_answer_2 }}
+                </button>
+                <button type="submit" name="quiz_answer" value="{{ quiz.possible_answer_3 }}" class="quiz-btn neo-button">
+                  {{ quiz.possible_answer_3 }}
+                </button>
+              </div>
+            </form>
+          {% elif quiz and quiz.attempted %}
+            <!-- Bereits erledigt Hinweis -->
+            <div class="glass-card p-4 rounded-xl backdrop-blur-sm border border-neo-emerald/30 bg-neo-emerald/5 text-neo-emerald text-center font-semibold">
+              Du hast das heutige Quiz bereits erledigt! 🎉
+            </div>
+          {% endif %}
         </div>
       </div>
 
@@ -598,74 +743,4 @@
     </div>
   </div>
 </div>
-
-<script>
-  // Animation for counting up numbers
-  document.addEventListener('DOMContentLoaded', function() {
-    // Function to animate counting up
-    function animateCounter(element, targetValue) {
-      const duration = 2000; // Animation duration in ms
-      const startTime = performance.now();
-      const startValue = 0;
-      
-      function updateCounter(currentTime) {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        
-        // Easing function for smoother animation
-        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-        let currentValue = startValue + (targetValue - startValue) * easeOutQuart;
-        
-        // If the target has a currency symbol or other formatting, preserve it
-        // For values with decimal points, ensure they are handled correctly
-        if (element.textContent.includes('€') || element.textContent.includes('$')) {
-            const isEuro = element.textContent.includes('€');
-            const symbol = isEuro ? '€' : '$';
-            // Check if the original value had decimals to decide formatting
-            if (targetValue % 1 !== 0 || element.textContent.match(/\.\d{2}/)) {
-                 element.textContent = symbol + currentValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            } else {
-                 element.textContent = symbol + Math.floor(currentValue).toLocaleString('de-DE');
-            }
-        } else if (targetValue % 1 !== 0 || (element.textContent.includes('.') && !element.textContent.match(/[a-zA-Z%]/))) {
-             // Handle non-currency numbers with decimals
-             element.textContent = currentValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        }
-        else {
-          element.textContent = Math.floor(currentValue).toLocaleString('de-DE');
-        }
-        
-        if (progress < 1) {
-          requestAnimationFrame(updateCounter);
-        } else {
-          // Ensure final value is exact and correctly formatted
-          if (element.textContent.includes('€') || element.textContent.includes('$')) {
-            const isEuro = element.textContent.includes('€');
-            const symbol = isEuro ? '€' : '$';
-            if (targetValue % 1 !== 0 || element.dataset.originalValue.match(/\.\d{2}/)) {
-                element.textContent = symbol + targetValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            } else {
-                element.textContent = symbol + Math.floor(targetValue).toLocaleString('de-DE');
-            }
-          } else if (targetValue % 1 !== 0 || (element.dataset.originalValue && element.dataset.originalValue.includes('.'))) {
-            element.textContent = targetValue.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          } else {
-            element.textContent = Math.floor(targetValue).toLocaleString('de-DE');
-          }
-        }
-      }
-      // Store original text content for formatting reference
-      element.dataset.originalValue = element.textContent;
-      requestAnimationFrame(updateCounter);
-    }
-    
-    // Find and animate all counter elements
-    const counters = document.querySelectorAll('.counter');
-    counters.forEach(counter => {
-      // Extract the number from the counter element
-      const value = parseFloat(counter.textContent.replace(/[^0-9.-]+/g, ""));
-      animateCounter(counter, value);
-    });
-  });
-</script>
 {% endblock %}

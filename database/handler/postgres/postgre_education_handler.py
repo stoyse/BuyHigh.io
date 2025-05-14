@@ -1,0 +1,128 @@
+import os  # Dieser Import fehlte
+import psycopg2
+import psycopg2.extras
+from datetime import datetime
+import logging
+from rich import print
+
+logger = logging.getLogger(__name__)
+
+# PostgreSQL-Verbindungsdetails aus .env
+PG_HOST = os.getenv('POSTGRES_HOST', 'localhost')
+PG_PORT = os.getenv('POSTGRES_PORT', '5432')
+PG_DB = os.getenv('POSTGRES_DB', 'buyhigh')
+PG_USER = os.getenv('POSTGRES_USER', 'postgres')
+PG_PASSWORD = os.getenv('POSTGRES_PASSWORD', '')
+
+def get_db_connection():
+    print('[bold blue]Connection to DB from Education Handler[/bold blue]')
+    """Stellt eine Verbindung zur PostgreSQL-Datenbank her."""
+    try:
+        conn = psycopg2.connect(
+            host=PG_HOST,
+            port=PG_PORT,
+            dbname=PG_DB,
+            user=PG_USER,
+            password=PG_PASSWORD
+        )
+        conn.autocommit = False
+        return conn
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Öffnen der PostgreSQL-Verbindung: {e}", exc_info=True)
+        raise
+
+def _parse_user_timestamps(user_row):
+    if user_row is None:
+        return None
+    user_data = dict(user_row)
+    for key in ['created_at', 'last_login']:
+        val = user_data.get(key)
+        if val and isinstance(val, str):
+            try:
+                user_data[key] = datetime.fromisoformat(val)
+            except Exception:
+                pass
+    return user_data
+
+
+def get_daily_quiz(date):
+    """Lädt das tägliche Quiz für ein bestimmtes Datum aus der PostgreSQL-Datenbank."""
+    try:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM daily_quiz WHERE date = %s", (date,))
+            quiz_data = cursor.fetchone()
+            return dict(quiz_data) if quiz_data else None
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen des täglichen Quiz für das Datum {date}: {e}", exc_info=True)
+        raise
+    finally:
+        if conn:
+            conn.close()
+
+def insert_daily_quiz_attempt(user_id, quiz_id, selected_answer, is_correct):
+    """
+    Fügt einen neuen Eintrag in die Tabelle daily_quiz_attempts ein.
+    """
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO daily_quiz_attempts (user_id, quiz_id, selected_answer, is_correct)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (user_id, quiz_id) DO NOTHING
+            """, (user_id, quiz_id, selected_answer, is_correct))
+            conn.commit()
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Einfügen eines Quiz-Versuchs: {e}", exc_info=True)
+        raise
+    finally:
+        if conn:
+            conn.close()
+
+def get_daily_quiz_attempts(user_id):
+    """
+    Lädt alle täglichen Quizversuche eines Benutzers aus der PostgreSQL-Datenbank.
+    """
+    try:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT * FROM daily_quiz_attempts WHERE user_id = %s
+            """, (user_id,))
+            attempts = cursor.fetchall()
+            return [dict(attempt) for attempt in attempts]
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen der täglichen Quizversuche für Benutzer {user_id}: {e}", exc_info=True)
+        raise
+    finally:
+        if conn:
+            conn.close()
+
+def get_dayly_quiz_attempt_day(user_id, date):
+    """
+    Lädt den täglichen Quizversuch eines Benutzers für ein bestimmtes Datum aus der PostgreSQL-Datenbank.
+    """
+    try:
+        conn = get_db_connection()
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT * FROM daily_quiz_attempts 
+                WHERE user_id = %s AND DATE(attempted_at) = %s
+            """, (user_id, date))
+            attempts = cursor.fetchall()
+            if not attempts:
+                return None
+            return [dict(attempt) for attempt in attempts]
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen der täglichen Quizversuche für Benutzer {user_id} am Datum {date}: {e}", exc_info=True)
+        raise
+    finally:
+        if conn:
+            conn.close()
+
+if __name__ == "__main__":
+    # Teste die Funktionen hier, wenn nötig
+    insert_daily_quiz_attempt(1, 2, '2', True)
+    #print(get_daily_quiz_attempts(1))
+    print(get_dayly_quiz_attempt_day(2, '2025-05-13'))

@@ -4,6 +4,7 @@ from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 import stock_data  # Import des stock_data Moduls für aktuelle Kurse
 import database.handler.postgres.postgres_db_handler as db_handler  # Import des PostgreSQL DB Handlers
+from rich import print
 
 load_dotenv()
 
@@ -16,6 +17,7 @@ POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 USD_TO_EUR_EXCHANGE_RATE = 0.92  # Beispielkurs, wie im SQLite-Handler
 
 def get_connection():
+    print('[bold blue]Connection to DB from Transaction Handler[/bold blue]')
     return psycopg2.connect(
         host=POSTGRES_HOST,
         port=POSTGRES_PORT,

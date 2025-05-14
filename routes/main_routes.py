@@ -4,6 +4,8 @@ import database.handler.postgres.postgres_db_handler as db_handler
 import logging  # Add logging import
 import stock_news
 from rich import print
+import database.handler.postgres.postgre_education_handler as edu_handler
+import datetime
 
 # Configure basic logging
 # logging.basicConfig(level=logging.DEBUG) # Wird jetzt in app.py global konfiguriert
@@ -129,6 +131,21 @@ def dashboard():
             asset_allocation.append(allocation)
         logger.debug(f"Asset-Allocation berechnet: {len(asset_allocation)} Assets")
     print(f'[cyan]Asset-Allocation: {asset_allocation}')
+
+    # Daily quiz
+
+    today = datetime.date.today().strftime('%Y-%m-%d')
+    quiz_data = edu_handler.get_daily_quiz(today)
+    print(f'[red]user:', g.user)
+    print(f'[red]today atempt: {edu_handler.get_dayly_quiz_attempt_day(g.user["id"], today)}')
+    if quiz_data is None:
+        quiz_data = {}
+    if edu_handler.get_dayly_quiz_attempt_day(g.user['id'], today) is not None:
+        quiz_data['attempted'] = True
+    else:
+        quiz_data['attempted'] = False
+    print(f'[cyan]Quiz data:', quiz_data)
+
     return render_template('dashboard.html', 
                            user=g.user, 
                            darkmode=dark_mode_active,
@@ -140,7 +157,8 @@ def dashboard():
                            current_user_level=user_level,
                            current_user_xp=user_xp,
                            xp_percentage=xp_percentage,
-                           levels=levels)
+                           levels=levels,
+                           quiz=quiz_data)
 
 # Generate a personalized dog message based on user data and portfolio
 def generate_dog_message(user, portfolio_data):
@@ -342,3 +360,28 @@ def trader_badges():
                           badges_by_category=badges_by_category,
                           total_earned=total_earned,
                           total_available=total_available)
+
+@main_bp.route('/daily-quiz', methods=['GET', 'POST'])
+@login_required
+def daily_quiz():
+    possible_answer_1 = request.form.get("possible_answer_1")
+    possible_answer_2 = request.form.get("possible_answer_2")
+    possible_answer_3 = request.form.get("possible_answer_3")
+    quiz_answer = request.form.get("quiz_answer")
+    print(f'[red]Possible answer 1:', possible_answer_1)
+    print(f'[red]Possible answer 2:', possible_answer_2)
+    print(f'[red]Possible answer 3:', possible_answer_3)
+    print(f'[red]Quiz answer:', quiz_answer)
+    todays_quiz = edu_handler.get_daily_quiz(datetime.date.today().strftime('%Y-%m-%d'))
+    print(f'[red]Quiz:', todays_quiz)
+    if todays_quiz['correct_answer'] == quiz_answer:
+        # Insert the quiz attempt into the database
+        edu_handler.insert_daily_quiz_attempt(g.user['id'], todays_quiz['id'], quiz_answer, True)
+        db_handler.manage_user_xp('daily_quiz', g.user['id'], 1)  # Beispiel: 10 XP für die richtige Antwort
+        flash('Richtige Antwort! Gut gemacht!', 'success')
+    if todays_quiz['correct_answer'] != quiz_answer:
+        # Insert the quiz attempt into the database
+        edu_handler.insert_daily_quiz_attempt(g.user['id'], todays_quiz['id'], quiz_answer, False)
+        flash('Falsche Antwort!', 'danger')
+
+    return redirect(url_for('main.dashboard'))

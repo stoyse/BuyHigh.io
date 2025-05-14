@@ -153,7 +153,38 @@ VALUES
 ('sell', 50, 'Awarded for selling an asset'),
 ('login', 5, 'Awarded for daily login'),
 ('invite_friend', 100, 'Awarded for inviting a friend'),
-('complete_profile', 50, 'Awarded for completing the user profile')
+('complete_profile', 50, 'Awarded for completing the user profile'),
+('daily_quiz', 100, 'Awarded for completing the daily quiz')
 ON CONFLICT (action) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS daily_quiz (
+    id SERIAL PRIMARY KEY,
+    date DATE NOT NULL UNIQUE,
+    question TEXT NOT NULL,
+    possible_answer_1 TEXT NOT NULL,
+    possible_answer_2 TEXT NOT NULL,
+    possible_answer_3 TEXT NOT NULL,
+    correct_answer TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS daily_quiz_attempts (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    quiz_id INTEGER NOT NULL REFERENCES daily_quiz(id) ON DELETE CASCADE,
+    selected_answer TEXT NOT NULL,
+    is_correct BOOLEAN NOT NULL,
+    attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, quiz_id)
+);
+
+-- Insert random data into daily_quiz
+INSERT INTO daily_quiz (date, question, possible_answer_1, possible_answer_2, possible_answer_3, correct_answer)
+VALUES
+('2025-5-9', 'What is the capital of France?', 'Berlin', 'Madrid', 'Paris', 'Paris'),
+('2025-5-10', 'Which planet is known as the Red Planet?', 'Earth', 'Mars', 'Venus', 'Mars'),
+('2025-5-11', 'What is the largest ocean on Earth?', 'Atlantic Ocean', 'Indian Ocean', 'Pacific Ocean', 'Pacific Ocean'),
+('2025-5-12', 'Who wrote "Romeo and Juliet"?', 'William Shakespeare', 'Charles Dickens', 'Mark Twain', 'William Shakespeare'),
+('2025-5-13', 'What is the chemical symbol for water?', 'H2O', 'CO2', 'O2', 'H2O')
+ON CONFLICT (date) DO NOTHING;
 
