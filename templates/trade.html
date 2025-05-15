@@ -159,14 +159,14 @@
           {% endfor %}
         {% else %}
           <!-- Fallback für fehlende Assets -->
-          <div class="stock-item p-3 glass-card hover:bg-gray-100/10 dark:hover:bg-gray-700/20 rounded-xl cursor-pointer border border-gray-200/20 dark:border-gray-700/20 transition-all hover:scale-[1.02] hover:shadow-neo" data-symbol="SPY" data-name="S&P 500 SPDR ETF" data-price="450.05" data-change="+0.50">
+          <div class="stock-item p-3 glass-card hover:bg-gray-100/10 dark:hover:bg-gray-700/20 rounded-xl cursor-pointer border border-gray-200/20 dark:border-gray-700/20 transition-all hover:scale-[1.02] hover:shadow-neo" data-symbol="AAPL" data-name="Apple Inc." data-price="170.00" data-change="+0.50">
             <div class="flex justify-between items-center">
               <div>
-                <p class="font-medium text-gray-800 dark:text-gray-200">S&P 500 ETF</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">SPY</p>
+                <p class="font-medium text-gray-800 dark:text-gray-200">Apple Inc.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">AAPL</p>
               </div>
               <div class="text-right">
-                <p class="font-medium text-gray-800 dark:text-gray-200">$450.05</p>
+                <p class="font-medium text-gray-800 dark:text-gray-200">$170.00</p>
                 <p class="text-xs text-neo-emerald flex items-center">
                   <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
@@ -204,17 +204,17 @@
             <svg class="w-5 h-5 mr-2 text-neo-blue animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
             </svg>
-            S&P 500 ETF (SPY)
+            Apple Inc. (AAPL)
           </h2>
           <p id="stock-price" class="text-sm text-gray-600 dark:text-gray-400 flex items-center mt-1">
             <svg class="w-4 h-4 mr-1 text-neo-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            Price: $450.05 (+0.50%)
+            Price: $170.00 (+0.50%)
           </p>
         </div>
         
-        <a id="news-button" href="{{ url_for('main.company_news') }}" 
+        <a id="news-button" href="{{ url_for('main.company_news', symbol='AAPL') }}" 
            class="neo-button px-3 py-2 bg-neo-amber/10 text-neo-amber border border-neo-amber/20 hover:bg-neo-amber hover:text-white rounded-lg text-sm font-medium flex items-center">
           <svg class="h-4 w-4 mr-2 animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
@@ -285,7 +285,7 @@
                 Price:
               </label>
               <div id="current-price" class="w-full p-2 glass-card border border-gray-200/20 dark:border-gray-700/20 rounded-lg text-sm dark:bg-gray-800/50 animate-pulse-slow">
-                $450.05
+                $170.00
               </div>
             </div>
           </div>
@@ -298,7 +298,7 @@
                 </svg>
                 Total:
               </p>
-              <p id="total-price" class="text-lg font-medium text-neo-blue">$450.05</p>
+              <p id="total-price" class="text-lg font-medium text-neo-blue">$170.00</p>
             </div>
             <div>
               <p class="text-sm text-gray-700 dark:text-gray-300 flex items-center">
@@ -377,6 +377,25 @@
     const stockItems = document.querySelectorAll('.stock-item');
     const newsButton = document.getElementById('news-button');
 
+    // Add search functionality
+    if (searchInput) {
+      searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        
+        stockItems.forEach(item => {
+          const name = item.getAttribute('data-name').toLowerCase();
+          const symbol = item.getAttribute('data-symbol').toLowerCase();
+          const sector = item.getAttribute('data-sector')?.toLowerCase() || '';
+          
+          if (name.includes(query) || symbol.includes(query) || sector.includes(query)) {
+            item.style.display = '';
+          } else {
+            item.style.display = 'none';
+          }
+        });
+      });
+    }
+
     // Initial asset loading via AJAX (optional for live data)
     function loadAssets() {
       fetch('/api/assets')
@@ -435,10 +454,15 @@
       });
     });
 
-    // Load assets when the page loads (optional)
-    // loadAssets();
-    
-    // Rest of the existing code...
+    // Automatically select the first stock item
+    if (stockItems.length > 0) {
+      const firstItem = stockItems[0];
+      firstItem.classList.add('selected-stock');
+      const symbol = firstItem.getAttribute('data-symbol');
+      if (symbol) {
+        newsButton.href = `/news/${symbol}`;
+      }
+    }
   });
 </script>
 {% endblock %}

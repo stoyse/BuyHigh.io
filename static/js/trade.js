@@ -747,13 +747,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (price && !isNaN(price)) return price;
     // Fallback falls kein Wert aus DB
-    const basePrice = {"SPY": 450, "AAPL": 170, "TSLA": 250, "MSFT": 330, "AMZN": 130, "GOOGL": 140, "META": 290};
+    const basePrice = {"AAPL": 170, "TSLA": 250, "MSFT": 330, "AMZN": 130, "GOOGL": 140, "META": 290, "NVDA": 950};
     return basePrice[symbol] || (100 + Math.random() * 400);
   }
 
   // Dummy-Funktionen für calculateMarketCap und formatCurrency, falls nicht vorhanden
   function calculateMarketCap(symbol, price) {
-    const sharesOutstanding = {"SPY": 1e9, "AAPL": 15e9, "TSLA": 3e9, "MSFT": 7e9, "AMZN": 10e9, "GOOGL": 12e9, "META": 2.5e9};
+    const sharesOutstanding = {"AAPL": 15e9, "TSLA": 3e9, "MSFT": 7e9, "AMZN": 10e9, "GOOGL": 12e9, "META": 2.5e9, "NVDA": 2.5e9};
     return price * (sharesOutstanding[symbol] || 5e9); 
   }
 
@@ -810,40 +810,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set up event listeners for stock items
     document.querySelectorAll('.stock-item').forEach(item => {
       item.addEventListener('click', function() {
-        const symbol = this.getAttribute('data-symbol');
-        const name = this.getAttribute('data-name');
-        const price = this.getAttribute('data-price');
-        const change = this.getAttribute('data-change');
-        const assetType = this.getAttribute('data-asset-type') || 'stock';
-
-        logDebug(`Selected stock: ${symbol} (${name}), price from HTML: $${price}, change: ${change}%, type: ${assetType}`);
-
-        // Update current symbol and price
-        currentSymbol = symbol;
-        currentStockPrice = parseFloat(price);
-        initialStockPrice = parseFloat(price);
-
-        // Update stock info in UI
-        document.getElementById('stock-name').textContent = `${name} (${symbol})`;
-        document.getElementById('stock-price').textContent = `Preis: $${price} (${change}%)`;
-        document.getElementById('current-price').textContent = `$${price}`;
-        
-        // Optional: Load additional asset details
-        loadAssetDetails(symbol);
-
-        // Update total based on quantity
-        updateTotalPrice();
-
-        // Load new stock data, aber behalte den ursprünglichen Preis bei
-        loadStockData(symbol, currentTimeframe, true);
-
-        // Highlight selected stock
-        document.querySelectorAll('.stock-item').forEach(s => {
-          s.classList.remove('border-primary-light', 'dark:border-primary-dark', 'border-2');
-          s.classList.add('border-gray-200', 'dark:border-gray-700', 'border-2');
-        });
-        this.classList.remove('border-gray-200', 'dark:border-gray-700');
-        this.classList.add('border-primary-light', 'dark:border-primary-dark', 'border-2');
+        selectStockItem(this);
       });
     });
 
@@ -870,6 +837,71 @@ document.addEventListener('DOMContentLoaded', function() {
         loadStockData(currentSymbol, timeframe, false);
       });
     });
+
+    // Add event listeners for buy and sell buttons
+    document.getElementById('buy-button').addEventListener('click', function() {
+      handleTrade('buy');
+    });
+    
+    document.getElementById('sell-button').addEventListener('click', function() {
+      handleTrade('sell');
+    });
+    
+    // NEU: Automatisch das erste Element in der Stockliste auswählen
+    selectFirstStockItem();
+  }
+
+  // NEU: Funktion zum Auswählen des ersten Elements
+  function selectFirstStockItem() {
+    const firstStockItem = document.querySelector('.stock-item');
+    if (firstStockItem) {
+      logDebug('Selecting first stock item by default');
+      selectStockItem(firstStockItem);
+      
+      // Visuell als ausgewählt markieren
+      firstStockItem.classList.remove('border-gray-200', 'dark:border-gray-700');
+      firstStockItem.classList.add('border-primary-light', 'dark:border-primary-dark', 'border-2', 'selected-stock');
+    } else {
+      logDebug('No stock items found to select by default');
+    }
+  }
+  
+  // NEU: Auslagern der Stock-Item-Auswahl in separate Funktion
+  function selectStockItem(item) {
+    const symbol = item.getAttribute('data-symbol');
+    const name = item.getAttribute('data-name');
+    const price = item.getAttribute('data-price');
+    const change = item.getAttribute('data-change');
+    const assetType = item.getAttribute('data-asset-type') || 'stock';
+
+    logDebug(`Selected stock: ${symbol} (${name}), price from HTML: $${price}, change: ${change}%, type: ${assetType}`);
+
+    // Update current symbol and price
+    currentSymbol = symbol;
+    currentStockPrice = parseFloat(price);
+    initialStockPrice = parseFloat(price);
+
+    // Update stock info in UI
+    document.getElementById('stock-name').textContent = `${name} (${symbol})`;
+    document.getElementById('stock-price').textContent = `Preis: $${price} (${change}%)`;
+    document.getElementById('current-price').textContent = `$${price}`;
+    
+    // Optional: Load additional asset details
+    loadAssetDetails(symbol);
+
+    // Update total based on quantity
+    updateTotalPrice();
+
+    // Load new stock data, aber behalte den ursprünglichen Preis bei
+    loadStockData(symbol, currentTimeframe, true);
+
+    // Highlight selected stock
+    document.querySelectorAll('.stock-item').forEach(s => {
+      s.classList.remove('border-primary-light', 'dark:border-primary-dark', 'border-2', 'selected-stock');
+      s.classList.add('border-gray-200', 'dark:border-gray-700', 'border-2');
+    });
+    item.classList.remove('border-gray-200', 'dark:border-gray-700');
+    item.classList.add('border-primary-light', 'dark:border-primary-dark', 'border-2', 'selected-stock');
   }
 
   initializePage();

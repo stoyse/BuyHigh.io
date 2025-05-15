@@ -100,7 +100,6 @@ CREATE TABLE IF NOT EXISTS assets (
 
 INSERT INTO assets (symbol, name, asset_type, exchange, sector, industry, default_price)
 VALUES 
-('^GSPC', 'S&P 500 Index', 'index', 'NYSE', 'Index', 'Market Index', 5200),
 ('AAPL', 'Apple Inc.', 'stock', 'NASDAQ', 'Technology', 'Consumer Electronics', 170),
 ('TSLA', 'Tesla Inc.', 'stock', 'NASDAQ', 'Automotive', 'Auto Manufacturers', 250),
 ('GOOGL', 'Alphabet Inc.', 'stock', 'NASDAQ', 'Technology', 'Internet Content', 140),
@@ -179,15 +178,7 @@ CREATE TABLE IF NOT EXISTS daily_quiz_attempts (
     UNIQUE(user_id, quiz_id)
 );
 
--- Insert random data into daily_quiz
-INSERT INTO daily_quiz (date, question, possible_answer_1, possible_answer_2, possible_answer_3, correct_answer)
-VALUES
-('2025-5-9', 'What is the capital of France?', 'Berlin', 'Madrid', 'Paris', 'Paris'),
-('2025-5-10', 'Which planet is known as the Red Planet?', 'Earth', 'Mars', 'Venus', 'Mars'),
-('2025-5-11', 'What is the largest ocean on Earth?', 'Atlantic Ocean', 'Indian Ocean', 'Pacific Ocean', 'Pacific Ocean'),
-('2025-5-12', 'Who wrote "Romeo and Juliet"?', 'William Shakespeare', 'Charles Dickens', 'Mark Twain', 'William Shakespeare'),
-('2025-5-13', 'What is the chemical symbol for water?', 'H2O', 'CO2', 'O2', 'H2O')
-ON CONFLICT (date) DO NOTHING;
+
 
 CREATE TABLE IF NOT EXISTS developers (
     id SERIAL PRIMARY KEY,
