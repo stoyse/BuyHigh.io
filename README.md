@@ -2,282 +2,96 @@
 
 ![Hackatime Badge](https://hackatime-badge.hackclub.com/U08RM2BCLBU/BuyHigh.io)
 
----
 
 ## Overview
 
-BuyHigh.io is a Flask-based web application for playful stock trading with gamification elements, pixel-art design, and user profiles. The app supports registration, login, portfolio management, stock trading (buy/sell), dashboard, settings (including theme), chat features, and API endpoints for AJAX/JS interactions.
+BuyHigh.io is a gamified stock trading platform designed for learning and entertainment. It combines trading mechanics with playful elements like XP, badges, and a mood pet to engage users. The app is built using Flask, with a modular codebase that supports extensibility and integration with external services like Firebase.
 
 ---
 
-## Detailed Feature & Technology Matrix
+## Features
 
-| Funktion | Beschreibung | Backend | Frontend | Datenbank | Externe Services |
-|----------|--------------|---------|----------|-----------|------------------|
-| **Benutzer-Registrierung** | Neues Benutzerkonto mit Username, Email, Passwort | Flask, Jinja2, bcrypt | HTML, Tailwind, JS | SQLite: users | - |
-| **Login/Logout** | Authentifizierung, Session-Handling | Flask, Jinja2, bcrypt | HTML, Tailwind, JS | SQLite: users | - |
-| **Google Login** | Login via Google OAuth | Flask, Firebase Auth | HTML, JS, Firebase UI | - | Firebase Auth |
-| **Passwort vergessen** | Passwort-Reset via Email | Flask, SMTP | HTML, JS | SQLite: users | SMTP-Server |
-| **Profilverwaltung** | Anzeigen & Bearbeiten von Profil, Username, Email | Flask | HTML, JS | SQLite: users | - |
-| **Passwort ändern** | Neues Passwort setzen | Flask, bcrypt | HTML, JS | SQLite: users | - |
-| **Account löschen** | Account & Daten löschen | Flask | HTML, JS | SQLite: users, transactions | - |
-| **Theme-Auswahl** | Light/Dark Mode pro User | Flask, Jinja2 | Tailwind, JS | SQLite: users | - |
-| **Dashboard** | Übersicht: Kontostand, Portfolio, Mood Pet, XP, Badges | Flask, Jinja2 | HTML, Tailwind, JS | SQLite: users, transactions, asset_types | - |
-| **Portfolio-Anzeige** | Liste aller gehaltenen Assets | Flask | HTML, JS | SQLite: transactions, asset_types | - |
-| **Stimmungs-Pet** | Visualisierung des Trading-Erfolgs | Flask | HTML, Tailwind, JS | SQLite: users | - |
-| **Meme Mode** | Aktivierung von Meme-Features | Flask | HTML, JS | SQLite: users | - |
-| **Level & XP** | Fortschrittssystem für User | Flask | HTML, JS | SQLite: users | - |
-| **Badges** | Freischaltbare Erfolge | Flask | HTML, JS | SQLite: users | - |
-| **Aktivitätsverlauf** | Letzte Trades anzeigen | Flask | HTML, JS | SQLite: transactions | - |
-| **Marktstimmung (Platzhalter)** | Künftige AI-basierte Marktstimmung | - | HTML | - | - |
-| **Handelsseite** | Aktienliste, Suche, Auswahl | Flask, Jinja2 | HTML, Tailwind, JS | SQLite: asset_types | - |
-| **Candlestick-Chart** | Interaktives Chart für gewähltes Asset | Flask API, Demo-Generator | ApexCharts, JS | - | ApexCharts, Alpha Vantage (optional) |
-| **Zeitrahmen-Auswahl** | Verschiedene Zeiträume für Chart | Flask API | JS | - | - |
-| **Live-Updates (1MIN)** | Chart aktualisiert sich minütlich | Flask API | JS | - | - |
-| **Kaufen/Verkaufen** | Kauf/Verkauf von Assets | Flask API | JS, HTML | SQLite: transactions, users | - |
-| **Kauf/Verkauf-Validierung** | Validierung von Menge, Preis, Saldo | Flask | JS | SQLite: users, transactions | - |
-| **Portfolio-Berechnung** | FIFO, Gewinn/Verlust, Gesamtwert | Flask | JS | SQLite: transactions | - |
-| **Marktstatistiken** | High, Low, Volumen, Market Cap | Flask API, Demo-Generator | JS | - | - |
-| **Chat-Raum-Liste** | Alle Chats des Users | Flask, Firebase | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
-| **Chat-Suche** | Chats nach Name filtern | Flask | JS | - | - |
-| **Chat erstellen** | Neuen Chat-Raum anlegen | Flask, Firebase | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
-| **Chat beitreten** | User zu Chat hinzufügen | Flask, Firebase | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
-| **Chat verlassen/löschen** | Chat verlassen oder löschen | Flask, Firebase | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
-| **Chat-Nachrichten** | Nachrichten senden/empfangen | Flask, Firebase, WebSocket | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
-| **Chat-Realtime** | Nachrichten in Echtzeit | Flask-SocketIO, Firebase | JS, WebSocket | Firebase RTDB, SQLite | Firebase RTDB |
-| **Fallback Chat-DB** | Automatischer Fallback auf SQLite | Flask | - | SQLite | - |
-| **General-Chat** | System-Chat, jeder User ist Mitglied | Flask, Firebase | HTML, JS | Firebase RTDB, SQLite | Firebase RTDB |
-| **Chat-Migration** | Migration SQLite → Firebase | Flask CLI | - | SQLite, Firebase RTDB | Firebase RTDB |
-| **Chat-Reset** | Löscht alle Chats in Firebase | Flask CLI | - | Firebase RTDB | Firebase RTDB |
-| **API: /api/stock-data** | Preis-/Chartdaten für Symbol & Zeitraum | Flask API | JS | - | Alpha Vantage, Demo-Generator |
-| **API: /api/trade/buy/sell** | Kauf/Verkauf-Transaktion | Flask API | JS | SQLite: transactions, users | - |
-| **API: /api/portfolio** | Portfolio & Kontostand | Flask API | JS | SQLite: transactions, users | - |
-| **Management CLI** | setup, status, migrate, reset-firebase-chat | Flask CLI | - | SQLite, Firebase RTDB | Firebase RTDB |
-| **Fehlerseiten** | 404, 403, 500 etc. | Flask | HTML | - | - |
-| **Pixel-Art Themes** | Verschiedene Themes, Sidebar-Icons | Tailwind, CSS | HTML, JS | - | - |
-| **Stripe Integration (geplant)** | Echtgeld-Käufe für Spielgeld | - | - | - | Stripe (geplant) |
-| **Passkey Login (geplant)** | Login mit Passkey | - | - | - | - |
-| **Electron Support (geplant)** | Desktop-App | - | - | - | Electron (geplant) |
-| **Mehrsprachigkeit (geplant)** | Mehrere Sprachen | Flask Babel | HTML, JS | - | - |
+### Core Features
+- **User Authentication**: Register, login, and manage accounts with secure password hashing.
+- **Portfolio Management**: Track your assets, view performance, and calculate gains/losses.
+- **Stock Trading**: Buy and sell stocks with real-time or demo data.
+- **Dashboard**: Overview of account balance, portfolio, recent transactions, and achievements.
+- **Gamification**: Earn XP, unlock badges, and level up as you trade.
+- **Mood Pet**: A virtual companion reflecting your trading success.
+- **Meme Mode**: Activate fun, meme-inspired features for a lighthearted experience.
+
+### Advanced Features
+- **Chat System**: Real-time messaging with Firebase integration and SQLite fallback.
+- **Interactive Charts**: Candlestick charts with multiple timeframes and live updates.
+- **API Endpoints**: RESTful APIs for stock data, trading, and portfolio management.
+- **Management CLI**: Tools for database setup, Firebase migration, and status checks.
+
+### Planned Features
+- **Stripe Integration**: Add real money to purchase virtual currency.
+- **Passkey Login**: Secure authentication using passkeys.
+- **Electron Support**: Desktop application for enhanced usability.
+- **Multilingual Support**: Localization for a global audience.
 
 ---
 
-## Main Features & Pages
+## Codebase Overview
 
-### 1. Authentication & User Management
+### Backend
+- **`app.py`**: Main Flask application setup, including routing, session handling, and error management.
+- **`routes/`**: Modular route definitions for main pages, authentication, API, and chat.
+- **`database/handler/`**: Database interaction modules for PostgreSQL and Firebase.
+- **`auth.py`**: Firebase authentication and user management.
+- **`manage.py`**: CLI for database and Firebase operations.
 
-- **Registration (`/register`)**
-  - Username, email, password
-  - Validation, password hashing (bcrypt)
-- **Login (`/login`)**
-  - Session handling, password verification
-- **Logout (`/logout`)**
-  - Session clearing, redirect
+### Frontend
+- **Templates (`/templates/`)**: Jinja2 templates for rendering HTML pages.
+- **Static Files (`/static/`)**: JavaScript and CSS for interactivity and styling.
 
-### 2. Main Pages
-
-- **Home (`/`)**
-  - Welcome message, user info, account balance, mood pet, meme mode, statistics
-  - Quick summary of your account and playful elements
-- **Dashboard (`/dashboard`)**
-  - **Account Overview:** Shows current balance (in EUR), total trades, and realized profit/loss (in EUR)
-  - **Portfolio:** List of all assets (stocks, crypto, etc.) you currently hold, with quantities and types
-  - **Mood Pet & Energy:** Displays your mood pet and its current energy (out of 100)
-  - **Meme Mode:** Indicates whether meme mode is enabled for your account
-  - **Recent Activity:** List of your latest buy/sell transactions, with date, symbol, quantity, and price
-  - **Player Status:** Shows your trader level, XP progress, and unlocked badges (e.g., first trade, streaks)
-  - **Market Mood (Coming Soon):** Placeholder for future market sentiment features
-- **Trade (`/trade`)**
-  - **Stock List & Search:** Browse and search for stocks, ETFs, indices, and crypto. Click to select.
-  - **Candlestick Chart:** Interactive chart (ApexCharts) for the selected symbol and timeframe
-  - **Timeframe Selection:** Choose between 1MIN, 1W, 1M, 3M, 6M, 1Y, ALL for chart data
-  - **Trade Form:** Buy/sell form with quantity, price, total, and potential gain/loss calculation
-  - **Stats:** Shows volume, high, low, and market cap for the selected asset
-  - **Live Updates:** For 1MIN timeframe, chart updates live every minute
-- **Settings (`/settings`)**
-  - **Theme Selection:** Choose between light and dark mode for your account
-  - **Change Password:** Update your account password with validation
-  - **Delete Account:** Permanently delete your account and all associated data (requires password confirmation).
-- **Chat (`/chat/chats`)**
-  - **Chat List:** Browse all your chat rooms with last messages and activity times
-  - **Chat Search:** Filter chats by name
-  - **Create Chat:** Create new chat rooms with custom names
-  - **Chat Room (`/chat/<chat_id>`):** Real-time messaging with other users 
-  - **Default General Chat:** System ensures users are added to a default "General" chat room
-
----
-
-## API Endpoints (`/api/...`)
-
-- **/api/stock-data**
-  - Returns price data (historical or intraday) for a symbol and timeframe (JSON)
-- **/api/trade/buy**
-  - POST: Buy a stock (symbol, quantity, price)
-- **/api/trade/sell**
-  - POST: Sell a stock (symbol, quantity, price)
-- **/api/portfolio**
-  - Returns the user's portfolio and account balance
-
----
-
-## Backend Modules & Functions
-
-### `app.py`
-- Flask app setup, routing, session handling, login decorator, API endpoints
-
-### `routes/`
-- **main_routes.py**: Main page routes (index, dashboard, trade, settings)
-- **auth_routes.py**: Authentication (register, login, logout)
-- **api_routes.py**: API endpoints for AJAX/JS
-- **chat_routes.py**: Chat-related routes and WebSocket handlers
-
-### `db_handler.py`
-- SQLite DB initialization (users, asset_types, transactions)
-- User management (CRUD)
-- Theme and password update
-- Timestamp parsing
-
-### `chat_db_handler.py`
-- SQLite-based chat operations (fallback)
-- Chat room and message management
-
-### `firebase_db_handler.py`
-- Firebase Realtime Database integration for chat features
-- Handles chat rooms, messages, and participants
-- Provides automatic failover to SQLite
-
-### `manage.py`
-- Management CLI for BuyHigh.io
-- Database setup, migration, and status checks
-- Firebase chat maintenance and reset
-
-### `transactions_handler.py`
-- Buy/sell logic (with EUR/USD conversion)
-- FIFO profit/loss calculation
-- Portfolio display
-- Recent transactions
-- Asset type initialization
-
-### `stock_data.py`
-- Price data from Alpha Vantage (historical, intraday)
-- Demo data generator (synthetic, for development)
-
-### `auth.py`
-- Password hashing and verification (bcrypt)
-
-### `utils.py`
-- Login decorator for Flask routes
-
----
-
-## Firebase Integration
-
-BuyHigh.io uses Firebase Realtime Database for chat features, with automatic fallback to SQLite:
-
-- **Database Structure**
-  - `/chats` - Chat room information and metadata
-  - `/chat_participants` - User participation in chats
-  - `/messages` - Chat messages with timestamps
-
-- **Management**
-  - Use `python manage.py status` to check Firebase connection status
-  - Use `python manage.py reset-firebase-chat` to reset chat data
-  - Use `python manage.py migrate` to copy SQLite chat data to Firebase
-
-For complete documentation on Firebase integration, see [firebase.md](firebase.md).
-
----
-
-## Frontend
-
-### Templates (`/templates/`)
-
-- **base.html**: Layout, navigation, theme, flash messages
-- **index.html**: Home page with user summary and playful info
-- **dashboard.html**: Dashboard with account stats, portfolio, activities, player status, and mood pet
-- **trade.html**: Trading interface with stock list, chart, trade form, and stats
-- **settings.html**: Settings (theme, password)
-- **login.html / register.html**: Authentication pages
-- **chat_collection.html**: List of all chat rooms for the user
-- **chat_details.html**: Individual chat room with messaging interface
-- **new_chat.html**: Form to create new chat rooms
-
-#### Page Details
-
-- **index.html**
-  - Shows a welcome message, user greeting, balance, mood pet, meme mode status, and quick stats.
-  - If not logged in, prompts to log in or register.
-
-- **dashboard.html**
-  - Account overview: EUR balance, total trades, realized profit/loss.
-  - Portfolio: List of all assets with symbol, quantity, and type.
-  - Mood pet: Name and energy bar.
-  - Meme mode: Toggle status.
-  - Recent activity: List of last transactions (buy/sell, date, symbol, price).
-  - Player status: Level, XP, badges, and progress bars.
-  - Market mood: Placeholder for future features.
-
-- **trade.html**
-  - Left: Searchable stock list with pixel-art mini-charts.
-  - Right: Candlestick chart (ApexCharts), timeframe selection, trade form (buy/sell), and stats (volume, high, low, market cap).
-  - Live chart updates for 1MIN timeframe.
-  - Shows your current EUR balance.
-
-- **settings.html**
-  - Theme selection (light/dark) with immediate effect.
-  - Change password form with validation and feedback.
-  - Delete account form with password confirmation.
-
-- **login.html / register.html**
-  - Clean forms for authentication, with dark mode support.
-
-- **chat_collection.html**
-  - List of all chat rooms the user participates in
-  - Search functionality to filter chats
-  - Button to create new chats
-
-- **chat_details.html**
-  - Real-time messaging interface 
-  - WebSocket-based updates
-  - Message history
-
-### Static Files
-
-- **/static/js/trade.js**: 
-  - Handles chart rendering (ApexCharts)
-  - AJAX for price data, portfolio, and trades
-  - UI updates, search, timeframe switching, live updates
-- **/static/js/chat.js**:
-  - WebSocket handling for real-time messaging
-  - Message formatting and display
+### Key Modules
+- **`transactions_handler.py`**: Handles trading logic, portfolio updates, and profit/loss calculations.
+- **`stock_data.py`**: Fetches stock data from APIs or generates demo data.
+- **`utils.py`**: Utility functions like login decorators.
 
 ---
 
 ## Database Structure
 
-- **users**: id, username, email, password_hash, balance, created_at, last_login, mood_pet, pet_energy, is_meme_mode, email_verified, theme, total_trades, profit_loss
-- **asset_types**: id, name
-- **transactions**: id, user_id, asset_type_id, asset_symbol, quantity, price_per_unit, transaction_type, timestamp
-- **chat_rooms**: id, name, created_at, created_by, members_can_invite
-- **chat_room_participants**: chat_room_id, user_id, chat_name, joined_at
-- **messages**: id, chat_room_id, user_id, message_text, sent_at
+![Database Diagram](database/db_diagram.png)
+
+### Tables Overview
+- **Users**: Stores user details, balance, XP, preferences, and more.
+- **Assets**: Information about tradable stocks, crypto, etc., including metadata like sector and industry.
+- **Transactions**: Records of buy/sell actions with calculated total values.
+- **Portfolio**: Tracks user holdings, average buy prices, and total investments.
+- **Chat Rooms**: Manages chat rooms, participants, and messages.
+- **XP Levels**: Defines XP requirements and bonuses for leveling up.
+- **XP Gains**: Configures XP rewards for specific user actions.
+- **Daily Quiz**: Stores quiz questions and tracks user attempts.
+- **Developers**: Identifies developers with special privileges.
+- **API Requests**: Logs API usage by users.
+
+### Key Relationships
+- **Users ↔ Transactions**: Tracks which user performed a transaction.
+- **Users ↔ Portfolio**: Links users to their asset holdings.
+- **Users ↔ Chat Rooms**: Manages user participation in chat rooms.
+- **Users ↔ XP Gains**: Awards XP for specific actions.
+- **Users ↔ Daily Quiz**: Tracks quiz attempts and correctness.
+
+Refer to the diagram above for a visual representation of the database schema.
 
 ---
 
 ## Management Commands
 
-- **python manage.py setup** - Initialize the database schema
-- **python manage.py status** - Check Firebase connection status
-- **python manage.py migrate** - Migrate chat data from SQLite to Firebase
-- **python manage.py reset-firebase-chat** - Reset Firebase chat data and create default chat
+- **`setup`**: Initialize the database schema.
+- **`status`**: Check Firebase connection status.
+- **`migrate`**: Migrate chat data from SQLite to Firebase.
+- **`reset-firebase-chat`**: Reset Firebase chat data.
 
 ---
 
 ## Notes
 
-- All prices and transactions are stored in USD; account balance and profit/loss are in EUR (with a fixed conversion rate).
-- Demo data is used if no API data is available.
-- The application is for learning and demo purposes only, not for real trading.
-- Chat features support automatic fallback to SQLite if Firebase is unavailable.
-
----
+- Prices are stored in USD, while account balances are in EUR.
+- Demo data is used when API data is unavailable.
+- The app is for educational purposes and not for real trading.
