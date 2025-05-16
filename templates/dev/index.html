@@ -83,13 +83,13 @@
                 <p class="text-xs text-gray-600 mt-1">Query and manage database</p>
             </a>
             
-            <a href="#" class="action-card block bg-green-50 hover:bg-green-100 p-4 rounded-lg text-center border border-green-200">
+            <a href="{{ url_for('dev.logs') }}" class="action-card block bg-green-50 hover:bg-green-100 p-4 rounded-lg text-center border border-green-200">
                 <i class="fas fa-list-alt text-3xl text-green-600 mb-2"></i>
                 <h3 class="font-medium">Logs Viewer</h3>
                 <p class="text-xs text-gray-600 mt-1">View application logs</p>
             </a>
             
-            <a href="#" class="action-card block bg-purple-50 hover:bg-purple-100 p-4 rounded-lg text-center border border-purple-200">
+            <a href="{{ url_for('dev.api_explorer') }}" class="action-card block bg-purple-50 hover:bg-purple-100 p-4 rounded-lg text-center border border-purple-200">
                 <i class="fas fa-exchange-alt text-3xl text-purple-600 mb-2"></i>
                 <h3 class="font-medium">API Explorer</h3>
                 <p class="text-xs text-gray-600 mt-1">Test API endpoints</p>

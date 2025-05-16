@@ -4,6 +4,8 @@ import logging
 import database.handler.postgres.postgre_dev_handler as dev_handler
 import database.handler.postgres.postgre_education_handler as edu_handler
 from rich import print
+import tools.api_check as api_check
+import tools.config as config
 
 logger = logging.getLogger(__name__)
 
@@ -78,3 +80,15 @@ def logs():
     logger.debug("Rendering logs page")
     logs = open('logs/app.log', 'r').readlines()
     return render_template('dev/logs.html', logs=logs)
+
+@dev_bp.route('/api-explorer')
+@login_required
+@dev_required
+def api_explorer():
+    print(f"[bold green]{api_check.check_api_status()}[/bold green]")
+    return render_template('dev/api_explorer.html',
+                           api_check=api_check.check_api_status(),
+                           api_list=config.API_LIST,
+                           base_url=config.BASE_URL)
+
+

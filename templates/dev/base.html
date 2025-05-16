@@ -205,7 +205,7 @@
                     <a href="{{ url_for('dev.db_explorer') }}" class="sidebar-item block p-4 hover:bg-blue-50">
                         <i class="fas fa-database mr-2"></i> Database Explorer
                     </a>
-                    <a href="#" class="sidebar-item block p-4 hover:bg-blue-50">
+                    <a href="{{ url_for('dev.api_explorer') }}" class="sidebar-item block p-4 hover:bg-blue-50">
                         <i class="fas fa-exchange-alt mr-2"></i> API Explorer
                     </a>
                     <a href="{{ url_for('dev.logs') }}" class="sidebar-item block p-4 hover:bg-blue-50 {% if request.path == url_for('dev.logs') %}active{% endif %}">

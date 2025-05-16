@@ -1,0 +1,190 @@
+{% extends 'dev/base.html' %}
+
+{% block title %}API Explorer{% endblock %}
+
+{% block extra_css %}
+<style>
+    .endpoint-item:hover {
+        background-color: rgba(59, 130, 246, 0.05);
+    }
+    .method-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    .method-get { background-color: #61affe; color: white; }
+    .method-post { background-color: #49cc90; color: white; }
+    .method-put { background-color: #fca130; color: white; }
+    .method-delete { background-color: #f93e3e; color: white; }
+    .method-patch { background-color: #50e3c2; color: white; }
+    .response-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .json-key { color: #881391; }
+    .json-string { color: #c41a16; }
+    .json-number { color: #1a01cc; }
+    .json-boolean { color: #0000ff; }
+    .json-null { color: #808080; }
+    .api-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background-color: white;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    .status-online {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+    .status-offline {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+    .endpoint-url {
+        background-color: #f3f4f6;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-family: monospace;
+        word-break: break-all;
+        overflow-wrap: break-word;
+        max-width: 100%;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">API Explorer</h1>
+
+<div class="mb-6">
+    
+    <!-- API Status Check -->
+    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+        <h2 class="text-lg font-semibold mb-3">API Status</h2>
+        <div id="api-status-container">
+            <div class="grid grid-cols-2 gap-4">
+                {% for api_name, status in api_check.items() %}
+                <div class="flex items-center">
+                    <i class="fas {% if status %}fa-check-circle text-green-500{% else %}fa-times-circle text-red-500{% endif %} mr-2"></i>
+                    <span>{{ api_name }} API</span>
+                </div>
+                <div class="{% if status %}text-green-500{% else %}text-red-500{% endif %} font-medium">
+                    {{ 'Online' if status else 'Offline' }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <button id="refresh-status" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
+            <i class="fas fa-sync-alt mr-1"></i> Status aktualisieren
+        </button>
+    </div>
+
+    <!-- API Details Section -->
+    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+        <h2 class="text-lg font-semibold mb-3">API Details</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for api_key, api_data in api_list.items() %}
+            {% if api_key != "status" %}
+            <div class="api-card">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-md font-semibold">{{ api_data.name }}</h3>
+                    <span class="status-badge {% if api_data.status %}status-online{% else %}status-offline{% endif %}">
+                        {{ 'Online' if api_data.status else 'Offline' }}
+                    </span>
+                </div>
+                <p class="text-gray-600 text-sm mb-3">{{ api_data.description }}</p>
+                <div class="flex items-center">
+                    <span class="text-xs font-bold text-gray-500 mr-2">Endpoint:</span>
+                    <span class="endpoint-url">{{ base_url }}/{{ api_data.url }}</span>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Main API Explorer Interface -->
+<!-- Full-width API Explorer Interface -->
+<div class="w-full">
+    <div class="bg-gray-50 rounded-lg p-4 mb-6">
+        <div class="flex flex-col gap-6">
+            <!-- Sidebar with API Endpoints -->
+            <div class="w-full">
+                <h2 class="text-lg font-semibold mb-3">API Endpunkte</h2>
+                <div class="mb-4">
+                    <input type="text" id="endpoint-search" placeholder="Endpunkte durchsuchen..." 
+                        class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="border-t border-gray-200 mt-2"></div>
+                <div class="space-y-1 mt-3" id="endpoints-list">
+                    {% for api_name, api_data in api_list.items() %}
+                    {% if api_key != "status" %}
+                    <div class="endpoint-item p-2 rounded cursor-pointer" data-endpoint="{{ base_url }}/{{ api_data.url }}">
+                        <span class="method-badge method-get">GET</span> {{ base_url }}/{{ api_data.url }}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    <!-- Zusätzliche Endpunkte für andere Methoden -->
+                    <div class="endpoint-item p-2 rounded cursor-pointer" data-endpoint="{{ base_url }}/trade/buy">
+                        <span class="method-badge method-post">POST</span> {{ base_url }}/trade/buy
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Endpoint search
+    document.getElementById('endpoint-search').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        document.querySelectorAll('.endpoint-item').forEach(item => {
+            const endpoint = item.getAttribute('data-endpoint').toLowerCase();
+            const method = item.querySelector('.method-badge').textContent.toLowerCase();
+            if (endpoint.includes(searchTerm) || method.includes(searchTerm)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    // Endpoint selection functionality
+    document.querySelectorAll('.endpoint-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const urlInput = document.getElementById('request-url');
+            if (urlInput) {
+                urlInput.value = this.getAttribute('data-endpoint');
+            }
+            const methodBadge = this.querySelector('.method-badge');
+            const methodSelect = document.getElementById('request-method');
+            if (methodBadge && methodSelect) {
+                methodSelect.value = methodBadge.textContent.trim();
+            }
+        });
+    });
+
+    // API Status reload (simple reload)
+    const refreshBtn = document.getElementById('refresh-status');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            location.reload();
+        });
+    }
+});
+</script>
+{% endblock %}
