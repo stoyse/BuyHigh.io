@@ -141,3 +141,16 @@ def get_api_calls():
     except Exception as e:
         logger.error(f"Fehler beim Abrufen der API-Aufrufe: {e}", exc_info=True)
         raise
+
+def delete_user(user_id):
+    """Löscht einen Benutzer aus der Datenbank."""
+    print(f'[bold red]Lösche Benutzer mit ID: {user_id}[/]')
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
+                conn.commit()
+                print(f'[red]SQL: DELETE FROM users WHERE id = {user_id}[/]')
+    except Exception as e:
+        logger.error(f"Fehler beim Löschen des Benutzers mit ID {user_id}: {e}", exc_info=True)
+        raise

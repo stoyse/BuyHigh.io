@@ -3,6 +3,7 @@ from utils import dev_required, login_required
 import logging
 import database.handler.postgres.postgre_dev_handler as dev_handler
 import database.handler.postgres.postgre_education_handler as edu_handler
+import database.handler.postgres.postgres_db_handler as db_handler
 from rich import print
 import tools.api_check as api_check
 import tools.config as config
@@ -91,4 +92,25 @@ def api_explorer():
                            api_list=config.API_LIST,
                            base_url=config.BASE_URL)
 
+@dev_bp.route('/user-management')
+@login_required
+@dev_required
+def user_management():
+    logger.debug("Rendering user management page")
+    print(f"[bold green]{db_handler.get_all_users()}[/bold green]")
+    return render_template('dev/user_management.html',
+                           all_users=db_handler.get_all_users())
+
+@dev_bp.route('/user-management/delete/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+@dev_required
+def delete_user_view(user_id):  # Name geändert
+    logger.debug(f"Deleting user with ID: {user_id}")
+    print(f'[red]Deleting user with ID: {user_id}[/]')
+    if request.method == 'POST':
+        dev_handler.delete_user(user_id)
+        flash('User deleted successfully!', 'success')
+        return redirect(url_for('dev.user_management'))
+    
+    return redirect(url_for('dev.user_management'))
 

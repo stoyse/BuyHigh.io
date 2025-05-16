@@ -1,0 +1,130 @@
+{% extends 'dev/base.html' %}
+
+{% block title %}User Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background-color: white;
+        transition: box-shadow 0.2s;
+        position: relative;
+    }
+    .user-card:hover {
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    }
+    .user-id {
+        font-size: 0.85rem;
+        color: #64748b;
+        background: #f1f5f9;
+        border-radius: 0.25rem;
+        padding: 0.1rem 0.5rem;
+        margin-right: 0.5rem;
+    }
+    .user-email {
+        font-family: monospace;
+        color: #334155;
+        background: #f3f4f6;
+        border-radius: 0.25rem;
+        padding: 0.1rem 0.5rem;
+        word-break: break-all;
+        display: inline-block;
+        max-width: 100%;
+    }
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: #fff;
+        min-width: 160px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        border-radius: 0.5rem;
+        z-index: 10;
+        border: 1px solid #e2e8f0;
+        padding: 0.25rem;
+        margin-top: 0;
+        padding-top: 20px;
+        margin-top: -20px;
+        max-width: 160px;
+        overflow: hidden;
+    }
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+    .dropdown-btn {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9999px;
+        transition: background-color 0.2s;
+    }
+    .dropdown-btn:hover {
+        background-color: #f1f5f9;
+    }
+    .dropdown-link {
+        display: block;
+        padding: 0.75rem 1.25rem;
+        color: #991b1b;
+        text-decoration: none;
+        font-size: 0.95rem;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+    }
+    .dropdown-link:hover {
+        background: #ef4444;
+        color: white;
+    }
+    .dropdown-content form button {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-radius: 0.25rem;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">User Management</h1>
+<div class="mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for user in all_users %}
+        <div class="user-card">
+            <div class="flex justify-between items-center mb-2">
+                <span class="user-id">ID: {{ user.id }}</span>
+                <span class="font-semibold text-gray-700">{{ user.username }}</span>
+                <div class="dropdown ml-2">
+                    <button class="dropdown-btn" title="Aktionen">&#x22EE;</button>
+                    <div class="dropdown-content">
+                        <form action="{{ url_for('dev.delete_user_view', user_id=user.id) }}" method="post" class="w-full">
+                            <button type="submit" 
+                                    onclick="return confirm('Wirklich löschen?')"
+                                    class="w-full text-left py-3 px-4 text-red-800 hover:bg-red-500 hover:text-white transition-all duration-200 rounded">
+                                Löschen
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span class="text-xs text-gray-500 font-bold mr-2">E-Mail:</span>
+                <span class="user-email">{{ user.email }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

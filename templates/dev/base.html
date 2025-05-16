@@ -211,7 +211,7 @@
                     <a href="{{ url_for('dev.logs') }}" class="sidebar-item block p-4 hover:bg-blue-50 {% if request.path == url_for('dev.logs') %}active{% endif %}">
                         <i class="fas fa-list-alt mr-2"></i> Logs Viewer
                     </a>
-                    <a href="#" class="sidebar-item block p-4 hover:bg-blue-50">
+                    <a href="{{ url_for('dev.user_management') }}" class="sidebar-item block p-4 hover:bg-blue-50">
                         <i class="fas fa-users mr-2"></i> User Management
                     </a>
                     <a href="#" class="sidebar-item block p-4 hover:bg-blue-50">
