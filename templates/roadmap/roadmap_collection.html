@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Roadmap Collection - BuyHigh.io{% endblock %}
+
+{% block content %}
+<div class="container mx-auto py-8 px-4">
+  <!-- Header -->
+  <div class="text-center mb-12">
+    <div class="flex flex-col md:flex-row justify-center items-center mb-4 md:space-x-4">
+      <h1 class="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neo-purple to-neo-blue">
+        Roadmap Collection
+      </h1>
+      {# Assuming a route 'roadmap.create_roadmap' will exist for creating new roadmaps #}
+      <a href="{{ url_for('roadmap.create_roadmap') }}" 
+         class="neo-button mt-4 md:mt-0 px-4 py-2 rounded-lg text-sm font-medium bg-neo-emerald/10 text-neo-emerald border border-neo-emerald/20 hover:bg-neo-emerald hover:text-white flex items-center">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        Create Roadmap
+      </a>
+    </div>
+    <p class="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+      Explore our curated learning paths to master the world of finance and trading.
+    </p>
+  </div>
+
+  <!-- Roadmap Cards Grid -->
+  {% if roadmap_collection and roadmap_collection|length > 0 %}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    {% for roadmap_item in roadmap_collection %}
+    <a href="{{ url_for('roadmap.roadmap', roadmap_id=roadmap_item.id) }}" 
+       class="glass-card rounded-2xl overflow-hidden border border-gray-200/10 dark:border-gray-700/20 hover:shadow-neo-lg transform hover:-translate-y-1 transition-all duration-300 ease-in-out flex flex-col">
+      <div class="p-6 flex-grow">
+        <div class="flex items-center mb-3">
+          <div class="bg-neo-purple/10 p-2 rounded-lg mr-3">
+            <svg class="w-6 h-6 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+            </svg>
+          </div>
+          <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ roadmap_item.title }}</h2>
+        </div>
+        <p class="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
+          {{ roadmap_item.description }}
+        </p>
+      </div>
+      <div class="px-6 pb-4 pt-2 border-t border-gray-200/5 dark:border-gray-700/10">
+        <div class="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+          <span>ID: {{ roadmap_item.id }}</span>
+          <span>Created: {{ roadmap_item.created_at.strftime('%b %d, %Y') if roadmap_item.created_at else 'N/A' }}</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-12">
+    <div class="inline-block bg-gray-100 dark:bg-gray-800 p-8 rounded-full mb-6">
+        <svg class="w-16 h-16 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    </div>
+    <h2 class="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-3">No Roadmaps Available Yet</h2>
+    <p class="text-gray-500 dark:text-gray-400">
+      We're working on creating new learning paths. Please check back soon!
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

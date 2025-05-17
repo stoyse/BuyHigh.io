@@ -13,18 +13,22 @@ logger = logging.getLogger(__name__)
 roadmap_bp = Blueprint('roadmap', __name__)
 
 @roadmap_bp.route('/')
+@roadmap_bp.route('/<int:roadmap_id>')
 @login_required
-def roadmap():
+def roadmap(roadmap_id=1):  # Default to roadmap ID 1 if none provided
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     user_id = g.user.get('id')
-    current_roadmap_id = 1 # Assumption: We are always working with Roadmap ID 1
 
-    roadmap_data = roadmap_handler.get_roadmap(current_roadmap_id)
-    roadmap_steps_data = roadmap_handler.get_roadmap_steps(current_roadmap_id)
+    roadmap_data = roadmap_handler.get_roadmap(roadmap_id)
+    if not roadmap_data:
+        flash("Roadmap nicht gefunden.", "error")
+        return redirect(url_for('roadmap.roadmap_collection'))
+        
+    roadmap_steps_data = roadmap_handler.get_roadmap_steps(roadmap_id)
     
     user_step_progress_db = {}
     if user_id:
-        user_step_progress_db = roadmap_handler.get_user_roadmap_progress_all_steps(user_id, current_roadmap_id)
+        user_step_progress_db = roadmap_handler.get_user_roadmap_progress_all_steps(user_id, roadmap_id)
 
     total_steps = len(roadmap_steps_data)
     completed_steps_count = 0 # Counts steps where all quizzes are attempted
@@ -86,33 +90,30 @@ def roadmap():
 
 @roadmap_bp.route('/step/<int:roadmap_id>/<step_id>')
 @login_required
-def roadmap_step(roadmap_id, step_id):
+def roadmap_step(roadmap_id, step_id): # step_id is a string from URL
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
-    data = roadmap_handler.get_roadmap_steps(roadmap_id)
-    current_step = next((s for s in data if str(s['id']) == str(step_id)), None)
+    
+    all_steps_for_roadmap = roadmap_handler.get_roadmap_steps(roadmap_id)
+    current_step = next((s for s in all_steps_for_roadmap if str(s['id']) == str(step_id)), None)
 
     if not current_step:
         flash("Schritt nicht gefunden.", "error")
-        return redirect(url_for('roadmap.roadmap'))
+        return redirect(url_for('roadmap.roadmap', roadmap_id=roadmap_id))
 
     raw_page_layout = current_step.get('page_layout', [])
-    print(f'[red]Current Step: {current_step}[/red]')
+    print(f'[red]Current Step (ID: {current_step["id"]}, Roadmap ID: {roadmap_id}): {current_step}[/red]')
     print(f'[blue]Initial Page Layout from DB: {raw_page_layout}[/blue]')
 
     page_layout = []
     for layout_item_identifier in raw_page_layout:
         page_layout.append({
-            "layout_number": layout_item_identifier, # Dies wird jetzt immer eine Zahl oder ein String sein, der zu einer .html-Datei führt
+            "layout_number": layout_item_identifier,
             "card_html": None,
         })
     
     print(f'[green]Transformed Page Layout for processing: {page_layout}[/green]')
 
-    # Lade alle Quizze für den aktuellen Schritt einmal.
-    # Diese werden jeder Karte im Kontext zur Verfügung gestellt.
-    
-    # 1. Lade alle Quizze für den Schritt (ohne Benutzerfortschritt)
-    quizzes_for_step_raw = roadmap_handler.get_roadmap_quizes_stepid(step_id)
+    quizzes_for_step_raw = roadmap_handler.get_roadmap_quizes_specific(step_id=current_step['id'], roadmap_id=roadmap_id)
     
     all_quizzes_for_step = []
     user_id_for_quiz = g.user.get('id') if g.user else None
@@ -126,13 +127,12 @@ def roadmap_step(roadmap_id, step_id):
                 progress = user_progress.get(quiz_raw['id'])
                 if progress:
                     quiz_raw['attempted'] = progress.get('attempted', False)
-                    quiz_raw['is_correct'] = progress.get('is_correct', None) # Behält None bei, wenn nicht versucht oder kein is_correct Wert
+                    quiz_raw['is_correct'] = progress.get('is_correct', None)
                 else:
                     quiz_raw['attempted'] = False
                     quiz_raw['is_correct'] = None
                 all_quizzes_for_step.append(quiz_raw)
         else:
-            # Kein Benutzer angemeldet, Quizze ohne Fortschrittsinformationen hinzufügen
             for quiz_raw in quizzes_for_step_raw:
                 quiz_raw['attempted'] = False
                 quiz_raw['is_correct'] = None
@@ -140,41 +140,34 @@ def roadmap_step(roadmap_id, step_id):
             print(f'[yellow]Warnung: Keine Benutzer-ID für Quiz-Fortschritt verfügbar. Quizze werden ohne Fortschritt geladen.[/yellow]')
     
     if all_quizzes_for_step:
-        print(f'[magenta]Quizzes found for step {step_id}: {len(all_quizzes_for_step)} quizzes. Will be available to card templates.[/magenta]')
+        print(f'[magenta]Quizzes found for step {current_step["id"]} (Roadmap {roadmap_id}): {len(all_quizzes_for_step)} quizzes. Will be available to card templates.[/magenta]')
     else:
-        print(f'[yellow]No quizzes found for step {step_id}.[/yellow]')
-
+        print(f'[yellow]No quizzes found for step {current_step["id"]} (Roadmap {roadmap_id}) using get_roadmap_quizes_specific.[/yellow]')
 
     for item in page_layout:
         layout_number_str = str(item.get('layout_number'))
         print(f'[cyan]Processing layout identifier (expected to be a card number): {layout_number_str}[/cyan]')
 
-        # Wenn die Layout-Nummer '1' ist, lade den Inhalt aus dem 'explain'-Feld des aktuellen Schritts.
         if layout_number_str == '1':
             explain_text = current_step.get('explain')
             if explain_text:
-                # Wrap the explanation text with HTML for display.
-                # The prose classes in the parent container in step.html should handle the styling.
                 item['card_html'] = f"<div class='explanation-card p-4 rounded-lg bg-white/5 dark:bg-black/10 border border-gray-200/10 dark:border-gray-700/20 shadow-sm'><h3 class='text-lg font-semibold mb-2 text-gray-800 dark:text-gray-100'>Concept Explanation</h3><p>{explain_text}</p></div>"
                 print(f'[green]Rendered HTML for card 1 from current_step.explain[/green]')
             else:
                 item['card_html'] = "<div class='explanation-card p-4 rounded-lg bg-white/5 dark:bg-black/10 border border-gray-200/10 dark:border-gray-700/20 shadow-sm'><p><em>No explanation available for this step.</em></p></div>"
                 print(f'[yellow]No explanation text found for card 1 in current_step.[/yellow]')
         else:
-            # Ursprüngliche Logik zum Laden von .html-Dateien für andere Karten (layout_number 2, 3, etc.)
             card_filename = f"{roadmap_id}_{step_id}_{layout_number_str}.html"
             card_path = os.path.join(current_app.root_path, "templates", "roadmap", "step_cards", card_filename)
             print(f'[blue]Card Path: {card_path}[/blue]')
             try:
                 with open(card_path, "r") as card_file:
                     raw_html = card_file.read()
-                    # Kontext für das Rendern der einzelnen Karte vorbereiten
                     card_context = {
                         "user": g.user,
                         "current_step": current_step,
                         "layout_number": layout_number_str,
-                        "all_quizzes_for_step": all_quizzes_for_step # Stelle alle Quizze der Karte zur Verfügung
-                        # Fügen Sie hier weitere Variablen hinzu, die Kartenvorlagen benötigen könnten
+                        "all_quizzes_for_step": all_quizzes_for_step
                     }
                     item['card_html'] = render_template_string(raw_html, **card_context)
                     print(f'[green]Rendered HTML for {card_filename} with context (including quizzes if any)[/green]')
@@ -186,33 +179,40 @@ def roadmap_step(roadmap_id, step_id):
                 print(f'[red]Error rendering card {card_filename}: {e}[/red]')
                 logger.error(f"Error rendering card {card_filename}: {e}", exc_info=True)
 
+    # HINWEIS: Die folgende Dummy-Funktion dient nur dazu, den UndefinedError zu beheben.
+    # Sie bietet KEINE echte CSRF-Sicherheit. Eine korrekte CSRF-Einrichtung
+    # erfordert die Initialisierung von CSRFProtect in Ihrer Hauptanwendung (app.py).
+    def dummy_csrf_token_for_template():
+        return "dummy_token_to_prevent_undefined_error"
+
     return render_template('roadmap/step.html',
                            user=g.user,
                            darkmode=dark_mode_active,
                            roadmap=roadmap_handler.get_roadmap(roadmap_id),
-                           roadmap_steps=data,
+                           roadmap_steps=all_steps_for_roadmap,
                            page_layout=page_layout,
                            current_step=current_step,
-                           roadmap_quiz_overall_for_step=all_quizzes_for_step 
+                           quizzes=all_quizzes_for_step,
+                           csrf_token=dummy_csrf_token_for_template # csrf_token() im Template wird dies aufrufen
                            )
 
 @roadmap_bp.route('/submit_quiz', methods=['POST'])
 @login_required
-def submit_roadmap_quiz():
+def submit_quiz(): # Renamed from submit_roadmap_quiz
     if request.method == 'POST':
         quiz_id_str = request.form.get('quiz_id')
-        step_id_str = request.form.get('step_id') # This is roadmap_steps.id
+        step_id_str = request.form.get('step_id')
         roadmap_id_str = request.form.get('roadmap_id')
-        submitted_answer = request.form.get('quiz_answer')
+        submitted_answer_value = request.form.get('quiz_answer')
         user_id = g.user.get('id')
 
-        if not all([quiz_id_str, step_id_str, roadmap_id_str, submitted_answer, user_id]):
+        if not all([quiz_id_str, step_id_str, roadmap_id_str, submitted_answer_value, user_id]):
             flash("Error: Incomplete quiz data submitted.", "error")
             return redirect(request.referrer or url_for('roadmap.roadmap'))
 
         try:
             quiz_id = int(quiz_id_str)
-            actual_step_id = int(step_id_str) # roadmap_steps.id
+            actual_step_id = int(step_id_str)
             roadmap_id = int(roadmap_id_str)
         except ValueError:
             flash("Error: Invalid quiz identifiers.", "error")
@@ -224,13 +224,20 @@ def submit_roadmap_quiz():
             flash(f"Quiz with ID {quiz_id} not found.", "error")
             return redirect(url_for('roadmap.roadmap_step', roadmap_id=roadmap_id, step_id=actual_step_id))
 
-        is_correct = (quiz['correct_answer'] == submitted_answer)
+        submitted_answer_text = ""
+        if submitted_answer_value == 'possible_answer_1':
+            submitted_answer_text = quiz.get('possible_answer_1')
+        elif submitted_answer_value == 'possible_answer_2':
+            submitted_answer_text = quiz.get('possible_answer_2')
+        elif submitted_answer_value == 'possible_answer_3':
+            submitted_answer_text = quiz.get('possible_answer_3')
+
+        is_correct = (quiz['correct_answer'] == submitted_answer_text)
 
         try:
             roadmap_handler.record_user_quiz_attempt(user_id, quiz_id, is_correct)
             
-            # Check if all quizzes for this step (actual_step_id) are now attempted
-            all_quizzes_for_this_step = roadmap_handler.get_roadmap_quizes_stepid(actual_step_id)
+            all_quizzes_for_this_step = roadmap_handler.get_roadmap_quizes_specific(step_id=actual_step_id, roadmap_id=roadmap_id)
             
             if all_quizzes_for_this_step:
                 quiz_ids_in_step = [q['id'] for q in all_quizzes_for_this_step]
@@ -247,12 +254,8 @@ def submit_roadmap_quiz():
                             break
                 
                 if all_quizzes_in_step_attempted:
-                    # All quizzes for the step have been attempted. Mark step as completed in user_roadmap_progress.
                     roadmap_handler.update_user_roadmap_step_progress(user_id, roadmap_id, actual_step_id, is_completed=True, progress_percentage=100.0)
-                    # Flash message for step completion can be added if desired, e.g., if this specific submission triggered it.
-                    # For now, the main feedback is about the quiz itself.
             
-            # XP and flash messages based on the correctness of the *current* quiz
             if is_correct:
                 xp_action_name = 'roadmap_quiz_correct' 
                 xp_to_award = roadmap_handler.get_xp_for_action(xp_action_name)
@@ -278,6 +281,141 @@ def submit_roadmap_quiz():
 
         return redirect(url_for('roadmap.roadmap_step', roadmap_id=roadmap_id, step_id=actual_step_id))
     
+    # Fallback for non-POST or other issues
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'success': False, 'message': 'Invalid request method.'})
     return redirect(url_for('roadmap.roadmap'))
 
 
+@roadmap_bp.route('/roadmap-collection')
+@login_required
+def roadmap_collection():
+    dark_mode_active = g.user and g.user.get('theme') == 'dark'
+    user_id = g.user.get('id')
+    return render_template('roadmap/roadmap_collection.html',
+                           user = g.user,
+                            darkmode = dark_mode_active,
+                            roadmap_collection = roadmap_handler.get_roadmap_collection())
+
+@roadmap_bp.route('/create_roadmap', methods=['GET', 'POST'])
+@login_required
+def create_roadmap():
+    if request.method == 'POST':
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
+        roadmap_title = request.form.get('roadmap_title')
+        roadmap_description = request.form.get('roadmap_description')
+        
+        if not roadmap_title:
+            if is_ajax:
+                return jsonify({'success': False, 'message': 'Roadmap title is required'})
+            flash('Roadmap title is required', 'danger')
+            return redirect(url_for('roadmap.create_roadmap'))
+        
+        conn = None
+        try:
+            conn = roadmap_handler.get_db_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute(
+                "INSERT INTO roadmap (title, description) VALUES (%s, %s) RETURNING id",
+                (roadmap_title, roadmap_description)
+            )
+            roadmap_id = cursor.fetchone()[0]
+            
+            step_titles = request.form.getlist('step_title[]')
+            step_descriptions = request.form.getlist('step_description[]')
+            step_numbers = request.form.getlist('step_number[]')
+            step_explains = request.form.getlist('step_explain[]')
+            
+            layout_fields = {}
+            for key in request.form:
+                if key.startswith('step_layout_'):
+                    index = int(key.replace('step_layout_', ''))
+                    layout_fields[index] = request.form[key]
+            
+            step_ids = []
+            for i in range(len(step_titles)):
+                step_number = int(step_numbers[i]) if i < len(step_numbers) else i + 1
+                step_title = step_titles[i]
+                step_description = step_descriptions[i] if i < len(step_descriptions) else ""
+                step_explain = step_explains[i] if i < len(step_explains) else None
+                
+                layout_json = layout_fields.get(i, '[]')
+                try:
+                    import json
+                    layout_array = json.loads(layout_json)
+                    if not layout_array and step_explain:
+                        layout_array = [1]
+                except:
+                    layout_array = [1] if step_explain else []
+                
+                cursor.execute(
+                    """
+                    INSERT INTO roadmap_steps 
+                    (roadmap_id, step_number, title, description, page_layout, explain) 
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING id
+                    """,
+                    (roadmap_id, step_number, step_title, step_description, layout_array, step_explain)
+                )
+                step_id = cursor.fetchone()[0]
+                step_ids.append(step_id)
+            
+            for key in request.form:
+                if key.startswith('quiz_step_') and '_question_' in key:
+                    parts = key.split('_')
+                    step_index = int(parts[2])
+                    quiz_index = int(parts[4])
+                    
+                    question = request.form[key]
+                    answer1 = request.form.get(f'quiz_step_{step_index}_answer1_{quiz_index}', '')
+                    answer2 = request.form.get(f'quiz_step_{step_index}_answer2_{quiz_index}', '')
+                    answer3 = request.form.get(f'quiz_step_{step_index}_answer3_{quiz_index}', '')
+                    correct_answer = request.form.get(f'quiz_step_{step_index}_correct_{quiz_index}', '')
+                    
+                    if question and answer1 and answer2 and answer3 and correct_answer and step_index < len(step_ids):
+                        step_id = step_ids[step_index]
+                        
+                        cursor.execute(
+                            """
+                            INSERT INTO roadmap_quizzes
+                            (roadmap_id, step_id, question, possible_answer_1, possible_answer_2, possible_answer_3, correct_answer)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                            """,
+                            (roadmap_id, step_id, question, answer1, answer2, answer3, correct_answer)
+                        )
+            
+            conn.commit()
+            
+            if is_ajax:
+                return jsonify({
+                    'success': True, 
+                    'message': 'Roadmap created successfully',
+                    'redirect_url': url_for('roadmap.roadmap', roadmap_id=roadmap_id) if step_ids else url_for('roadmap.roadmap_collection')
+                })
+            
+            flash('Roadmap created successfully!', 'success')
+            if step_ids:
+                return redirect(url_for('roadmap.roadmap', roadmap_id=roadmap_id))
+            return redirect(url_for('roadmap.roadmap_collection'))
+            
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            logger.error(f"Error creating roadmap: {e}", exc_info=True)
+            
+            if is_ajax:
+                return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+            
+            flash(f'Error creating roadmap: {str(e)}', 'danger')
+            return redirect(url_for('roadmap.create_roadmap'))
+            
+        finally:
+            if conn:
+                conn.close()
+    
+    return render_template('roadmap/create_roadmap.html',
+                          user = g.user,
+                          darkmode = g.user.get('theme') == 'dark',
+                          roadmap_collection = roadmap_handler.get_roadmap_collection())

@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+
+{% block title %}Create Roadmap - BuyHigh.io{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+  <!-- Header -->
+  <div class="text-center mb-12">
+    <h1 class="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neo-purple to-neo-blue mb-4">Create New Roadmap</h1>
+    <p class="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+      Design your own educational roadmap to help users learn about financial concepts and strategies.
+    </p>
+  </div>
+
+  <!-- Roadmap Creation Form -->
+  <form id="roadmap-form" method="POST" action="{{ url_for('roadmap.create_roadmap') }}" class="space-y-10">
+    <!-- Main Roadmap Details -->
+    <div class="glass-card border border-purple-500/20 p-6 rounded-xl">
+      <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100">Roadmap Details</h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label for="roadmap-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Roadmap Title</label>
+          <input type="text" id="roadmap-title" name="roadmap_title" required
+                 class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-neo-purple/50 focus:border-neo-purple">
+        </div>
+        
+        <div>
+          <label for="roadmap-description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+          <textarea id="roadmap-description" name="roadmap_description" rows="3" required
+                   class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-neo-purple/50 focus:border-neo-purple"></textarea>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Roadmap Steps Container -->
+    <div id="steps-container" class="space-y-6">
+      <!-- Steps will be added here dynamically -->
+    </div>
+    
+    <!-- Add Step Button -->
+    <div class="flex justify-center">
+      <button type="button" id="add-step-btn" 
+              class="neo-button rounded-lg px-6 py-2 text-base font-medium bg-neo-blue/10 text-neo-blue border border-neo-blue/20 hover:bg-neo-blue hover:text-white transition-all duration-300 flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        Add Roadmap Step
+      </button>
+    </div>
+    
+    <!-- Submit Button -->
+    <div class="flex justify-end mt-8">
+      <button type="submit" 
+              class="neo-button rounded-lg px-8 py-3 text-lg font-medium bg-neo-emerald/10 text-neo-emerald border border-neo-emerald/20 hover:bg-neo-emerald hover:text-white transition-all duration-300 flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        Create Roadmap
+      </button>
+    </div>
+  </form>
+
+  <!-- Step Template (hidden) -->
+  <template id="step-template">
+    <div class="step-item glass-card border border-blue-500/20 p-6 rounded-xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">
+          Step <span class="step-number">1</span>
+        </h3>
+        <button type="button" class="remove-step-btn text-neo-red hover:text-red-600 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Step Title</label>
+          <input type="text" name="step_title[]" required
+                 class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-neo-blue/50 focus:border-neo-blue">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Step Description</label>
+          <textarea name="step_description[]" rows="2" required
+                   class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-neo-blue/50 focus:border-neo-blue"></textarea>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Page Layout</label>
+          <input type="text" name="step_layout[]" placeholder="Enter numbers separated by commas (e.g., 1,2,3)" value="1" 
+                 class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-neo-blue/50 focus:border-neo-blue">
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Determines which components to show. Use "1" for explanation text. Quizzes always appear at the bottom.</p>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Step Explanation</label>
+          <textarea name="step_explain[]" rows="4"
+                   class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-neo-blue/50 focus:border-neo-blue"></textarea>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Main concept explanation for this step. Will be shown when layout includes "1".</p>
+        </div>
+        
+        <!-- Quizzes Container -->
+        <div class="quizzes-container mt-6 space-y-4">
+          <h4 class="text-md font-medium text-gray-700 dark:text-gray-300 flex items-center">
+            <svg class="w-4 h-4 mr-1 text-neo-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Quizzes for this Step
+          </h4>
+          
+          <!-- Quizzes will be added here -->
+        </div>
+        
+        <!-- Add Quiz Button -->
+        <div class="flex justify-start">
+          <button type="button" class="add-quiz-btn neo-button rounded-lg px-4 py-1 text-sm font-medium bg-neo-amber/10 text-neo-amber border border-neo-amber/20 hover:bg-neo-amber hover:text-white transition-all duration-300 flex items-center">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+            Add Quiz
+          </button>
+        </div>
+        
+        <input type="hidden" name="step_number[]" class="step-number-input" value="1">
+      </div>
+    </div>
+  </template>
+  
+  <!-- Quiz Template (hidden) -->
+  <template id="quiz-template">
+    <div class="quiz-item p-4 rounded-lg bg-amber-50/20 dark:bg-amber-900/10 border border-amber-200/30 dark:border-amber-700/20">
+      <div class="flex justify-between items-center mb-3">
+        <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300">Quiz Question</h5>
+        <button type="button" class="remove-quiz-btn text-neo-red hover:text-red-600 transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="space-y-3">
+        <div>
+          <input type="text" name="quiz_question[]" placeholder="Enter quiz question" required
+                 class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-neo-amber/50 focus:border-neo-amber">
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div>
+            <input type="text" name="quiz_answer1[]" placeholder="Answer option 1" required
+                   class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100">
+          </div>
+          <div>
+            <input type="text" name="quiz_answer2[]" placeholder="Answer option 2" required
+                   class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100">
+          </div>
+          <div>
+            <input type="text" name="quiz_answer3[]" placeholder="Answer option 3" required
+                   class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100">
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Correct Answer:</label>
+          <select name="quiz_correct_answer[]" required
+                  class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100">
+            <option value="">Select correct answer</option>
+            <option value="1">Answer option 1</option>
+            <option value="2">Answer option 2</option>
+            <option value="3">Answer option 3</option>
+          </select>
+        </div>
+        
+        <input type="hidden" name="quiz_step_index[]" class="quiz-step-index" value="0">
+      </div>
+    </div>
+  </template>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const stepsContainer = document.getElementById('steps-container');
+    const addStepBtn = document.getElementById('add-step-btn');
+    const stepTemplate = document.getElementById('step-template');
+    const quizTemplate = document.getElementById('quiz-template');
+    
+    // Counter for steps
+    let stepCount = 0;
+    
+    // Add step function
+    function addStep() {
+      stepCount++;
+      
+      // Clone step template
+      const stepNode = document.importNode(stepTemplate.content, true);
+      
+      // Update step number
+      stepNode.querySelector('.step-number').textContent = stepCount;
+      stepNode.querySelector('.step-number-input').value = stepCount;
+      
+      // Add event listener to remove step button
+      const removeStepBtn = stepNode.querySelector('.remove-step-btn');
+      removeStepBtn.addEventListener('click', function() {
+        this.closest('.step-item').remove();
+        updateStepNumbers();
+      });
+      
+      // Add event listener to add quiz button
+      const addQuizBtn = stepNode.querySelector('.add-quiz-btn');
+      addQuizBtn.addEventListener('click', function() {
+        addQuiz(this.closest('.step-item'));
+      });
+      
+      // Append step to container
+      stepsContainer.appendChild(stepNode);
+    }
+    
+    // Add quiz function
+    function addQuiz(stepItem) {
+      // Clone quiz template
+      const quizNode = document.importNode(quizTemplate.content, true);
+      
+      // Get index of this step for reference
+      const stepIndex = Array.from(stepsContainer.children).indexOf(stepItem);
+      quizNode.querySelector('.quiz-step-index').value = stepIndex;
+      
+      // Add event listener to remove quiz button
+      const removeQuizBtn = quizNode.querySelector('.remove-quiz-btn');
+      removeQuizBtn.addEventListener('click', function() {
+        this.closest('.quiz-item').remove();
+      });
+      
+      // Listen for answer changes to update correct answer options
+      const answerInputs = quizNode.querySelectorAll('[name^="quiz_answer"]');
+      const correctAnswerSelect = quizNode.querySelector('[name^="quiz_correct_answer"]');
+      
+      answerInputs.forEach((input, index) => {
+        input.addEventListener('input', function() {
+          const optionNumber = index + 1;
+          const option = correctAnswerSelect.querySelector(`option[value="${optionNumber}"]`);
+          if (option) {
+            option.textContent = this.value || `Answer option ${optionNumber}`;
+          }
+        });
+      });
+      
+      // Append quiz to container
+      const quizzesContainer = stepItem.querySelector('.quizzes-container');
+      quizzesContainer.appendChild(quizNode);
+    }
+    
+    // Update step numbers after removal
+    function updateStepNumbers() {
+      const stepItems = stepsContainer.querySelectorAll('.step-item');
+      stepItems.forEach((item, index) => {
+        const number = index + 1;
+        item.querySelector('.step-number').textContent = number;
+        item.querySelector('.step-number-input').value = number;
+      });
+      stepCount = stepItems.length;
+    }
+    
+    // Add initial step
+    addStep();
+    
+    // Add step button event listener
+    addStepBtn.addEventListener('click', addStep);
+    
+    // Form submission handler
+    document.getElementById('roadmap-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Create a FormData object to gather all form data
+      const formData = new FormData(this);
+      
+      // Convert page layout strings to arrays
+      const layouts = formData.getAll('step_layout[]');
+      formData.delete('step_layout[]');
+      
+      layouts.forEach((layout, index) => {
+        // Convert comma-separated string to array of integers
+        const layoutArray = layout.split(',')
+          .map(num => num.trim())
+          .filter(num => num !== '')
+          .map(num => parseInt(num, 10) || num);
+          
+        formData.append(`step_layout_${index}`, JSON.stringify(layoutArray));
+      });
+      
+      // Prepare quiz data to correctly associate with steps
+      const quizStepIndices = formData.getAll('quiz_step_index[]');
+      formData.delete('quiz_step_index[]');
+      
+      const quizQuestions = formData.getAll('quiz_question[]');
+      formData.delete('quiz_question[]');
+      
+      const quizAnswer1s = formData.getAll('quiz_answer1[]');
+      formData.delete('quiz_answer1[]');
+      
+      const quizAnswer2s = formData.getAll('quiz_answer2[]');
+      formData.delete('quiz_answer2[]');
+      
+      const quizAnswer3s = formData.getAll('quiz_answer3[]');
+      formData.delete('quiz_answer3[]');
+      
+      const quizCorrectAnswers = formData.getAll('quiz_correct_answer[]');
+      formData.delete('quiz_correct_answer[]');
+      
+      // Restructure quiz data
+      for (let i = 0; i < quizQuestions.length; i++) {
+        const stepIndex = quizStepIndices[i];
+        formData.append(`quiz_step_${stepIndex}_question_${i}`, quizQuestions[i]);
+        formData.append(`quiz_step_${stepIndex}_answer1_${i}`, quizAnswer1s[i]);
+        formData.append(`quiz_step_${stepIndex}_answer2_${i}`, quizAnswer2s[i]);
+        formData.append(`quiz_step_${stepIndex}_answer3_${i}`, quizAnswer3s[i]);
+        
+        // Determine correct answer text based on selection
+        let correctAnswerText;
+        const correctAnswerIndex = parseInt(quizCorrectAnswers[i], 10);
+        if (correctAnswerIndex === 1) correctAnswerText = quizAnswer1s[i];
+        else if (correctAnswerIndex === 2) correctAnswerText = quizAnswer2s[i];
+        else if (correctAnswerIndex === 3) correctAnswerText = quizAnswer3s[i];
+        
+        formData.append(`quiz_step_${stepIndex}_correct_${i}`, correctAnswerText);
+      }
+      
+      // Submit the form with AJAX
+      fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          // Redirect to the new roadmap or show success message
+          window.location.href = data.redirect_url || '{{ url_for("roadmap.roadmap") }}';
+        } else {
+          alert('Error: ' + (data.message || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while creating the roadmap. Please try again.');
+      });
+    });
+  });
+</script>
+{% endblock %}

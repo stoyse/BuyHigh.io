@@ -77,17 +77,105 @@ def get_roadmap_quizes_roadmapid(roadmap_id):
     finally:
         conn.close()
 
-def get_roadmap_quizes_stepid(roadmap_step):
-    """Lädt die Quizze für einen bestimmten Roadmap-Schritt."""
+def get_roadmap_quizes_stepid(roadmap_step, roadmap_id=None):
+    """
+    Lädt die Quizze für einen bestimmten Roadmap-Schritt.
+    Optional kann eine roadmap_id angegeben werden, um die Ergebnisse weiter einzuschränken.
+    """
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            cursor.execute("SELECT * FROM roadmap_quizzes WHERE step_id = %s", (roadmap_step,))
+            if roadmap_id is not None:
+                # Präzisere Abfrage mit roadmap_id und step_id
+                cursor.execute("SELECT * FROM roadmap_quizzes WHERE step_id = %s AND roadmap_id = %s", 
+                              (roadmap_step, roadmap_id))
+            else:
+                # Ursprüngliche Abfrage nur mit step_id
+                cursor.execute("SELECT * FROM roadmap_quizzes WHERE step_id = %s", (roadmap_step,))
+            
             quizzes = cursor.fetchall()
+            logger.info(f"Gefundene Quizze für step_id={roadmap_step}, roadmap_id={roadmap_id}: {len(quizzes)}")
             return [dict(quiz) for quiz in quizzes]
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Abrufen der Roadmap-Quizze: {e}", exc_info=True)
         raise
+    finally:
+        conn.close()
+
+def get_roadmap_quizes_specific(step_id, roadmap_id):
+    """
+    Lädt die Quizze für eine spezifische Kombination aus Roadmap-ID und Step-ID.
+    Dies ist die präziseste Abfrage und sollte bevorzugt verwendet werden.
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT * FROM roadmap_quizzes 
+                WHERE step_id = %s AND roadmap_id = %s
+            """, (step_id, roadmap_id))
+            
+            quizzes = cursor.fetchall()
+            logger.info(f"Gefundene Quizze für step_id={step_id}, roadmap_id={roadmap_id}: {len(quizzes)}")
+            
+            if len(quizzes) == 0:
+                # Zur Diagnose: Überprüfe, ob es überhaupt Quizze für diese step_id gibt
+                cursor.execute("SELECT COUNT(*) FROM roadmap_quizzes WHERE step_id = %s", (step_id,))
+                count_by_step = cursor.fetchone()[0]
+                
+                # Überprüfe, ob es Quizze für diese roadmap_id gibt
+                cursor.execute("SELECT COUNT(*) FROM roadmap_quizzes WHERE roadmap_id = %s", (roadmap_id,))
+                count_by_roadmap = cursor.fetchone()[0]
+                
+                logger.warning(f"Keine Quizze gefunden für step_id={step_id}, roadmap_id={roadmap_id}. "
+                              f"Einzeln gefunden: {count_by_step} für step_id, {count_by_roadmap} für roadmap_id")
+                
+            return [dict(quiz) for quiz in quizzes]
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen spezifischer Roadmap-Quizze: {e}", exc_info=True)
+        return [] # Leere Liste im Fehlerfall zurückgeben
+    finally:
+        conn.close()
+
+def check_and_fix_quiz_mappings():
+    """Diagnostische Funktion zur Überprüfung und Reparatur inkonsistenter Quiz-Mappings."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            # Überprüfe auf Quiz-Einträge, bei denen step_id nicht zu roadmap_id passt
+            cursor.execute("""
+                SELECT q.id, q.step_id, q.roadmap_id, s.roadmap_id AS expected_roadmap_id
+                FROM roadmap_quizzes q
+                LEFT JOIN roadmap_steps s ON q.step_id = s.id
+                WHERE q.roadmap_id != s.roadmap_id OR s.id IS NULL
+            """)
+            
+            inconsistent_quizzes = cursor.fetchall()
+            
+            if inconsistent_quizzes:
+                logger.warning(f"Gefunden {len(inconsistent_quizzes)} inkonsistente Quiz-Mappings:")
+                for quiz in inconsistent_quizzes:
+                    logger.warning(f"Quiz ID: {quiz['id']}, step_id: {quiz['step_id']}, "
+                                 f"aktuell roadmap_id: {quiz['roadmap_id']}, erwartet: {quiz['expected_roadmap_id']}")
+                    
+                    # Optional: Automatische Korrektur, wenn gewünscht
+                    if quiz['expected_roadmap_id'] is not None:
+                        cursor.execute("""
+                            UPDATE roadmap_quizzes
+                            SET roadmap_id = %s
+                            WHERE id = %s
+                        """, (quiz['expected_roadmap_id'], quiz['id']))
+                        
+                conn.commit()
+                logger.info("Inkonsistente Quiz-Mappings wurden korrigiert.")
+            else:
+                logger.info("Keine inkonsistenten Quiz-Mappings gefunden.")
+                
+            return len(inconsistent_quizzes)
+    except psycopg2.Error as e:
+        conn.rollback()
+        logger.error(f"Fehler bei der Überprüfung/Reparatur der Quiz-Mappings: {e}", exc_info=True)
+        return -1
     finally:
         conn.close()
 
@@ -290,8 +378,87 @@ def get_user_roadmap_progress_all_steps(user_id, roadmap_id):
     finally:
         conn.close()
 
+def get_roadmap_collection():
+    """Lädt alle Roadmaps aus der Datenbank."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM roadmap")
+            roadmaps = cursor.fetchall()
+            return [dict(roadmap) for roadmap in roadmaps]
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen der Roadmap-Sammlung: {e}", exc_info=True)
+        raise
+    finally:
+        conn.close()
+
 if __name__ == "__main__":
-    #print(get_roadmap(1))
-    print(get_roadmap_steps(1))
-    #print(get_roadmap_quizes_stepid(1))
-    #print(get_roadmap_quizes_roadmapid(1))
+    # Führen Sie eine Überprüfung und ggf. Korrektur der Quiz-Mappings durch
+    print("[bold yellow]Überprüfung der Quiz-Mappings:[/bold yellow]")
+    check_and_fix_quiz_mappings()
+    print("-" * 50)
+
+    # Beispiel-IDs für Tests
+    EXAMPLE_WORKING_ROADMAP_ID = 1
+    EXAMPLE_WORKING_STEP_ID = 1 # Dies ist roadmap_steps.id
+
+    # Basierend auf vorherigen Logs als Beispiel für eine problematische Prüfung:
+    EXAMPLE_PROBLEM_ROADMAP_ID = 3
+    EXAMPLE_PROBLEM_STEP_ID = 4 # Dies ist roadmap_steps.id
+
+    print(f"[bold green]Test für Roadmap {EXAMPLE_WORKING_ROADMAP_ID} (funktionierendes Beispiel):[/bold green]")
+    roadmap_working = get_roadmap(EXAMPLE_WORKING_ROADMAP_ID)
+    if roadmap_working:
+        print(f"Roadmap {EXAMPLE_WORKING_ROADMAP_ID}: {roadmap_working}")
+        steps_working_roadmap = get_roadmap_steps(EXAMPLE_WORKING_ROADMAP_ID)
+        if steps_working_roadmap:
+            # Finde die tatsächliche ID des ersten Schritts, falls vorhanden
+            actual_first_step_id_working = steps_working_roadmap[0]['id'] if steps_working_roadmap else EXAMPLE_WORKING_STEP_ID
+            print(f"Quizze für Roadmap {EXAMPLE_WORKING_ROADMAP_ID}, Step ID {actual_first_step_id_working} (spezifisch):")
+            print(get_roadmap_quizes_specific(step_id=actual_first_step_id_working, roadmap_id=EXAMPLE_WORKING_ROADMAP_ID))
+        print(f"Alle Quizze für Roadmap {EXAMPLE_WORKING_ROADMAP_ID}:")
+        print(get_roadmap_quizes_roadmapid(EXAMPLE_WORKING_ROADMAP_ID))
+    else:
+        print(f"Roadmap {EXAMPLE_WORKING_ROADMAP_ID} nicht gefunden.")
+    print("-" * 50)
+
+    print(f"[bold red]Test für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}, Step ID {EXAMPLE_PROBLEM_STEP_ID} (Beispiel für Fehlersuche):[/bold red]")
+    problem_roadmap = get_roadmap(EXAMPLE_PROBLEM_ROADMAP_ID)
+    if problem_roadmap:
+        print(f"Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}: {problem_roadmap}")
+        
+        problem_step_details = None
+        steps_problem_roadmap = get_roadmap_steps(EXAMPLE_PROBLEM_ROADMAP_ID)
+        if steps_problem_roadmap:
+            for step in steps_problem_roadmap:
+                if step['id'] == EXAMPLE_PROBLEM_STEP_ID: # Vergleiche mit roadmap_steps.id
+                    problem_step_details = step
+                    break
+            if problem_step_details:
+                 print(f"Details für Step ID {EXAMPLE_PROBLEM_STEP_ID} (Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}): {problem_step_details}")
+            else:
+                print(f"Step mit ID {EXAMPLE_PROBLEM_STEP_ID} nicht in Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} gefunden.")
+        else:
+            print(f"Keine Schritte für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} gefunden.")
+
+        print(f"Quizze für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}, Step ID {EXAMPLE_PROBLEM_STEP_ID} (spezifisch):")
+        quizzes_specific = get_roadmap_quizes_specific(step_id=EXAMPLE_PROBLEM_STEP_ID, roadmap_id=EXAMPLE_PROBLEM_ROADMAP_ID)
+        print(quizzes_specific)
+        if not quizzes_specific:
+            print(f"[bold yellow]WARNUNG: get_roadmap_quizes_specific hat keine Quizze für Step ID {EXAMPLE_PROBLEM_STEP_ID} (roadmap_steps.id), Roadmap ID {EXAMPLE_PROBLEM_ROADMAP_ID} zurückgegeben.[/bold yellow]")
+
+        print(f"Alle Quizze für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} (via get_roadmap_quizes_roadmapid):")
+        all_quizzes_for_roadmap = get_roadmap_quizes_roadmapid(EXAMPLE_PROBLEM_ROADMAP_ID)
+        print(all_quizzes_for_roadmap)
+        # Überprüfen, ob ein Quiz mit der gesuchten step_id in der Liste ist
+        found_in_all = any(q['step_id'] == EXAMPLE_PROBLEM_STEP_ID for q in all_quizzes_for_roadmap)
+        if not found_in_all and quizzes_specific: # Wenn spezifisch was findet, aber "alle" nicht, ist das seltsam
+             print(f"[bold yellow]WARNUNG: Quiz für Step ID {EXAMPLE_PROBLEM_STEP_ID} wurde spezifisch gefunden, aber nicht in der Gesamtliste der Quizze für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} über step_id-Attribut.[/bold yellow]")
+        elif not found_in_all and not quizzes_specific:
+             print(f"[bold yellow]INFO: Weder spezifisch noch in der Gesamtliste wurde ein Quiz für Step ID {EXAMPLE_PROBLEM_STEP_ID} (roadmap_steps.id) in Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} gefunden.[/bold yellow]")
+
+
+    else:
+        print(f"Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} nicht gefunden.")
+    print("-" * 50)
+    print("[bold blue]Diagnose-Skript-Tests abgeschlossen.[/bold blue]")
