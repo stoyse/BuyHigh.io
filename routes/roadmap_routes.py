@@ -334,10 +334,42 @@ def submit_quiz():
 def roadmap_collection():
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     user_id = g.user.get('id')
+    
+    all_roadmaps_raw = roadmap_handler.get_roadmap_collection()
+    processed_roadmaps = []
+
+    if user_id:
+        for r_map in all_roadmaps_raw:
+            roadmap_id = r_map['id']
+            steps_for_this_roadmap = roadmap_handler.get_roadmap_steps(roadmap_id)
+            total_steps = len(steps_for_this_roadmap)
+            completed_steps_count = 0
+
+            if total_steps > 0:
+                user_step_progress_db = roadmap_handler.get_user_roadmap_progress_all_steps(user_id, roadmap_id)
+                for step in steps_for_this_roadmap:
+                    progress_info = user_step_progress_db.get(step['id'])
+                    if progress_info and progress_info.get('is_completed'):
+                        completed_steps_count += 1
+                
+                r_map['progress_percentage'] = (completed_steps_count / total_steps) * 100
+                r_map['is_completed'] = (completed_steps_count == total_steps)
+            else:
+                r_map['progress_percentage'] = 0
+                r_map['is_completed'] = False # Eine Roadmap ohne Schritte kann nicht abgeschlossen sein im Sinne von Schritten
+            
+            processed_roadmaps.append(r_map)
+    else:
+        # Wenn kein Benutzer angemeldet ist, fügen wir keine Fortschrittsinformationen hinzu
+        for r_map in all_roadmaps_raw:
+            r_map['progress_percentage'] = 0
+            r_map['is_completed'] = False
+            processed_roadmaps.append(r_map)
+
     return render_template('roadmap/roadmap_collection.html',
                            user = g.user,
-                            darkmode = dark_mode_active,
-                            roadmap_collection = roadmap_handler.get_roadmap_collection())
+                           darkmode = dark_mode_active,
+                           roadmap_collection = processed_roadmaps)
 
 @roadmap_bp.route('/create_roadmap', methods=['GET', 'POST'])
 @login_required
@@ -461,3 +493,59 @@ def create_roadmap():
                           user = g.user,
                           darkmode = g.user.get('theme') == 'dark',
                           roadmap_collection = roadmap_handler.get_roadmap_collection())
+
+@roadmap_bp.route('/moonwalking-bull')
+@login_required  # Annahme, dass diese Seite auch einen Login erfordert
+def moonwalking_bull_page():
+    dark_mode_active = g.user and g.user.get('theme') == 'dark'
+    return render_template('roadmap/moonwalking_bull.html',
+                           user=g.user,
+                           darkmode=dark_mode_active)
+
+@roadmap_bp.route('/toggle_meme_mode', methods=['POST'])
+@login_required
+def toggle_meme_mode():
+    user_id = g.user.get('id')
+    
+    if not user_id:
+        flash("Du musst angemeldet sein, um den Meme-Modus umzuschalten.", "error")
+        return redirect(url_for('roadmap.roadmap'))
+    
+    conn = None
+    try:
+        conn = roadmap_handler.get_db_connection()
+        cursor = conn.cursor()
+        
+        # Aktuellen Meme-Modus-Status abrufen
+        cursor.execute("SELECT is_meme_mode FROM users WHERE id = %s", (user_id,))
+        result = cursor.fetchone()
+        
+        if result is None:
+            flash("Benutzer nicht gefunden.", "error")
+            return redirect(url_for('roadmap.roadmap'))
+        
+        current_meme_mode = result[0]
+        new_meme_mode = not current_meme_mode  # Wert umkehren
+        
+        # Meme-Modus des Benutzers in der Datenbank aktualisieren
+        cursor.execute("UPDATE users SET is_meme_mode = %s WHERE id = %s", (new_meme_mode, user_id))
+        conn.commit()
+        
+        # Benutzersitzungsdaten aktualisieren
+        if 'user' in g and g.user:
+            g.user['is_meme_mode'] = new_meme_mode
+        
+        status_text = "aktiviert" if new_meme_mode else "deaktiviert"
+        flash(f"Meme-Modus wurde {status_text}.", "success")
+        return redirect(request.referrer or url_for('roadmap.roadmap'))
+        
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        logger.error(f"Fehler beim Umschalten des Meme-Modus: {e}", exc_info=True)
+        flash(f"Fehler beim Umschalten des Meme-Modus: {str(e)}", "danger")
+        return redirect(request.referrer or url_for('roadmap.roadmap'))
+        
+    finally:
+        if conn:
+            conn.close()

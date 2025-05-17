@@ -29,15 +29,23 @@
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
     {% for roadmap_item in roadmap_collection %}
     <a href="{{ url_for('roadmap.roadmap', roadmap_id=roadmap_item.id) }}" 
-       class="glass-card rounded-2xl overflow-hidden border border-gray-200/10 dark:border-gray-700/20 hover:shadow-neo-lg transform hover:-translate-y-1 transition-all duration-300 ease-in-out flex flex-col">
+       class="glass-card rounded-2xl overflow-hidden border {% if roadmap_item.is_completed %}border-neo-emerald/50{% else %}border-gray-200/10 dark:border-gray-700/20{% endif %} hover:shadow-neo-lg transform hover:-translate-y-1 transition-all duration-300 ease-in-out flex flex-col">
       <div class="p-6 flex-grow">
-        <div class="flex items-center mb-3">
-          <div class="bg-neo-purple/10 p-2 rounded-lg mr-3">
-            <svg class="w-6 h-6 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-            </svg>
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center">
+            <div class="bg-neo-purple/10 p-2 rounded-lg mr-3">
+              <svg class="w-6 h-6 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+              </svg>
+            </div>
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ roadmap_item.title }}</h2>
           </div>
-          <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">{{ roadmap_item.title }}</h2>
+          {% if roadmap_item.is_completed %}
+          <span class="bg-neo-emerald/20 text-neo-emerald text-xs font-semibold px-2.5 py-0.5 rounded-full">
+            <svg class="inline w-3 h-3 mr-1 -mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+            Completed
+          </span>
+          {% endif %}
         </div>
         <p class="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
           {{ roadmap_item.description }}

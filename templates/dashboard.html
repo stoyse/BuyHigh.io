@@ -164,6 +164,17 @@
     border-color: #8b5cf6 !important;
     color: #c4b5fd !important;
   }
+
+  /* Meme Mode Animations */
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .meme-spin {
+    animation: spin 3s linear infinite;
+    transform-origin: center center;
+  }
 </style>
 {% endblock %}
 
@@ -486,7 +497,7 @@
                 <!-- Face and Features -->
                 <div class="absolute inset-0">
                   <!-- Bull Face -->
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full {{ 'meme-spin' if g.user.is_meme_mode else '' }}">
                     <!-- Bull Head -->
                     <circle cx="50" cy="50" r="40" fill="#794928" />
                     
@@ -513,14 +524,35 @@
                   </svg>
                 </div>
                 
-                <!-- Business Accessories -->
-                <div class="absolute -bottom-4 -left-4 -right-4">
+                {% if not g.user.is_meme_mode %}
+                <!-- Business Accessories - nur anzeigen, wenn Meme-Modus AUS ist -->
+                <div class="absolute -bottom-8 -left-4 -right-4">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40">
-                    <!-- Suit/Tie -->
-                    <path d="M60 0 L50 15 L60 40 L70 15 Z" fill="#1e293b" />
-                    <path d="M60 0 L55 20 L60 40 L65 20 Z" fill="#e63946" />
+                    <!-- Suit Jacket -->
+                    <path d="M40 0 L60 0 L80 0 L75 15 L70 25 L60 40 L50 25 L45 15 Z" fill="#1e293b" />
+                    
+                    <!-- Suit Lapels -->
+                    <path d="M52 0 L50 10 L55 18 L60 22 L65 18 L70 10 L68 0" fill="#141c2b" />
+                    
+                    <!-- Shirt -->
+                    <path d="M55 0 L57 12 L60 20 L63 12 L65 0" fill="#f8fafc" />
+                    
+                    <!-- Tie -->
+                    <path d="M60 0 L58 5 L57 10 L60 20 L63 10 L62 5 L60 0 Z" fill="#e63946" />
+                    <path d="M58 5 L60 7 L62 5 L61 4 L59 4 Z" fill="#c1121f" />
+                    
+                    <!-- Tie Knot -->
+                    <path d="M59 4 L60 6 L61 4 Z" fill="#f1faee" stroke="#c1121f" stroke-width="0.2" />
+                    
+                    <!-- Tie Bottom -->
+                    <path d="M57 10 L60 20 L63 10 L60 13 Z" fill="#c1121f" />
+                    
+                    <!-- Jacket Edges/Highlights -->
+                    <path d="M45 15 L50 25 L52 15" stroke="#0f172a" stroke-width="0.3" fill="none" />
+                    <path d="M75 15 L70 25 L68 15" stroke="#0f172a" stroke-width="0.3" fill="none" />
                   </svg>
                 </div>
+                {% endif %}
               </div>
             </div>
             
@@ -568,10 +600,12 @@
             <div class="flex items-center justify-between">
               <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Meme Mode</span>
               <div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" class="sr-only peer" {{ 'checked' if g.user.is_meme_mode else '' }}>
-                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-neo-amber"></div>
-                </label>
+                <form id="memeToggleForm" action="{{ url_for('roadmap.toggle_meme_mode') }}" method="post">
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="memeToggleCheckbox" class="sr-only peer" {{ 'checked' if g.user.is_meme_mode else '' }}>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-neo-amber"></div>
+                  </label>
+                </form>
               </div>
             </div>
           </div>
@@ -743,4 +777,19 @@
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Meme Mode Toggle Funktionalität
+    const memeToggleCheckbox = document.getElementById('memeToggleCheckbox');
+    const memeToggleForm = document.getElementById('memeToggleForm');
+    
+    if (memeToggleCheckbox && memeToggleForm) {
+      memeToggleCheckbox.addEventListener('change', function() {
+        // Formular automatisch absenden, wenn der Toggle geändert wird
+        memeToggleForm.submit();
+      });
+    }
+  });
+</script>
 {% endblock %}
