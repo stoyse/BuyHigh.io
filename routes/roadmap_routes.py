@@ -43,7 +43,8 @@ def roadmap(roadmap_id=1):  # Default to roadmap ID 1 if none provided
                 step['is_attempted_all_quizzes'] = True
                 completed_steps_count += 1
 
-                quizzes_in_step = roadmap_handler.get_roadmap_quizes_stepid(step['id'])
+                # Use get_roadmap_quizes_specific for accuracy
+                quizzes_in_step = roadmap_handler.get_roadmap_quizes_specific(step_id=step['id'], roadmap_id=roadmap_id)
                 if not quizzes_in_step:
                     step['completion_status'] = 'perfect' # Step completed, no quizzes to be imperfect on
                 else:
@@ -198,31 +199,66 @@ def roadmap_step(roadmap_id, step_id): # step_id is a string from URL
 
 @roadmap_bp.route('/submit_quiz', methods=['POST'])
 @login_required
-def submit_quiz(): # Renamed from submit_roadmap_quiz
+def submit_quiz():
+    # Log all form data for debugging - hilfreich, um zu sehen, was ankommt
+    logger.debug(f"submit_quiz called. Form data: {request.form.to_dict()}")
+
     if request.method == 'POST':
         quiz_id_str = request.form.get('quiz_id')
         step_id_str = request.form.get('step_id')
         roadmap_id_str = request.form.get('roadmap_id')
-        submitted_answer_value = request.form.get('quiz_answer')
+        submitted_answer_value = request.form.get('quiz_answer') # Dies ist 'possible_answer_1', etc.
         user_id = g.user.get('id')
 
+        # Bestimme die Weiterleitungs-URL für Fehler oder Erfolg
+        # request.referrer könnte None sein oder auf eine andere Seite zeigen, wenn etwas schiefgeht.
+        # Sicherer ist es, explizit zur aktuellen Step-Seite zurückzukehren.
+        # Dafür brauchen wir roadmap_id und step_id so früh wie möglich.
+        
+        redirect_url = url_for('roadmap.roadmap') # Fallback, falls IDs fehlen
+        if roadmap_id_str and step_id_str:
+            try:
+                # Versuche, die IDs für die Redirect-URL zu validieren/konvertieren
+                # Dies ist nur für die Redirect-URL im Fehlerfall, die eigentliche Logik verwendet actual_step_id etc.
+                redirect_url = url_for('roadmap.roadmap_step', roadmap_id=int(roadmap_id_str), step_id=int(step_id_str))
+            except ValueError:
+                logger.warning(f"Konnte roadmap_id '{roadmap_id_str}' oder step_id '{step_id_str}' nicht für Redirect-URL konvertieren.")
+                # Fallback auf die Roadmap-Sammlung oder eine generische Roadmap-Seite, wenn IDs ungültig sind
+                redirect_url = url_for('roadmap.roadmap_collection')
+
+
         if not all([quiz_id_str, step_id_str, roadmap_id_str, submitted_answer_value, user_id]):
-            flash("Error: Incomplete quiz data submitted.", "error")
-            return redirect(request.referrer or url_for('roadmap.roadmap'))
+            message = "Error: Incomplete quiz data submitted."
+            logger.error(f"Incomplete data in submit_quiz: quiz_id={quiz_id_str}, step_id={step_id_str}, roadmap_id={roadmap_id_str}, answer_value={submitted_answer_value}, user_id={user_id}")
+            flash(message, "error")
+            return redirect(request.referrer or redirect_url)
 
         try:
             quiz_id = int(quiz_id_str)
-            actual_step_id = int(step_id_str)
-            roadmap_id = int(roadmap_id_str)
+            actual_step_id = int(step_id_str) # Dies ist die ID des roadmap_steps
+            current_roadmap_id = int(roadmap_id_str) # Dies ist die ID der roadmap
         except ValueError:
-            flash("Error: Invalid quiz identifiers.", "error")
-            return redirect(request.referrer or url_for('roadmap.roadmap'))
+            message = "Error: Invalid quiz identifiers."
+            logger.error(f"Invalid identifiers in submit_quiz: quiz_id_str={quiz_id_str}, step_id_str={step_id_str}, roadmap_id_str={roadmap_id_str}")
+            flash(message, "error")
+            return redirect(redirect_url) # Nutze die zuvor bestimmte redirect_url
+
+        # Die Ziel-URL für Erfolg oder spezifische Fehler nach ID-Validierung
+        target_step_redirect_url = url_for('roadmap.roadmap_step', roadmap_id=current_roadmap_id, step_id=actual_step_id)
 
         quiz = roadmap_handler.get_quiz_by_id(quiz_id)
 
         if not quiz:
-            flash(f"Quiz with ID {quiz_id} not found.", "error")
-            return redirect(url_for('roadmap.roadmap_step', roadmap_id=roadmap_id, step_id=actual_step_id))
+            message = f"Quiz with ID {quiz_id} not found."
+            logger.error(message)
+            flash(message, "error")
+            return redirect(target_step_redirect_url)
+        
+        if quiz.get('step_id') != actual_step_id or quiz.get('roadmap_id') != current_roadmap_id:
+            message = f"Data mismatch: Quiz {quiz_id} (step: {quiz.get('step_id')}, roadmap: {quiz.get('roadmap_id')}) does not align with submitted step {actual_step_id} or roadmap {current_roadmap_id}."
+            logger.error(message)
+            flash("An error occurred with the quiz data. Please try again.", "error")
+            return redirect(target_step_redirect_url)
 
         submitted_answer_text = ""
         if submitted_answer_value == 'possible_answer_1':
@@ -232,12 +268,16 @@ def submit_quiz(): # Renamed from submit_roadmap_quiz
         elif submitted_answer_value == 'possible_answer_3':
             submitted_answer_text = quiz.get('possible_answer_3')
 
-        is_correct = (quiz['correct_answer'] == submitted_answer_text)
+        is_correct = (str(quiz.get('correct_answer','')).strip().lower() == str(submitted_answer_text).strip().lower())
+        logger.info(f"Quiz {quiz_id} attempt by user {user_id}. Submitted key: '{submitted_answer_value}', Submitted text: '{submitted_answer_text}', Correct text: '{quiz.get('correct_answer')}'. Result: {is_correct}")
 
         try:
+            logger.info(f"Attempting to record quiz attempt for user {user_id}, quiz {quiz_id}, correct: {is_correct}")
             roadmap_handler.record_user_quiz_attempt(user_id, quiz_id, is_correct)
+            logger.info(f"Successfully recorded quiz attempt for user {user_id}, quiz {quiz_id}.")
             
-            all_quizzes_for_this_step = roadmap_handler.get_roadmap_quizes_specific(step_id=actual_step_id, roadmap_id=roadmap_id)
+            all_quizzes_for_this_step = roadmap_handler.get_roadmap_quizes_specific(step_id=actual_step_id, roadmap_id=current_roadmap_id)
+            logger.debug(f"Quizzes for step {actual_step_id} (Roadmap {current_roadmap_id}) after attempt: {len(all_quizzes_for_this_step) if all_quizzes_for_this_step else 'None or 0'}")
             
             if all_quizzes_for_this_step:
                 quiz_ids_in_step = [q['id'] for q in all_quizzes_for_this_step]
@@ -254,38 +294,40 @@ def submit_quiz(): # Renamed from submit_roadmap_quiz
                             break
                 
                 if all_quizzes_in_step_attempted:
-                    roadmap_handler.update_user_roadmap_step_progress(user_id, roadmap_id, actual_step_id, is_completed=True, progress_percentage=100.0)
+                    logger.info(f"All quizzes for step {actual_step_id} (Roadmap {current_roadmap_id}) attempted by user {user_id}. Attempting to update step progress.")
+                    roadmap_handler.update_user_roadmap_step_progress(user_id, current_roadmap_id, actual_step_id, is_completed=True, progress_percentage=100.0)
+                    logger.info(f"Successfully updated step progress for user {user_id}, roadmap {current_roadmap_id}, step {actual_step_id}.")
             
+            response_message_text = "" # Renamed to avoid conflict with jsonify's message
             if is_correct:
                 xp_action_name = 'roadmap_quiz_correct' 
                 xp_to_award = roadmap_handler.get_xp_for_action(xp_action_name)
                 if xp_to_award == 0: 
                     xp_to_award = roadmap_handler.get_xp_for_action('daily_quiz') 
                     if xp_to_award == 0: 
-                        xp_to_award = 50 
+                        xp_to_award = 25 
                 
                 if xp_to_award > 0:
                     xp_update_info = roadmap_handler.add_xp_to_user(user_id, xp_to_award)
-                    flash_message = f"Correct! 🎉 You earned {xp_to_award} XP."
+                    response_message_text = f"Correct! You earned {xp_to_award} XP."
                     if xp_update_info and xp_update_info.get("level_up"):
-                        flash_message += f" Level Up! You are now Level {xp_update_info['new_level']}! 🚀"
-                    flash(flash_message, "success")
+                        response_message_text += f" Level Up! You are now Level {xp_update_info['new_level']}!"
                 else:
-                    flash("Correct! 🎉", "success")
+                    response_message_text = "Correct!"
+                flash(response_message_text, "success")
             else:
-                flash(f"Incorrect. The correct answer was: {quiz['correct_answer']}", "warning")
+                response_message_text = f"Incorrect. The correct answer was: {quiz.get('correct_answer')}"
+                flash(response_message_text, "warning")
 
         except Exception as e:
-            logger.error(f"Error processing quiz submission: {e}", exc_info=True)
-            flash("An internal error occurred. Please try again later.", "error")
+            logger.error(f"Exception during DB operations or subsequent logic in submit_quiz for quiz {quiz_id}: {e}", exc_info=True)
+            flash("An internal error occurred while processing your answer.", "error")
 
-        return redirect(url_for('roadmap.roadmap_step', roadmap_id=roadmap_id, step_id=actual_step_id))
+        return redirect(target_step_redirect_url)
     
-    # Fallback for non-POST or other issues
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'success': False, 'message': 'Invalid request method.'})
+    # Fallback für Nicht-POST-Methoden
+    flash("Invalid request method.", "error")
     return redirect(url_for('roadmap.roadmap'))
-
 
 @roadmap_bp.route('/roadmap-collection')
 @login_required
