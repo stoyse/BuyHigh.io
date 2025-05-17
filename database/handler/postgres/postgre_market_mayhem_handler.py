@@ -46,6 +46,20 @@ def get_all_mayhem():
         logger.error(f"Fehler beim Abrufen der Marktdaten: {e}", exc_info=True)
         raise
 
+def get_all_mayhem_scenarios():
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM market_mayhem_scenarios")
+                mayhem_data = cur.fetchall()
+                # Convert to list of dicts
+                colnames = [desc[0] for desc in cur.description]
+                mayhem_data = [dict(zip(colnames, row)) for row in mayhem_data]
+                return mayhem_data
+    except Exception as e:
+        logger.error(f"Fehler beim Abrufen der Marktdaten: {e}", exc_info=True)
+        raise
+
 def get_mayhem_data(scenario_id):
     data = {}
     try:
@@ -79,8 +93,27 @@ def check_if_mayhem():
                 print(f"No scenarios found for event ID {row['id']}.")
     return events
 
-
-
+def schedule_mayhem(scenario_id, start_time=None, end_time=None, result=None):
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                now = datetime.datetime.now()
+                
+                # Use provided parameters or defaults
+                start_time = datetime.datetime.fromisoformat(start_time) if start_time else now
+                end_time = datetime.datetime.fromisoformat(end_time) if end_time else now
+                
+                cur.execute("""
+                    INSERT INTO market_mayhem (scenario_id, start_time, end_time, result, created_at)
+                    VALUES (%s, %s, %s, %s, %s)
+                    RETURNING id
+                """, (scenario_id, start_time, end_time, result, now))
+                new_id = cur.fetchone()[0]
+                conn.commit()
+                return new_id
+    except Exception as e:
+        logger.error(f"Error in market mayhem handler: {str(e)}")
+        return None
 
 if __name__ == "__main__":
     # Test the connection and query

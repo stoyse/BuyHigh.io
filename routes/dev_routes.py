@@ -4,6 +4,7 @@ import logging
 import database.handler.postgres.postgre_dev_handler as dev_handler
 import database.handler.postgres.postgre_education_handler as edu_handler
 import database.handler.postgres.postgres_db_handler as db_handler
+import database.handler.postgres.postgre_market_mayhem_handler as mayhem_handler
 from rich import print
 import tools.api_check as api_check
 import tools.config as config
@@ -114,3 +115,32 @@ def delete_user_view(user_id):  # Name geändert
     
     return redirect(url_for('dev.user_management'))
 
+
+@dev_bp.route('/mayhem')
+@login_required
+@dev_required
+def mayhem():
+    logger.debug("Rendering mayhem page")
+    return render_template('dev/mayhem.html',
+                           all_mayhem=mayhem_handler.get_all_mayhem(),
+                           check_if_mayhem=mayhem_handler.check_if_mayhem(),
+                           mayhem_scenarios=mayhem_handler.get_all_mayhem_scenarios())
+
+@dev_bp.route('/mayhem/shedule/<scenario_id>', methods=['GET', 'POST'])
+@login_required
+@dev_required
+def mayhem_shedule(scenario_id):
+    logger.debug(f"Scheduling mayhem for scenario ID: {scenario_id}")
+    if request.method == 'POST':
+        start_time = request.form.get('start_time')
+        end_time = request.form.get('end_time')
+        result = request.form.get('result')
+        print(f"[purple]Start Time: {start_time}, End Time: {end_time}, Result: {result}")
+        
+        # Updated function call with all parameters
+        mayhem_handler.schedule_mayhem(scenario_id, start_time, end_time, result)
+        flash('Mayhem scheduled successfully!', 'success')
+        return redirect(url_for('dev.mayhem'))
+    
+    mayhem_data = mayhem_handler.get_mayhem_data(scenario_id)
+    return render_template('dev/mayhem.html', mayhem_data=mayhem_data)
