@@ -98,6 +98,11 @@
     </p>
   </header>
 
+  <!-- Neue Anzeige für Marktereignisse -->
+  <div id="mayhem-alert" class="hidden p-4 mb-4 text-sm text-red-800 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-900" role="alert">
+    <span class="font-medium">Market Mayhem:</span> <span id="mayhem-description"></span>
+  </div>
+
   <!-- Main Trading Interface -->
   <div class="flex flex-col lg:flex-row gap-6">
     <!-- Left Column: Stock List and Search -->
@@ -463,6 +468,30 @@
         newsButton.href = `/news/${symbol}`;
       }
     }
+
+    // Neue Funktion: Lade Marktereignisse und zeige sie an
+    function loadMayhemAlert() {
+      fetch('/api/mayhem')
+        .then(response => response.json())
+        .then(data => {
+          if (data && Object.keys(data).length > 0) {
+            const mayhemEvent = Object.values(data)[0]; // Nimm das erste Ereignis
+            if (mayhemEvent.mayhem_scenarios && mayhemEvent.mayhem_scenarios.description) {
+              const description = mayhemEvent.mayhem_scenarios.description;
+              const alertBox = document.getElementById('mayhem-alert');
+              const descriptionElement = document.getElementById('mayhem-description');
+              descriptionElement.textContent = description;
+              alertBox.classList.remove('hidden');
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error loading mayhem alert:', error);
+        });
+    }
+
+    // Lade Marktereignisse beim Laden der Seite
+    loadMayhemAlert();
   });
 </script>
 {% endblock %}

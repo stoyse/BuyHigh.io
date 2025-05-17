@@ -10,6 +10,34 @@ document.addEventListener('DOMContentLoaded', function() {
   let liveUpdateIntervalId = null;
   const LIVE_UPDATE_INTERVAL_MS = 60000; // 60 Sekunden
 
+  // Neuer globaler Cache für Basispreise aus der Datenbank
+  let stockBasePricesCache = {};
+
+  // Funktion zum initialen Laden aller Basispreise aus der Datenbank
+  function loadAllBasePrices() {
+    logDebug("Loading all base prices from database...");
+    
+    return fetch(`/api/assets`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.assets)) {
+          data.assets.forEach(asset => {
+            if (asset.symbol && asset.default_price) {
+              stockBasePricesCache[asset.symbol] = parseFloat(asset.default_price);
+              logDebug(`Cached base price for ${asset.symbol}: $${stockBasePricesCache[asset.symbol]}`);
+            }
+          });
+          logDebug(`Successfully cached base prices for ${Object.keys(stockBasePricesCache).length} assets`);
+          return stockBasePricesCache;
+        }
+        throw new Error("Failed to load asset base prices");
+      })
+      .catch(error => {
+        logDebug(`Error loading base prices: ${error.message}`);
+        return {};
+      });
+  }
+
   // Verbesserte Logging-Funktion
   function logDebug(message, data = null) {
     if (!DEBUG) return;
@@ -68,109 +96,41 @@ document.addEventListener('DOMContentLoaded', function() {
     logDebug("Updating all stock prices from API...");
     const stockItems = document.querySelectorAll('.stock-item');
     
-    // Für jede Aktie in der Liste
     stockItems.forEach(item => {
       const symbol = item.getAttribute('data-symbol');
       if (!symbol) return;
-      
-      // Immer zuerst den Default-Preis aus der DB holen als Basis-Wert
-      const basePrice = getStartPrice(symbol);
-      const fallbackPrice = parseFloat(basePrice).toFixed(2);
-      
-      // Sicherstellen, dass immer ein Preis gesetzt ist, auch bevor die API antworten kann
-      if (!item.getAttribute('data-price') || item.getAttribute('data-price') === '0.00' || item.getAttribute('data-price') === '0') {
-        item.setAttribute('data-price', fallbackPrice);
-        const priceElement = item.querySelector('.stock-price');
-        if (priceElement) {
-          priceElement.textContent = `$${fallbackPrice}`;
-        }
-      }
-      
-      // API-Aufruf für aktuelle Preisdaten
+
       fetch(`/api/stock-data?symbol=${symbol}&timeframe=1D`)
-        .then(response => {
-          if (!response.ok) {
-            logDebug(`⚠️ API response not ok for ${symbol}: ${response.status}`);
-            throw new Error(`HTTP error ${response.status}`);
-          }
-          return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-          // Zuerst prüfen, ob die Antwort API-Limitierungsmeldungen enthält
-          if (data && (data.Note || data.Information)) {
-            logDebug(`⚠️ API Limitierung für ${symbol}: ${data.Note || data.Information}`);
-            // Automatischer Fallback auf Demo-Daten bei API-Limitierung
-            useFallbackDemoPrice(item, symbol);
-            return;
-          }
-          
-          // Prüfen, ob gültige Daten vorliegen
           if (Array.isArray(data) && data.length > 0) {
             const latestData = data[data.length - 1];
-            
-            // Zusätzliche Prüfung auf gültige Datenpunkte
-            if (!latestData || typeof latestData.close === 'undefined' || latestData.close === null) {
-              logDebug(`⚠️ Ungültiger Datenpunkt für ${symbol}:`, latestData);
-              useFallbackDemoPrice(item, symbol);
-              return;
-            }
-            
-            const price = parseFloat(latestData.close).toFixed(2);
-            
-            // Alten Preis extrahieren für Vergleich
-            const oldPrice = parseFloat(item.getAttribute('data-price') || 0);
-            
-            // Update data-attribute
-            item.setAttribute('data-price', price);
-            item.setAttribute('data-source', 'api'); // Markieren als API-Daten
-            
-            // Update UI elements
-            const priceElement = item.querySelector('.stock-price');
-            if (priceElement) {
-              // Optional: Farbanimation für Preisänderung
-              if (price > oldPrice) {
-                priceElement.classList.add('price-flash-up');
-                setTimeout(() => priceElement.classList.remove('price-flash-up'), 1000);
-              } else if (price < oldPrice) {
-                priceElement.classList.add('price-flash-down');
-                setTimeout(() => priceElement.classList.remove('price-flash-down'), 1000);
+            const price = parseFloat(latestData.close); // Preis als Zahl belassen
+
+            // Wende Mayhem-Effekt an (jetzt ein Pass-Through, der eine Zahl sicherstellt)
+            applyMayhemEffect(symbol, price).then(adjustedPrice => {
+              item.setAttribute('data-price', adjustedPrice.toFixed(2));
+              const priceElement = item.querySelector('.stock-price');
+              if (priceElement) {
+                priceElement.textContent = `$${adjustedPrice.toFixed(2)}`;
               }
-              
-              priceElement.textContent = `$${price}`;
-            }
-            
-            // Wenn diese Aktie aktuell ausgewählt ist, auch deren Details aktualisieren
-            if (currentSymbol === symbol) {
-              currentStockPrice = parseFloat(price);
-              document.getElementById('current-price').textContent = `$${price}`;
-              updateTotalPrice();
-            }
-            
-            logDebug(`✅ Updated price for ${symbol}: $${price}`);
-          } else if (data && data.error) {
-            logDebug(`⚠️ Error in API response for ${symbol} during all stock update: ${data.error}`);
-            // Optional: UI-Indikator für Fehler setzen
-            const priceElement = item.querySelector('.stock-price');
-            if (priceElement) {
-              priceElement.classList.add('error-flash');
-              setTimeout(() => priceElement.classList.remove('error-flash'), 1000);
-            }
-          } else {
-            // Allgemeine Fehler bei leerer oder ungültiger Antwort
-            logDebug(`⚠️ Ungültiges Datenformat für ${symbol}:`, data);
+            });
           }
         })
         .catch(error => {
-          logDebug(`⚠️ Error updating price for ${symbol}: ${error.message}`);
-          // Optional: UI-Indikator für Fehler setzen
-          const priceElement = item.querySelector('.stock-price');
-          if (priceElement) {
-            priceElement.textContent = 'Error';
-            priceElement.classList.add('error-flash');
-            setTimeout(() => priceElement.classList.remove('error-flash'), 1000);
-          }
+          console.error(`Error updating price for ${symbol}:`, error);
         });
     });
+  }
+
+  // Neue Funktion: Überprüfe auf Marktereignisse und passe Preise an (Mayhem-Effekt entfernt/umgangen)
+  function applyMayhemEffect(symbol, price) {
+    const numericPrice = parseFloat(price);
+    if (isNaN(numericPrice)) {
+      logDebug(`[applyMayhemEffect] Invalid price for ${symbol}: ${price}. Defaulting to 0.`);
+      return Promise.resolve(0); // Stelle sicher, dass eine Zahl zurückgegeben wird
+    }
+    return Promise.resolve(numericPrice); // Gibt den Preis als Zahl zurück, verpackt in einem Promise
   }
 
   // Neue Hilfsfunktion für Fallback auf Demo-Preise bei API-Limitierung
@@ -451,17 +411,44 @@ document.addEventListener('DOMContentLoaded', function() {
         data: cleanChartData
       }]);
 
+      // Prüfen, ob die Daten realistisch für diese Aktie sind
+      const basePrice = getStartPrice(symbol);
       if (slicedData.length > 0) {
         const lastDataPoint = slicedData[slicedData.length - 1];
-        currentStockPrice = parseFloat(lastDataPoint.close);
-        document.getElementById('current-price').textContent = `$${currentStockPrice.toFixed(2)}`;
-        document.getElementById('stock-high').textContent = `$${parseFloat(lastDataPoint.high).toFixed(2)}`;
-        document.getElementById('stock-low').textContent = `$${parseFloat(lastDataPoint.low).toFixed(2)}`;
-        document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
-        const marketCap = typeof calculateMarketCap === 'function' ? calculateMarketCap(symbol, currentStockPrice) : 'N/A';
-        document.getElementById('stock-market-cap').textContent = typeof formatCurrency === 'function' ? formatCurrency(marketCap) : marketCap;
-        updateTotalPrice();
-        logDebug(`📊 Chart and stats updated for ${symbol}, close: $${currentStockPrice.toFixed(2)}`);
+        const rawClosePrice = parseFloat(lastDataPoint.close);
+        
+        // Prüfen, ob der Preis realistisch ist (innerhalb von 50% des Default-Preises)
+        const isRealisticPrice = Math.abs(rawClosePrice - basePrice) / basePrice < 0.5;
+        
+        // Wenn der Preis nicht realistisch für diese Aktie ist, verwenden wir den Default-Preis
+        const actualPrice = isRealisticPrice ? rawClosePrice : basePrice;
+        
+        // Wende Mayhem-Effekt auf den korrekten Basispreis an
+        applyMayhemEffect(symbol, actualPrice).then(adjustedPrice => {
+          currentStockPrice = adjustedPrice;
+          document.getElementById('current-price').textContent = `$${adjustedPrice.toFixed(2)}`;
+          
+          // Aktualisiere die Preisanzeige auch in der Seitenleiste
+          const sidebarItem = document.querySelector(`.stock-item[data-symbol="${symbol}"]`);
+          if (sidebarItem) {
+            sidebarItem.setAttribute('data-price', adjustedPrice.toFixed(2));
+            const priceElement = sidebarItem.querySelector('.stock-price');
+            if (priceElement) {
+              priceElement.textContent = `$${adjustedPrice.toFixed(2)}`;
+            }
+          }
+          
+          // Aktualisiere weitere UI-Elemente
+          document.getElementById('stock-high').textContent = `$${(parseFloat(lastDataPoint.high) * (adjustedPrice / actualPrice)).toFixed(2)}`;
+          document.getElementById('stock-low').textContent = `$${(parseFloat(lastDataPoint.low) * (adjustedPrice / actualPrice)).toFixed(2)}`;
+          document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
+          
+          const marketCap = typeof calculateMarketCap === 'function' ? calculateMarketCap(symbol, adjustedPrice) : 'N/A';
+          document.getElementById('stock-market-cap').textContent = typeof formatCurrency === 'function' ? formatCurrency(marketCap) : marketCap;
+          
+          updateTotalPrice();
+          logDebug(`📊 Chart and stats updated for ${symbol}, adjusted close: $${adjustedPrice.toFixed(2)}, base price: $${basePrice}`);
+        });
       }
     } catch(e) {
       logDebug(`❌ Error updating chart: ${e.message}`);
@@ -513,6 +500,76 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
+  // Demo-Daten verwenden, wenn API nicht funktioniert
+  function useDemoData(symbol, timeframe) {
+    const units = getTimeframeUnits(timeframe);
+    const startPrice = getStartPrice(symbol); // immer Default-Preis aus DB holen!
+    const isMinutes = timeframe === '1MIN';
+    logDebug(`📊 Generating fallback demo data for ${symbol} with startPrice $${parseFloat(startPrice).toFixed(2)}`);
+    const demoData = generateCandlestickData(units, startPrice, isMinutes);
+    
+    // Wende Mayhem-Effekt auf die Demo-Daten an, aber respektiere die startPrice
+    applyMayhemEffect(symbol, startPrice).then(adjustedStartPrice => {
+        // Passe alle Preise proportional an
+        const factor = adjustedStartPrice / startPrice;
+        demoData.forEach(item => {
+            item.open *= factor;
+            item.high *= factor;
+            item.low *= factor;
+            item.close *= factor;
+        });
+        
+        updateChartWithDemoData(symbol, demoData);
+    });
+  }
+
+  // Neue Funktion zur Aktualisierung des Charts mit Demo-Daten
+  function updateChartWithDemoData(symbol, demoData) {
+    try {
+      const chartData = demoData.map(item => ({
+        x: new Date(item.date),
+        y: [
+          parseFloat(item.open),
+          parseFloat(item.high),
+          parseFloat(item.low),
+          parseFloat(item.close)
+        ]
+      }));
+      
+      chart.updateSeries([{
+        name: symbol,
+        data: chartData
+      }]);
+      
+      if (demoData.length > 0) {
+        const lastDataPoint = demoData[demoData.length - 1];
+        currentStockPrice = parseFloat(lastDataPoint.close);
+        document.getElementById('current-price').textContent = `$${currentStockPrice.toFixed(2)}`;
+        document.getElementById('stock-high').textContent = `$${parseFloat(lastDataPoint.high).toFixed(2)}`;
+        document.getElementById('stock-low').textContent = `$${parseFloat(lastDataPoint.low).toFixed(2)}`;
+        document.getElementById('stock-volume').textContent = formatNumber(lastDataPoint.volume);
+        
+        // Aktualisiere die Seitenleiste
+        const sidebarItem = document.querySelector(`.stock-item[data-symbol="${symbol}"]`);
+        if (sidebarItem) {
+          sidebarItem.setAttribute('data-price', currentStockPrice.toFixed(2));
+          const priceElement = sidebarItem.querySelector('.stock-price');
+          if (priceElement) {
+            priceElement.textContent = `$${currentStockPrice.toFixed(2)}`;
+          }
+        }
+        
+        const marketCap = typeof calculateMarketCap === 'function' ? calculateMarketCap(symbol, currentStockPrice) : 'N/A';
+        document.getElementById('stock-market-cap').textContent = typeof formatCurrency === 'function' ? formatCurrency(marketCap) : marketCap;
+        
+        updateTotalPrice();
+        logDebug(`📊 Demo chart updated for ${symbol}, close: $${currentStockPrice.toFixed(2)}`);
+      }
+    } catch(e) {
+      logDebug(`❌ Error updating chart with demo data: ${e.message}`);
+    }
+  }
+
   // Funktion zum Abholen der neuesten Daten für Live-Updates
   function fetchLatestData(symbol, timeframe, preserveInitialPrice = false) {
     logDebug(`Fetching latest data for ${symbol}, timeframe: ${timeframe}`);
@@ -648,33 +705,36 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    const endpoint = action === 'buy' ? '/api/trade/buy' : '/api/trade/sell';
-    const payload = {
-      symbol: currentSymbol,
-      quantity: quantity,
-      price: price
-    };
+    // Wende Mayhem-Effekt auf den aktuellen Preis an
+    applyMayhemEffect(currentSymbol, price).then(adjustedPrice => {
+      const endpoint = action === 'buy' ? '/api/trade/buy' : '/api/trade/sell';
+      const payload = {
+        symbol: currentSymbol,
+        quantity: quantity,
+        price: adjustedPrice
+      };
 
-    fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        alert(data.message);
-        loadUserBalance();
-        loadStockData(currentSymbol, currentTimeframe, true);
-      } else {
-        alert(data.message);
-      }
-    })
-    .catch(error => {
-      console.error('Error during trade:', error);
-      alert('An error occurred during the trade.');
+      fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          alert(data.message);
+          loadUserBalance();
+          loadStockData(currentSymbol, currentTimeframe, true);
+        } else {
+          alert(data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error during trade:', error);
+        alert('An error occurred during the trade.');
+      });
     });
   }
 
@@ -718,37 +778,37 @@ document.addEventListener('DOMContentLoaded', function() {
     return data;
   }
 
-  // Demo-Daten verwenden, wenn API nicht funktioniert
-  function useDemoData(symbol, timeframe) {
-    const units = getTimeframeUnits(timeframe);
-    const startPrice = getStartPrice(symbol); // immer Default-Preis aus DB holen!
-    const isMinutes = timeframe === '1MIN';
-    logDebug(`📊 Generating fallback demo data for ${symbol} with startPrice $${parseFloat(startPrice).toFixed(2)}`);
-    const demoData = generateCandlestickData(units, startPrice, isMinutes);
-    updateChartAndStats(symbol, demoData);
-  }
-
-  // Dummy für getStartPrice, falls nicht vorhanden
+  // Verbesserte Funktion für getStartPrice ohne statische Fallbacks
   function getStartPrice(symbol) {
-    // Hole Default-Preis aus der Datenbank per synchronem API-Call (nur beim ersten Mal)
+    // 1. Versuche zuerst den Preis aus dem Cache zu lesen
+    if (stockBasePricesCache[symbol] !== undefined) {
+      return stockBasePricesCache[symbol];
+    }
+    
+    // 2. Wenn nicht im Cache, versuche synchron aus der Datenbank zu laden
     let price = null;
-    const xhr = new XMLHttpRequest();
-    xhr.open('GET', `/api/assets/${symbol}`, false); // synchroner Request (nur für Initialisierung)
     try {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', `/api/assets/${symbol}`, false); // synchroner Request (nur für Notfall)
       xhr.send(null);
       if (xhr.status === 200) {
         const data = JSON.parse(xhr.responseText);
         if (data && data.asset && data.asset.default_price) {
           price = parseFloat(data.asset.default_price);
+          // Für zukünftige Verwendung cachen
+          stockBasePricesCache[symbol] = price;
         }
       }
     } catch (e) {
-      // Fallback auf statische Werte unten
+      logDebug(`Error in synchronous fallback for ${symbol}: ${e}`);
     }
+    
     if (price && !isNaN(price)) return price;
-    // Fallback falls kein Wert aus DB
-    const basePrice = {"AAPL": 170, "TSLA": 250, "MSFT": 330, "AMZN": 130, "GOOGL": 140, "META": 290, "NVDA": 950};
-    return basePrice[symbol] || (100 + Math.random() * 400);
+    
+    // 3. Absoluter Fallback: sicherer Standardpreis
+    const defaultFallbackPrice = 100 + Math.random() * 50; // Zwischen $100-$150
+    logDebug(`Warning: Using generic fallback price for ${symbol}: $${defaultFallbackPrice.toFixed(2)}`);
+    return defaultFallbackPrice;
   }
 
   // Dummy-Funktionen für calculateMarketCap und formatCurrency, falls nicht vorhanden
@@ -792,20 +852,34 @@ document.addEventListener('DOMContentLoaded', function() {
     setupChart();
     loadUserBalance();
     
-    // HINZUGEFÜGT: Sofort die Default-Preise aus data-price in die UI übernehmen
-    document.querySelectorAll('.stock-item').forEach(item => {
-      const price = item.getAttribute('data-price');
-      const priceElement = item.querySelector('.stock-price');
-      if (priceElement && price) {
-        priceElement.textContent = `$${parseFloat(price).toFixed(2)}`;
-      }
+    // NEU: Laden der Basispreise VOR dem Aktualisieren der Preise
+    loadAllBasePrices().then(() => {
+      // HINZUGEFÜGT: Sofort die Default-Preise aus data-price in die UI übernehmen
+      document.querySelectorAll('.stock-item').forEach(item => {
+        const symbol = item.getAttribute('data-symbol');
+        const priceElement = item.querySelector('.stock-price');
+        
+        // Verwende sowohl data-price als auch cached base price
+        let price = parseFloat(item.getAttribute('data-price'));
+        if (isNaN(price) && stockBasePricesCache[symbol]) {
+          price = stockBasePricesCache[symbol];
+          item.setAttribute('data-price', price); // Update das Attribut
+        }
+        
+        if (priceElement && !isNaN(price)) {
+          priceElement.textContent = `$${price.toFixed(2)}`;
+        }
+      });
+      
+      // NEU: Preise von API laden beim Seitenaufruf
+      updateAllStockPrices();
+      
+      // Regelmäßige Aktualisierung der Preise alle 2 Minuten
+      setInterval(updateAllStockPrices, 120000); // 2 Minuten
+      
+      // NEU: Automatisch das erste Element in der Stockliste auswählen
+      selectFirstStockItem();
     });
-    
-    // NEU: Preise von API laden beim Seitenaufruf
-    updateAllStockPrices();
-    
-    // Regelmäßige Aktualisierung der Preise alle 2 Minuten
-    setInterval(updateAllStockPrices, 120000); // 2 Minuten
 
     // Set up event listeners for stock items
     document.querySelectorAll('.stock-item').forEach(item => {
@@ -846,9 +920,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('sell-button').addEventListener('click', function() {
       handleTrade('sell');
     });
-    
-    // NEU: Automatisch das erste Element in der Stockliste auswählen
-    selectFirstStockItem();
   }
 
   // NEU: Funktion zum Auswählen des ersten Elements
@@ -870,38 +941,43 @@ document.addEventListener('DOMContentLoaded', function() {
   function selectStockItem(item) {
     const symbol = item.getAttribute('data-symbol');
     const name = item.getAttribute('data-name');
-    const price = item.getAttribute('data-price');
+    const basePrice = parseFloat(item.getAttribute('data-price'));
     const change = item.getAttribute('data-change');
     const assetType = item.getAttribute('data-asset-type') || 'stock';
 
-    logDebug(`Selected stock: ${symbol} (${name}), price from HTML: $${price}, change: ${change}%, type: ${assetType}`);
+    logDebug(`Selected stock: ${symbol} (${name}), base price: $${basePrice}, change: ${change}%, type: ${assetType}`);
 
-    // Update current symbol and price
-    currentSymbol = symbol;
-    currentStockPrice = parseFloat(price);
-    initialStockPrice = parseFloat(price);
+    // Wende Mayhem-Effekt auf den Basispreis an
+    applyMayhemEffect(symbol, basePrice).then(adjustedPrice => {
+      // Update current symbol and price
+      currentSymbol = symbol;
+      currentStockPrice = adjustedPrice;
+      initialStockPrice = adjustedPrice;
 
-    // Update stock info in UI
-    document.getElementById('stock-name').textContent = `${name} (${symbol})`;
-    document.getElementById('stock-price').textContent = `Preis: $${price} (${change}%)`;
-    document.getElementById('current-price').textContent = `$${price}`;
-    
-    // Optional: Load additional asset details
-    loadAssetDetails(symbol);
+      // Update stock info in UI
+      document.getElementById('stock-name').textContent = `${name} (${symbol})`;
+      document.getElementById('stock-price').textContent = `Preis: $${adjustedPrice.toFixed(2)} (${change}%)`;
+      document.getElementById('current-price').textContent = `$${adjustedPrice.toFixed(2)}`;
 
-    // Update total based on quantity
-    updateTotalPrice();
+      // Optional: Load additional asset details
+      loadAssetDetails(symbol);
 
-    // Load new stock data, aber behalte den ursprünglichen Preis bei
-    loadStockData(symbol, currentTimeframe, true);
+      // Update total based on quantity
+      updateTotalPrice();
 
-    // Highlight selected stock
-    document.querySelectorAll('.stock-item').forEach(s => {
-      s.classList.remove('border-primary-light', 'dark:border-primary-dark', 'border-2', 'selected-stock');
-      s.classList.add('border-gray-200', 'dark:border-gray-700', 'border-2');
+      // Load new stock data, WICHTIG: Verwende false statt true, damit der Preis nicht überschrieben wird
+      loadStockData(symbol, currentTimeframe, false);
+
+      // Highlight selected stock
+      document.querySelectorAll('.stock-item').forEach(s => {
+        s.classList.remove('border-primary-light', 'dark:border-primary-dark', 'border-2', 'selected-stock');
+        s.classList.add('border-gray-200', 'dark:border-gray-700', 'border-2');
+      });
+      item.classList.remove('border-gray-200', 'dark:border-gray-700');
+      item.classList.add('border-primary-light', 'dark:border-primary-dark', 'border-2', 'selected-stock');
+
+      logDebug(`Updated UI for selected stock: ${symbol} with adjusted price: $${adjustedPrice.toFixed(2)}`);
     });
-    item.classList.remove('border-gray-200', 'dark:border-gray-700');
-    item.classList.add('border-primary-light', 'dark:border-primary-dark', 'border-2', 'selected-stock');
   }
 
   initializePage();

@@ -400,3 +400,14 @@ def daily_quiz():
         flash('Falsche Antwort!', 'danger')
 
     return redirect(url_for('main.dashboard'))
+
+@main_bp.route('/api/mayhem', methods=['GET'])
+@login_required
+def api_mayhem():
+    """
+    API-Route, um aktuelle Marktereignisse zurückzugeben.
+    """
+    mayhem_data = market_mayhem_handler.check_if_mayhem()
+    if mayhem_data:
+        return mayhem_data, 200
+    return {}, 200
