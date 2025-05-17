@@ -85,7 +85,7 @@
             </div>
         </div>
         <button id="refresh-status" class="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md">
-            <i class="fas fa-sync-alt mr-1"></i> Status aktualisieren
+            <i class="fas fa-sync-alt mr-1"></i> Refresh Status
         </button>
     </div>
 
@@ -121,9 +121,9 @@
         <div class="flex flex-col gap-6">
             <!-- Sidebar with API Endpoints -->
             <div class="w-full">
-                <h2 class="text-lg font-semibold mb-3">API Endpunkte</h2>
+                <h2 class="text-lg font-semibold mb-3">API Endpoints</h2>
                 <div class="mb-4">
-                    <input type="text" id="endpoint-search" placeholder="Endpunkte durchsuchen..." 
+                    <input type="text" id="endpoint-search" placeholder="Search endpoints..." 
                         class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div class="border-t border-gray-200 mt-2"></div>
@@ -135,7 +135,7 @@
                     </div>
                     {% endif %}
                     {% endfor %}
-                    <!-- Zusätzliche Endpunkte für andere Methoden -->
+                    <!-- Additional endpoints for other methods -->
                     <div class="endpoint-item p-2 rounded cursor-pointer" data-endpoint="{{ base_url }}/trade/buy">
                         <span class="method-badge method-post">POST</span> {{ base_url }}/trade/buy
                     </div>

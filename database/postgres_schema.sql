@@ -196,3 +196,61 @@ CREATE TABLE IF NOT EXISTS api_requests (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     source TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS market_mayhem (
+    id SERIAL PRIMARY KEY,
+    scenario_id INTEGER NOT NULL REFERENCES market_mayhem_scenarios(id) ON DELETE CASCADE,
+    start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    result TEXT, -- Result of the scenario (e.g., 'success', 'failure')
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Random data for the market_mayhem table
+INSERT INTO market_mayhem (scenario_id, start_time, end_time, result)
+VALUES
+    (1, '2025-05-18', '2025-05-18', 'success'), -- Flash Crash
+    (2, '2025-05-19', '2025-05-19', 'failure'), -- Positive News
+    (3, '2025-05-20', '2025-05-20', 'success'), -- Interest Rate Hike
+    (4, '2025-05-21', '2025-05-21', 'failure'), -- Tech Boom
+    (5, '2025-05-22', '2025-05-22', 'success'), -- Earnings Miss
+    (1, '2025-05-23', '2025-05-23', 'failure'), -- Flash Crash
+    (2, '2025-05-24', '2025-05-24', 'success'), -- Positive News
+    (3, '2025-05-25', '2025-05-25', 'failure'), -- Interest Rate Hike
+    (4, '2025-05-26', '2025-05-26', 'success'), -- Tech Boom
+    (5, '2025-05-27', '2025-05-27', 'failure'); -- Earnings Miss
+
+CREATE TABLE IF NOT EXISTS market_mayhem_scenarios (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE, -- Name des Szenarios (z. B. "Flash Crash", "Positive News")
+    description TEXT, -- Beschreibung des Szenarios
+    stock_price_change REAL, -- Preisänderung in Prozent
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+
+-- Example data for the market_mayhem_scenarios table
+INSERT INTO market_mayhem_scenarios (name, description, stock_price_change)
+VALUES
+    ('Flash Crash', 
+     'A sudden and unexpected market crash triggered by algorithmic trading. Players must react quickly to minimize losses.', 
+     -15.0),
+
+    ('Positive News', 
+     'A surprisingly positive economic announcement leads to a rapid increase in stock prices. Players must decide whether to buy or take profits.', 
+     8.5),
+
+    ('Interest Rate Hike', 
+     'The central bank unexpectedly raises interest rates, causing a drop in stock prices. Players must adjust their portfolios accordingly.', 
+     -5.0),
+
+    ('Tech Boom', 
+     'A breakthrough in the tech industry causes a massive surge in tech stocks. Players must decide whether to ride the hype.', 
+     12.0),
+
+    ('Earnings Miss', 
+     'A major company misses earnings expectations, leading to a sharp decline in its stock price. Players must react quickly.', 
+     -10.0)
+ON CONFLICT (name) DO NOTHING;

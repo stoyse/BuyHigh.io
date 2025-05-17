@@ -6,7 +6,7 @@ import stock_news
 from rich import print
 import database.handler.postgres.postgre_education_handler as edu_handler
 import datetime
-import stock_data_api as stock_data  # <-- NEU: Importiere das neue Modul
+import database.handler.postgres.postgre_market_mayhem_handler as market_mayhem_handler
 
 # Configure basic logging
 # logging.basicConfig(level=logging.DEBUG) # Wird jetzt in app.py global konfiguriert
@@ -146,6 +146,20 @@ def dashboard():
     else:
         quiz_data['attempted'] = False
     print(f'[cyan]Quiz data:', quiz_data)
+
+
+    # check for mayhem
+    mayhem_data = market_mayhem_handler.check_if_mayhem()
+    if mayhem_data:
+        print(f'[red]Market Mayhem:', mayhem_data)
+        for event_id, event_data in mayhem_data.items():
+            if 'mayhem_scenarios' in event_data and 'description' in event_data['mayhem_scenarios']:
+                flash(event_data['mayhem_scenarios']['description'], 'warning')
+            else:
+                logger.warning(f"Mayhem-Daten für Event-ID {event_id} enthalten keine 'mayhem_scenarios' oder 'description'.")
+    else:
+        print(f'[red]No market mayhem found for today.')
+
 
     return render_template('dashboard.html', 
                            user=g.user, 

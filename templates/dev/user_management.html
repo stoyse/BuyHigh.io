@@ -107,20 +107,20 @@
                 <span class="user-id">ID: {{ user.id }}</span>
                 <span class="font-semibold text-gray-700">{{ user.username }}</span>
                 <div class="dropdown ml-2">
-                    <button class="dropdown-btn" title="Aktionen">&#x22EE;</button>
+                    <button class="dropdown-btn" title="Actions">&#x22EE;</button>
                     <div class="dropdown-content">
                         <form action="{{ url_for('dev.delete_user_view', user_id=user.id) }}" method="post" class="w-full">
                             <button type="submit" 
-                                    onclick="return confirm('Wirklich löschen?')"
+                                    onclick="return confirm('Really delete?')"
                                     class="w-full text-left py-3 px-4 text-red-800 hover:bg-red-500 hover:text-white transition-all duration-200 rounded">
-                                Löschen
+                                Delete
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
             <div class="mt-2">
-                <span class="text-xs text-gray-500 font-bold mr-2">E-Mail:</span>
+                <span class="text-xs text-gray-500 font-bold mr-2">Email:</span>
                 <span class="user-email">{{ user.email }}</span>
             </div>
         </div>
