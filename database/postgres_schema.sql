@@ -311,6 +311,10 @@ VALUES
 (1, 2, 'What is a stock?', 'A type of bond', 'A share in a company', 'A loan to the government', 'A share in a company'),
 (1, 3, 'What determines stock prices?', 'Government policies', 'Supply and demand', 'Company logos', 'Supply and demand');
 
+INSERT INTO xp_gains (action, xp_amount, description) 
+VALUES ('roadmap_quiz_correct', 75, 'Awarded for correctly answering a roadmap quiz') 
+ON CONFLICT (action) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS user_roadmap_quiz_progress (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

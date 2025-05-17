@@ -1,0 +1,20 @@
+<div class="specific-card-content">
+  <h4>Karte {{ current_step.step_number }}.{{ layout_number }}</h4>
+  <p>Dies ist der spezifische Inhalt für die Karte mit der Layout-Nummer {{ layout_number }} im Schritt {{ current_step.title }}.</p>
+  
+  {% if user %}
+    <p>Information für Benutzer: {{ user.username }}</p>
+  {% endif %}
+  
+  <p>Zusätzlicher Inhalt für diese Karte...</p>
+
+  {# Hier wird das Quiz eingebunden, wenn Quizdaten für den Schritt vorhanden sind #}
+  {% if all_quizzes_for_step and all_quizzes_for_step|length > 0 %}
+    <div class="embedded-quiz-section mt-6 border-t border-gray-200/10 dark:border-gray-700/20 pt-6">
+      <h3 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-100">Interaktives Quiz zu dieser Lektion:</h3>
+      {% include "roadmap/step_cards/_quiz_card_template.html" %}
+    </div>
+  {% else %}
+    <p class="mt-4 text-sm text-gray-500 dark:text-gray-400"><em>Für diese Lektion ist derzeit kein Quiz verfügbar.</em></p>
+  {% endif %}
+</div>

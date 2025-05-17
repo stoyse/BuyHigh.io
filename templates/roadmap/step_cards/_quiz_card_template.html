@@ -1,0 +1,68 @@
+{% if all_quizzes_for_step and all_quizzes_for_step|length > 0 %}
+    {% for quiz_instance in all_quizzes_for_step %}
+    <div class="quiz-container my-4 p-6 glass-card rounded-2xl border border-gray-200/10 dark:border-gray-700/20">
+        <div class="flex justify-between items-center mb-5">
+            <h2 class="text-xl font-semibold flex items-center text-gray-800 dark:text-gray-100">
+              <svg class="w-6 h-6 mr-2 text-neo-purple animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Lektionen-Quiz
+            </h2>
+            <span class="text-xs font-medium text-neo-purple bg-neo-purple/10 px-2 py-0.5 rounded-full">XP +{{ quiz_instance.xp_reward | default(50) }}</span> {# Annahme: XP-Belohnung im Quiz-Objekt #}
+          </div>
+
+        <div class="mb-4">
+            <p class="text-base font-semibold text-gray-800 dark:text-gray-100">
+            {{ quiz_instance.question }}
+            </p>
+            {% if quiz_instance.explanation and quiz_instance.attempted %} {# Erklärung nur anzeigen, wenn vorhanden und versucht #}
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {{ quiz_instance.explanation }}
+            </p>
+            {% endif %}
+        </div>
+
+        {% if not quiz_instance.attempted %} {# Annahme: 'attempted' Flag im Quiz-Objekt #}
+            <form method="post" action="{{ url_for('roadmap.submit_roadmap_quiz') }}"> {# ANPASSEN: Dies sollte Ihre Quiz-Einreichungsroute sein #}
+                <input type="hidden" name="quiz_id" value="{{ quiz_instance.id }}">
+                <input type="hidden" name="step_id" value="{{ current_step.id }}">
+                <input type="hidden" name="roadmap_id" value="{{ current_step.roadmap_id }}">
+
+                <div class="flex flex-col space-y-2.5">
+                    {% if quiz_instance.possible_answer_1 %}
+                    <button type="submit" name="quiz_answer" value="{{ quiz_instance.possible_answer_1 }}" 
+                            class="quiz-btn">
+                    {{ quiz_instance.possible_answer_1 }}
+                    </button>
+                    {% endif %}
+                    {% if quiz_instance.possible_answer_2 %}
+                    <button type="submit" name="quiz_answer" value="{{ quiz_instance.possible_answer_2 }}" 
+                            class="quiz-btn">
+                    {{ quiz_instance.possible_answer_2 }}
+                    </button>
+                    {% endif %}
+                    {% if quiz_instance.possible_answer_3 %}
+                    <button type="submit" name="quiz_answer" value="{{ quiz_instance.possible_answer_3 }}" 
+                            class="quiz-btn">
+                    {{ quiz_instance.possible_answer_3 }}
+                    </button>
+                    {% endif %}
+                    {# Fügen Sie hier bei Bedarf weitere Antwortmöglichkeiten hinzu, z.B. possible_answer_4 #}
+                </div>
+            </form>
+        {% else %}
+            <div class="glass-card p-4 rounded-xl backdrop-blur-sm border {{ 'border-neo-emerald/30 bg-neo-emerald/5 text-neo-emerald' if quiz_instance.is_correct else 'border-neo-red/30 bg-neo-red/5 text-neo-red' }} text-center font-semibold">
+                {% if quiz_instance.is_correct %}
+                    Richtig beantwortet! 🎉
+                {% else %}
+                    Leider falsch. Die richtige Antwort war: {{ quiz_instance.correct_answer }}
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="glass-card p-4 rounded-xl my-4">
+        <p class="text-center text-gray-500 dark:text-gray-400">Für diesen Schritt sind aktuell keine Quizfragen verfügbar.</p>
+    </div>
+{% endif %}
