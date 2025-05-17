@@ -229,6 +229,66 @@ def add_xp_to_user(user_id, xp_to_add):
     finally:
         conn.close()
 
+def update_user_roadmap_step_progress(user_id, roadmap_id, step_id, is_completed, progress_percentage=None):
+    """
+    Aktualisiert den Fortschritt eines Benutzers für einen bestimmten Roadmap-Schritt.
+    Setzt completed_at, wenn is_completed True ist.
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            completed_at_val = datetime.now() if is_completed else None
+            
+            # Wenn kein spezifischer Fortschrittsprozentsatz angegeben ist und der Schritt abgeschlossen ist, auf 100% setzen
+            if progress_percentage is None and is_completed:
+                progress_percentage = 100.0
+            elif progress_percentage is None and not is_completed: # Falls nicht abgeschlossen und kein Wert, 0%
+                progress_percentage = 0.0
+
+            sql_query = """
+            INSERT INTO user_roadmap_progress (user_id, roadmap_id, step_id, is_completed, progress_percentage, completed_at)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (user_id, roadmap_id, step_id) DO UPDATE SET
+                is_completed = EXCLUDED.is_completed,
+                progress_percentage = EXCLUDED.progress_percentage,
+                completed_at = EXCLUDED.completed_at;
+            """
+            cursor.execute(sql_query, (user_id, roadmap_id, step_id, is_completed, progress_percentage, completed_at_val))
+            conn.commit()
+            logger.info(f"Fortschritt für Benutzer {user_id}, Roadmap {roadmap_id}, Schritt {step_id} aktualisiert. Abgeschlossen: {is_completed}, Fortschritt: {progress_percentage}%")
+    except psycopg2.Error as e:
+        conn.rollback()
+        logger.error(f"Fehler beim Aktualisieren des Roadmap-Schritt-Fortschritts: {e}", exc_info=True)
+        raise
+    finally:
+        conn.close()
+
+def get_user_roadmap_progress_all_steps(user_id, roadmap_id):
+    """
+    Ruft den Fortschritt aller Schritte einer Roadmap für einen bestimmten Benutzer ab.
+    Gibt ein Dictionary zurück, das step_id auf {'is_completed': bool, 'progress_percentage': float} abbildet.
+    """
+    conn = get_db_connection()
+    progress_map = {}
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute("""
+                SELECT step_id, is_completed, progress_percentage 
+                FROM user_roadmap_progress 
+                WHERE user_id = %s AND roadmap_id = %s
+            """, (user_id, roadmap_id))
+            rows = cursor.fetchall()
+            for row in rows:
+                progress_map[row['step_id']] = {
+                    'is_completed': row['is_completed'],
+                    'progress_percentage': row['progress_percentage']
+                }
+        return progress_map
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen des gesamten Roadmap-Fortschritts für Benutzer {user_id}, Roadmap {roadmap_id}: {e}", exc_info=True)
+        return {} # Leeres Dictionary im Fehlerfall
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     #print(get_roadmap(1))

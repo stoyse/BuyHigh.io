@@ -280,16 +280,22 @@ CREATE TABLE IF NOT EXISTS roadmap_steps (
     title TEXT NOT NULL, -- Titel des Schritts
     description TEXT, -- Beschreibung des Schritts
     page_layout INTEGER[], -- Liste von Zahlen, z.B. ARRAY[1,2,3]
+    explain TEXT, -- Erklärung des konzepts
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(roadmap_id, step_number) -- Sicherstellen, dass die Schritt-Reihenfolge eindeutig ist
 );
 
 -- Example steps for the roadmap
-INSERT INTO roadmap_steps (roadmap_id, step_number, title, description, page_layout)
+INSERT INTO roadmap_steps (roadmap_id, step_number, title, description, page_layout, explain)
 VALUES 
-(1, 1, 'What are financial markets?', 'Learn what financial markets are and how they work.', ARRAY[1,2,3]),
-(1, 2, 'Stocks and Bonds', 'Understand the difference between stocks and bonds.', ARRAY[1,2,3]),
-(1, 3, 'Market Mechanisms', 'Understand how supply and demand influence the markets.', ARRAY[1,2,3])
+(1, 1, 'What are financial markets?', 'Learn what financial markets are and how they work.', ARRAY[1,2,3], 
+'Finanzmärkte sind organisierte Plattformen oder Systeme, auf denen Käufer und Verkäufer Finanzinstrumente wie Aktien, Anleihen, Währungen und Derivate handeln. Sie erfüllen mehrere wichtige Funktionen: Sie ermöglichen Unternehmen und Regierungen die Kapitalaufnahme, bieten Investoren die Möglichkeit, ihr Geld anzulegen, sorgen für Liquidität (d.h. die Möglichkeit, Vermögenswerte schnell zu kaufen oder zu verkaufen), und helfen, Preise für Finanzprodukte durch Angebot und Nachfrage zu bestimmen. Ohne Finanzmärkte wäre es für Unternehmen schwieriger, zu wachsen, und für Investoren schwerer, ihr Geld zu investieren oder zu diversifizieren.'),
+
+(1, 2, 'Stocks and Bonds', 'Understand the difference between stocks and bonds.', ARRAY[1,2,3], 
+'Aktien und Anleihen sind zwei der wichtigsten Arten von Finanzinstrumenten. Eine Aktie steht für einen Eigentumsanteil an einem Unternehmen. Wer eine Aktie besitzt, ist Miteigentümer und kann von Gewinnen (Dividenden) profitieren, trägt aber auch das Risiko von Verlusten. Eine Anleihe hingegen ist ein Schuldtitel: Der Käufer leiht einem Unternehmen oder Staat Geld und erhält dafür regelmäßige Zinszahlungen sowie die Rückzahlung des Nennwerts am Ende der Laufzeit. Während Aktien mehr Renditechancen, aber auch höhere Risiken bieten, gelten Anleihen als sicherer, bringen aber meist geringere Erträge.'),
+
+(1, 3, 'Market Mechanisms', 'Understand how supply and demand influence the markets.', ARRAY[1,2,3], 
+'Marktmechanismen beschreiben, wie Preise auf Finanzmärkten durch das Zusammenspiel von Angebot und Nachfrage entstehen. Wenn viele Investoren ein bestimmtes Wertpapier kaufen wollen (hohe Nachfrage), aber nur wenige verkaufen möchten (geringes Angebot), steigt der Preis. Umgekehrt sinkt der Preis, wenn das Angebot das Interesse der Käufer übersteigt. Diese Dynamik sorgt dafür, dass Preise ständig angepasst werden und spiegelt die Einschätzungen und Erwartungen aller Marktteilnehmer wider.')
 ON CONFLICT DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS roadmap_quizzes (

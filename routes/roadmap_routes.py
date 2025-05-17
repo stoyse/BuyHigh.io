@@ -16,12 +16,72 @@ roadmap_bp = Blueprint('roadmap', __name__)
 @login_required
 def roadmap():
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
+    user_id = g.user.get('id')
+    current_roadmap_id = 1 # Assumption: We are always working with Roadmap ID 1
+
+    roadmap_data = roadmap_handler.get_roadmap(current_roadmap_id)
+    roadmap_steps_data = roadmap_handler.get_roadmap_steps(current_roadmap_id)
+    
+    user_step_progress_db = {}
+    if user_id:
+        user_step_progress_db = roadmap_handler.get_user_roadmap_progress_all_steps(user_id, current_roadmap_id)
+
+    total_steps = len(roadmap_steps_data)
+    completed_steps_count = 0 # Counts steps where all quizzes are attempted
+
+    if total_steps > 0:
+        for step in roadmap_steps_data:
+            progress_info = user_step_progress_db.get(step['id'])
+            step['is_attempted_all_quizzes'] = False # Renaming for clarity, true if all quizzes in step are attempted
+            step['completion_status'] = 'incomplete' # Default: 'incomplete', 'perfect', 'imperfect'
+
+            if progress_info and progress_info.get('is_completed'): # 'is_completed' from DB means all quizzes attempted
+                step['is_attempted_all_quizzes'] = True
+                completed_steps_count += 1
+
+                quizzes_in_step = roadmap_handler.get_roadmap_quizes_stepid(step['id'])
+                if not quizzes_in_step:
+                    step['completion_status'] = 'perfect' # Step completed, no quizzes to be imperfect on
+                else:
+                    all_correct = True
+                    quiz_ids_for_this_step = [q['id'] for q in quizzes_in_step]
+                    # Fetch attempts for these specific quizzes
+                    user_attempts_for_quizzes = roadmap_handler.get_user_progress_for_quizzes(user_id, quiz_ids_for_this_step)
+
+                    if len(user_attempts_for_quizzes) < len(quizzes_in_step):
+                        # This implies an inconsistency if step.is_attempted_all_quizzes is True.
+                        # e.g. quiz added after completion, or error fetching progress.
+                        all_correct = False
+                        logger.warning(f"Data inconsistency for step {step['id']} user {user_id}: marked completed but quiz progress count mismatch.")
+                    
+                    for q_id in quiz_ids_for_this_step:
+                        attempt = user_attempts_for_quizzes.get(q_id)
+                        # If step is marked as all quizzes attempted, each quiz should have an attempt.
+                        if not attempt or not attempt.get('attempted'):
+                            all_correct = False # Should not happen if is_attempted_all_quizzes is true and data is consistent
+                            logger.warning(f"Data inconsistency for step {step['id']} user {user_id}: quiz {q_id} not marked attempted despite step completion.")
+                            break 
+                        if not attempt.get('is_correct'):
+                            all_correct = False
+                            break
+                    
+                    if all_correct:
+                        step['completion_status'] = 'perfect'
+                    else:
+                        step['completion_status'] = 'imperfect'
+            # else: step remains 'incomplete' and step['is_attempted_all_quizzes'] is False
+        
+        overall_roadmap_progress_percentage = (completed_steps_count / total_steps) * 100 if total_steps > 0 else 0
+    else:
+        overall_roadmap_progress_percentage = 0
+
     return render_template('roadmap/roadmap.html',
                            user=g.user, 
                            darkmode=dark_mode_active,
-                           roadmap=roadmap_handler.get_roadmap(1),
-                           roadmap_steps=roadmap_handler.get_roadmap_steps(1),
-                           roadmap_quiz=roadmap_handler.get_roadmap_quizes_roadmapid(1))
+                           roadmap=roadmap_data,
+                           roadmap_steps=roadmap_steps_data, # Now contains 'is_attempted_all_quizzes' and 'completion_status'
+                           overall_roadmap_progress_percentage=overall_roadmap_progress_percentage
+                           )
                            
 
 @roadmap_bp.route('/step/<int:roadmap_id>/<step_id>')
@@ -89,31 +149,42 @@ def roadmap_step(roadmap_id, step_id):
         layout_number_str = str(item.get('layout_number'))
         print(f'[cyan]Processing layout identifier (expected to be a card number): {layout_number_str}[/cyan]')
 
-        # Jedes Element im page_layout wird als reguläre Karte behandelt,
-        # die Karte selbst kann entscheiden, ob sie Quizdaten verwendet.
-        card_filename = f"{roadmap_id}_{step_id}_{layout_number_str}.html"
-        card_path = os.path.join(current_app.root_path, "templates", "roadmap", "step_cards", card_filename)
-        print(f'[blue]Card Path: {card_path}[/blue]')
-        try:
-            with open(card_path, "r") as card_file:
-                raw_html = card_file.read()
-                # Kontext für das Rendern der einzelnen Karte vorbereiten
-                card_context = {
-                    "user": g.user,
-                    "current_step": current_step,
-                    "layout_number": layout_number_str,
-                    "all_quizzes_for_step": all_quizzes_for_step # Stelle alle Quizze der Karte zur Verfügung
-                    # Fügen Sie hier weitere Variablen hinzu, die Kartenvorlagen benötigen könnten
-                }
-                item['card_html'] = render_template_string(raw_html, **card_context)
-                print(f'[green]Rendered HTML for {card_filename} with context (including quizzes if any)[/green]')
-        except FileNotFoundError:
-            item['card_html'] = f"<!-- Card file {card_filename} not found -->"
-            print(f'[red]Card file {card_filename} not found[/red]')
-        except Exception as e:
-            item['card_html'] = f"<!-- Error rendering card {card_filename}: {e} -->"
-            print(f'[red]Error rendering card {card_filename}: {e}[/red]')
-            logger.error(f"Error rendering card {card_filename}: {e}", exc_info=True)
+        # Wenn die Layout-Nummer '1' ist, lade den Inhalt aus dem 'explain'-Feld des aktuellen Schritts.
+        if layout_number_str == '1':
+            explain_text = current_step.get('explain')
+            if explain_text:
+                # Wrap the explanation text with HTML for display.
+                # The prose classes in the parent container in step.html should handle the styling.
+                item['card_html'] = f"<div class='explanation-card p-4 rounded-lg bg-white/5 dark:bg-black/10 border border-gray-200/10 dark:border-gray-700/20 shadow-sm'><h3 class='text-lg font-semibold mb-2 text-gray-800 dark:text-gray-100'>Concept Explanation</h3><p>{explain_text}</p></div>"
+                print(f'[green]Rendered HTML for card 1 from current_step.explain[/green]')
+            else:
+                item['card_html'] = "<div class='explanation-card p-4 rounded-lg bg-white/5 dark:bg-black/10 border border-gray-200/10 dark:border-gray-700/20 shadow-sm'><p><em>No explanation available for this step.</em></p></div>"
+                print(f'[yellow]No explanation text found for card 1 in current_step.[/yellow]')
+        else:
+            # Ursprüngliche Logik zum Laden von .html-Dateien für andere Karten (layout_number 2, 3, etc.)
+            card_filename = f"{roadmap_id}_{step_id}_{layout_number_str}.html"
+            card_path = os.path.join(current_app.root_path, "templates", "roadmap", "step_cards", card_filename)
+            print(f'[blue]Card Path: {card_path}[/blue]')
+            try:
+                with open(card_path, "r") as card_file:
+                    raw_html = card_file.read()
+                    # Kontext für das Rendern der einzelnen Karte vorbereiten
+                    card_context = {
+                        "user": g.user,
+                        "current_step": current_step,
+                        "layout_number": layout_number_str,
+                        "all_quizzes_for_step": all_quizzes_for_step # Stelle alle Quizze der Karte zur Verfügung
+                        # Fügen Sie hier weitere Variablen hinzu, die Kartenvorlagen benötigen könnten
+                    }
+                    item['card_html'] = render_template_string(raw_html, **card_context)
+                    print(f'[green]Rendered HTML for {card_filename} with context (including quizzes if any)[/green]')
+            except FileNotFoundError:
+                item['card_html'] = f"<!-- Card file {card_filename} not found -->"
+                print(f'[red]Card file {card_filename} not found[/red]')
+            except Exception as e:
+                item['card_html'] = f"<!-- Error rendering card {card_filename}: {e} -->"
+                print(f'[red]Error rendering card {card_filename}: {e}[/red]')
+                logger.error(f"Error rendering card {card_filename}: {e}", exc_info=True)
 
     return render_template('roadmap/step.html',
                            user=g.user,
@@ -122,7 +193,6 @@ def roadmap_step(roadmap_id, step_id):
                            roadmap_steps=data,
                            page_layout=page_layout,
                            current_step=current_step,
-                           # roadmap_quiz_overall_for_step kann beibehalten werden, falls es global auf der step.html Seite genutzt wird
                            roadmap_quiz_overall_for_step=all_quizzes_for_step 
                            )
 
@@ -131,66 +201,83 @@ def roadmap_step(roadmap_id, step_id):
 def submit_roadmap_quiz():
     if request.method == 'POST':
         quiz_id_str = request.form.get('quiz_id')
-        step_id_str = request.form.get('step_id')
+        step_id_str = request.form.get('step_id') # This is roadmap_steps.id
         roadmap_id_str = request.form.get('roadmap_id')
         submitted_answer = request.form.get('quiz_answer')
         user_id = g.user.get('id')
 
         if not all([quiz_id_str, step_id_str, roadmap_id_str, submitted_answer, user_id]):
-            flash("Fehler: Unvollständige Quizdaten übermittelt.", "error")
+            flash("Error: Incomplete quiz data submitted.", "error")
             return redirect(request.referrer or url_for('roadmap.roadmap'))
 
         try:
             quiz_id = int(quiz_id_str)
-            step_id = int(step_id_str)
+            actual_step_id = int(step_id_str) # roadmap_steps.id
             roadmap_id = int(roadmap_id_str)
         except ValueError:
-            flash("Fehler: Ungültige Quiz-Identifikatoren.", "error")
+            flash("Error: Invalid quiz identifiers.", "error")
             return redirect(request.referrer or url_for('roadmap.roadmap'))
 
         quiz = roadmap_handler.get_quiz_by_id(quiz_id)
 
         if not quiz:
-            flash(f"Quiz mit ID {quiz_id} nicht gefunden.", "error")
-            return redirect(url_for('roadmap.roadmap_step', roadmap_id=roadmap_id, step_id=step_id))
+            flash(f"Quiz with ID {quiz_id} not found.", "error")
+            return redirect(url_for('roadmap.roadmap_step', roadmap_id=roadmap_id, step_id=actual_step_id))
 
         is_correct = (quiz['correct_answer'] == submitted_answer)
 
         try:
             roadmap_handler.record_user_quiz_attempt(user_id, quiz_id, is_correct)
             
+            # Check if all quizzes for this step (actual_step_id) are now attempted
+            all_quizzes_for_this_step = roadmap_handler.get_roadmap_quizes_stepid(actual_step_id)
+            
+            if all_quizzes_for_this_step:
+                quiz_ids_in_step = [q['id'] for q in all_quizzes_for_this_step]
+                user_attempts_for_step_quizzes = roadmap_handler.get_user_progress_for_quizzes(user_id, quiz_ids_in_step)
+                
+                all_quizzes_in_step_attempted = True
+                if len(user_attempts_for_step_quizzes) < len(all_quizzes_for_this_step):
+                    all_quizzes_in_step_attempted = False
+                else:
+                    for q_id_in_step in quiz_ids_in_step:
+                        attempt_info = user_attempts_for_step_quizzes.get(q_id_in_step)
+                        if not attempt_info or not attempt_info.get('attempted'):
+                            all_quizzes_in_step_attempted = False
+                            break
+                
+                if all_quizzes_in_step_attempted:
+                    # All quizzes for the step have been attempted. Mark step as completed in user_roadmap_progress.
+                    roadmap_handler.update_user_roadmap_step_progress(user_id, roadmap_id, actual_step_id, is_completed=True, progress_percentage=100.0)
+                    # Flash message for step completion can be added if desired, e.g., if this specific submission triggered it.
+                    # For now, the main feedback is about the quiz itself.
+            
+            # XP and flash messages based on the correctness of the *current* quiz
             if is_correct:
-                # XP für korrektes Roadmap-Quiz vergeben
-                # Annahme: Die Aktion in xp_gains heißt 'roadmap_quiz_correct'
                 xp_action_name = 'roadmap_quiz_correct' 
-                # Überprüfen, ob 'roadmap_quiz_correct' in xp_gains existiert, ansonsten Fallback
-                # Für dieses Beispiel nehmen wir an, es gibt einen Eintrag oder wir verwenden einen Standardwert.
-                # Sie sollten sicherstellen, dass 'roadmap_quiz_correct' in Ihrer xp_gains Tabelle existiert.
-                # INSERT INTO xp_gains (action, xp_amount, description) VALUES ('roadmap_quiz_correct', 75, 'Awarded for correctly answering a roadmap quiz') ON CONFLICT (action) DO NOTHING;
                 xp_to_award = roadmap_handler.get_xp_for_action(xp_action_name)
-                if xp_to_award == 0: # Fallback, falls 'roadmap_quiz_correct' nicht existiert, aber 'daily_quiz'
-                    xp_to_award = roadmap_handler.get_xp_for_action('daily_quiz') # Beispiel-Fallback
-                    if xp_to_award == 0: # Hardcoded Fallback
+                if xp_to_award == 0: 
+                    xp_to_award = roadmap_handler.get_xp_for_action('daily_quiz') 
+                    if xp_to_award == 0: 
                         xp_to_award = 50 
                 
                 if xp_to_award > 0:
                     xp_update_info = roadmap_handler.add_xp_to_user(user_id, xp_to_award)
-                    flash_message = f"Richtig! 🎉 Du hast {xp_to_award} XP erhalten."
+                    flash_message = f"Correct! 🎉 You earned {xp_to_award} XP."
                     if xp_update_info and xp_update_info.get("level_up"):
-                        flash_message += f" Level Up! Du bist jetzt Level {xp_update_info['new_level']}! 🚀"
+                        flash_message += f" Level Up! You are now Level {xp_update_info['new_level']}! 🚀"
                     flash(flash_message, "success")
                 else:
-                    flash("Richtig! 🎉", "success")
+                    flash("Correct! 🎉", "success")
             else:
-                flash(f"Leider falsch. Die richtige Antwort war: {quiz['correct_answer']}", "warning")
+                flash(f"Incorrect. The correct answer was: {quiz['correct_answer']}", "warning")
 
         except Exception as e:
-            logger.error(f"Fehler bei der Verarbeitung der Quiz-Antwort: {e}", exc_info=True)
-            flash("Ein interner Fehler ist aufgetreten. Bitte versuche es später erneut.", "error")
+            logger.error(f"Error processing quiz submission: {e}", exc_info=True)
+            flash("An internal error occurred. Please try again later.", "error")
 
-        return redirect(url_for('roadmap.roadmap_step', roadmap_id=roadmap_id, step_id=step_id))
+        return redirect(url_for('roadmap.roadmap_step', roadmap_id=roadmap_id, step_id=actual_step_id))
     
-    # GET-Anfragen zu dieser Route sind nicht vorgesehen
     return redirect(url_for('roadmap.roadmap'))
 
 
