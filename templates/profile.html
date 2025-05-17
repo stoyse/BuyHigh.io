@@ -3,67 +3,207 @@
 {% block title %}Profile - BuyHigh.io{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8 max-w-full">
-  <header class="mb-8 text-center">
-    <h1 class="text-3xl font-pixel gradient-text mb-2 flex justify-center items-center">
-      <svg class="w-8 h-8 mr-2 animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-      </svg>
-      My Profile
-    </h1>
-    <p class="text-gray-600 dark:text-gray-400 text-sm max-w-2xl mx-auto">
-      Here you can find your personal information and statistics.
-    </p>
-  </header>
+<div class="container mx-auto px-4 py-8 max-w-5xl">
+  <div class="text-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">Your Profile</h1>
+    <p class="mt-2 text-gray-600 dark:text-gray-400">Your personal investment journey</p>
+  </div>
 
-  <div class="max-w-2xl mx-auto glass-card shadow-neo border border-gray-200/10 dark:border-gray-700/20 rounded-2xl p-8 relative overflow-hidden animate-float">
-    <!-- Decorative elements -->
-    <div class="absolute -top-16 -right-16 w-32 h-32 bg-neo-purple rounded-full opacity-10 blur-3xl"></div>
-    <div class="absolute -bottom-16 -left-16 w-32 h-32 bg-neo-blue rounded-full opacity-10 blur-3xl"></div>
+  <div class="glass-card rounded-2xl overflow-hidden border border-white/10 dark:border-gray-700/30 hover:shadow-neo transition-all duration-300 animate-blur-in">
+    <!-- User Header with Background -->
+    <div class="relative h-48 overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-r from-neo-purple to-neo-blue opacity-20"></div>
+      
+      <!-- Level Badge -->
+      <div class="absolute top-6 right-6 bg-black/30 backdrop-blur-sm text-white px-4 py-2 rounded-full text-base font-bold flex items-center">
+        <svg class="w-6 h-6 mr-2 text-neo-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+        </svg>
+        Level {{ user.level|default(1) }}
+      </div>
 
-    <div class="flex flex-col md:flex-row items-center md:items-start gap-8">
-      <!-- Avatar -->
-      <div class="flex-shrink-0">
-        <div class="w-28 h-28 rounded-full bg-gradient-to-br from-neo-purple to-neo-blue flex items-center justify-center shadow-neo mb-4 md:mb-0">
-          <span class="text-4xl font-pixel text-white">{{ user.username[0]|upper }}</span>
+      <!-- User Type Badge -->
+      {% if 'guest_' in user.username %}
+      <div class="absolute top-6 left-6 bg-gray-500/30 backdrop-blur-sm text-white px-4 py-2 rounded-full text-base font-medium">
+        Guest User
+      </div>
+      {% elif user.id <= 2 %}
+      <div class="absolute top-6 left-6 bg-neo-amber/40 backdrop-blur-sm text-white px-4 py-2 rounded-full text-base font-medium">
+        Administrator
+      </div>
+      {% else %}
+      <div class="absolute top-6 left-6 bg-neo-blue/30 backdrop-blur-sm text-white px-4 py-2 rounded-full text-base font-medium">
+        Member
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- User Avatar -->
+    <div class="flex justify-center -mt-24">
+      <div class="relative w-48 h-48 rounded-full overflow-hidden bg-gradient-to-br from-neo-purple to-neo-blue p-1">
+        <div class="absolute inset-0 bg-gradient-neo opacity-30 animate-gradient"></div>
+        <div class="w-full h-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center relative z-10">
+          <span class="font-bold text-6xl text-neo-purple">{{ user.username[0]|upper }}</span>
+        </div>
+        
+        <!-- Mood Pet Indicator -->
+        <div class="absolute bottom-3 right-3 w-16 h-16 rounded-full bg-white dark:bg-gray-700 border-4 border-white dark:border-gray-800 flex items-center justify-center">
+          {% if user.mood_pet == 'bull' %}
+            <span class="text-green-500 text-2xl">🐂</span>
+          {% elif user.mood_pet == 'bear' %}
+            <span class="text-red-500 text-2xl">🐻</span>
+          {% else %}
+            <span class="text-gray-500 text-2xl">🐾</span>
+          {% endif %}
         </div>
       </div>
-      <!-- User Info -->
-      <div class="flex-1">
-        <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-2 flex items-center">
-          {{ user.username }}
-          {% if user.verified %}
-            <svg class="w-5 h-5 ml-2 text-neo-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
+    </div>
+
+    <!-- User Info -->
+    <div class="px-8 pt-4 pb-8">
+      <div class="text-center mb-8">
+        <h2 class="font-bold text-3xl text-gray-800 dark:text-gray-200 mb-2">{{ user.username }}</h2>
+        <p class="text-md text-gray-600 dark:text-gray-400 mb-1">{{ user.email }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-500">Member since {{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'Unknown' }}</p>
+      </div>
+
+      <!-- XP Progress Bar -->
+      <div class="mb-8 max-w-lg mx-auto">
+        <div class="flex justify-between text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
+          <span>XP: {{ user.xp|default(0) }}</span>
+          <span>Next Level: {% if user.xp > 0 %}{% if user.xp > 100 %}{{ 100 - (user.xp % 100) }}{% else %}{{ 100 - user.xp }}{% endif %} XP needed{% else %}100 XP needed{% endif %}</span>
+        </div>
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+          <div class="bg-gradient-to-r from-neo-purple to-neo-blue h-3 rounded-full" style="width: {% if user.xp > 0 %}{% if user.xp > 100 %}{{ user.xp % 100 }}{% if user.xp % 100 == 0 %}100{% endif %}{% else %}{{ user.xp }}{% endif %}%{% else %}0%{% endif %}"></div>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <!-- Financial Stats -->
+        <div class="glass-card rounded-xl p-6 border border-white/10 dark:border-gray-700/30">
+          <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-neo-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-          {% endif %}
-        </h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-1 flex items-center">
-          <svg class="w-4 h-4 mr-1 text-neo-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-          </svg>
-          {{ user.email }}
-        </p>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4 flex items-center">
-          <svg class="w-4 h-4 mr-1 text-neo-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          Member since: {{ user.created_at.strftime('%d.%m.%Y') if user.created_at else '-' }}
-        </p>
-        <div class="flex flex-wrap gap-4 mt-4">
-          <div class="glass-card p-4 rounded-xl text-center min-w-[120px]">
-            <p class="text-xs text-gray-500 dark:text-gray-400">Level</p>
-            <p class="text-xl font-bold text-neo-purple">{{ user.level|default(1) }}</p>
-          </div>
-          <div class="glass-card p-4 rounded-xl text-center min-w-[120px]">
-            <p class="text-xs text-gray-500 dark:text-gray-400">XP</p>
-            <p class="text-xl font-bold text-neo-blue">{{ user.xp|default(0) }}</p>
-          </div>
-          <div class="glass-card p-4 rounded-xl text-center min-w-[120px]">
-            <p class="text-xs text-gray-500 dark:text-gray-400">Trades</p>
-            <p class="text-xl font-bold text-neo-emerald">{{ user.total_trades|default(0) }}</p>
+            Financial Overview
+          </h3>
+          <div class="space-y-4">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Account Balance</p>
+              <p class="text-2xl font-bold text-gray-800 dark:text-gray-200">${{ "{:,.2f}".format(user.balance) }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Profit/Loss</p>
+              <p class="text-2xl font-bold {% if user.profit_loss >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                ${{ "{:,.2f}".format(user.profit_loss) }}
+              </p>
+            </div>
+            {% if user.profit_loss != 0 and user.balance > 0 %}
+              <div>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Return Rate</p>
+                <p class="text-lg font-semibold {% if user.profit_loss >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                  {{ "{:,.2f}".format((user.profit_loss / user.balance) * 100) }}%
+                </p>
+              </div>
+            {% endif %}
           </div>
         </div>
+        
+        <!-- Trading Stats -->
+        <div class="glass-card rounded-xl p-6 border border-white/10 dark:border-gray-700/30">
+          <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+            Trading Activity
+          </h3>
+          <div class="space-y-4">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Trades</p>
+              <p class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ user.total_trades|default(0) }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Experience Level</p>
+              <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                {% if user.total_trades >= 100 %}
+                  Expert Trader
+                {% elif user.total_trades >= 50 %}
+                  Advanced Trader
+                {% elif user.total_trades >= 10 %}
+                  Intermediate Trader
+                {% elif user.total_trades >= 1 %}
+                  Beginner Trader
+                {% else %}
+                  Novice
+                {% endif %}
+              </p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Trading Style</p>
+              <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                {% if user.is_meme_mode %}
+                  Meme Stock Enthusiast
+                {% else %}
+                  Traditional Investor
+                {% endif %}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Account Stats -->
+        <div class="glass-card rounded-xl p-6 border border-white/10 dark:border-gray-700/30">
+          <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center">
+            <svg class="w-6 h-6 mr-2 text-neo-emerald" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            Account Details
+          </h3>
+          <div class="space-y-4">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">XP Points</p>
+              <p class="text-2xl font-bold text-gray-800 dark:text-gray-200">{{ user.xp|default(0) }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Last Login</p>
+              <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">{{ user.last_login.strftime('%d.%m.%Y %H:%M') if user.last_login else 'Never' }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">Email Verification</p>
+              <p class="text-lg font-semibold {% if user.email_verified %}text-green-500{% else %}text-amber-500{% endif %}">
+                {% if user.email_verified %}
+                  Verified
+                {% else %}
+                  Not Verified
+                {% endif %}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="{{ url_for('main.settings') }}" class="neo-button rounded-lg px-6 py-3 text-base font-medium bg-neo-purple/10 text-neo-purple border border-neo-purple/20 hover:bg-neo-purple hover:text-white transition-all duration-300 flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          Edit Profile Settings
+        </a>
+        <a href="{{ url_for('main.trader_badges') }}" class="neo-button rounded-lg px-6 py-3 text-base font-medium bg-neo-amber/10 text-neo-amber border border-neo-amber/20 hover:bg-neo-amber hover:text-white transition-all duration-300 flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+          </svg>
+          View Trader Badges
+        </a>
+        <a href="{{ url_for('main.transactions') }}" class="neo-button rounded-lg px-6 py-3 text-base font-medium bg-neo-blue/10 text-neo-blue border border-neo-blue/20 hover:bg-neo-blue hover:text-white transition-all duration-300 flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+          </svg>
+          Transaction History
+        </a>
       </div>
     </div>
   </div>

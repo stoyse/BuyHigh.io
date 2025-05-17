@@ -411,3 +411,12 @@ def api_mayhem():
     if mayhem_data:
         return mayhem_data, 200
     return {}, 200
+
+
+@main_bp.route('/social')
+@login_required
+def social():
+    logger.info(f"Soziale Seite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
+    dark_mode_active = g.user and g.user.get('theme') == 'dark'
+    print(f'[cynan] All profiles:', db_handler.get_all_profiles())
+    return render_template('social.html', user=g.user, darkmode=dark_mode_active, users=db_handler.get_all_users(), profiles=db_handler.get_all_profiles())

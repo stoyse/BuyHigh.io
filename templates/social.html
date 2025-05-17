@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}Community - BuyHigh.io{% endblock %}
+
+{% block content %}
+  <div class="text-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100">BuyHigh Community</h1>
+    <p class="mt-2 text-gray-600 dark:text-gray-400">Connect with fellow financial adventurers</p>
+  </div>
+
+  <!-- Filter and Sort Controls -->
+  <div class="flex flex-wrap items-center justify-between mb-6 gap-4">
+    <div class="flex items-center space-x-2">
+      <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Sort by:</span>
+      <select id="sort-users" class="glass-card text-sm rounded-lg border-0 focus:ring-neo-purple focus:border-neo-purple">
+        <option value="level-desc">Highest Level</option>
+        <option value="xp-desc">Most XP</option>
+        <option value="balance-desc">Highest Balance</option>
+        <option value="profit-desc">Most Profitable</option>
+        <option value="trades-desc">Most Active</option>
+        <option value="newest">Newest Members</option>
+      </select>
+    </div>
+    
+    <div class="relative">
+      <input type="text" id="search-users" placeholder="Search users" class="pl-10 glass-card text-sm rounded-lg border-0 w-full sm:w-64 focus:ring-neo-purple focus:border-neo-purple">
+      <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- User Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {% for profile in profiles %}
+      <div class="user-card glass-card rounded-xl overflow-hidden border border-white/10 dark:border-gray-700/30 hover:shadow-neo transition-all duration-300 animate-blur-in" style="animation-delay: {{ loop.index * 0.05 }}s;">
+        <!-- User Header with Background -->
+        <div class="relative h-24 overflow-hidden">
+          <div class="absolute inset-0 bg-gradient-to-r from-neo-purple to-neo-blue opacity-20"></div>
+          
+          <!-- Level Badge -->
+          <div class="absolute top-3 right-3 bg-black/30 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center">
+            <svg class="w-4 h-4 mr-1 text-neo-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+            </svg>
+            Level {{ profile.level }}
+          </div>
+
+          {% if 'guest_' in profile.username %}
+          <div class="absolute top-3 left-3 bg-gray-500/30 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-xs font-medium">
+            Guest
+          </div>
+          {% elif profile.id <= 2 %}
+          <div class="absolute top-3 left-3 bg-neo-amber/40 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-xs font-medium">
+            Admin
+          </div>
+          {% else %}
+          <div class="absolute top-3 left-3 bg-neo-blue/30 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-xs font-medium">
+            Member
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- User Avatar -->
+        <div class="flex justify-center -mt-12">
+          <div class="relative w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-neo-purple to-neo-blue p-0.5">
+            <div class="absolute inset-0 bg-gradient-neo opacity-30 animate-gradient"></div>
+            <div class="w-full h-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center relative z-10">
+              <span class="font-bold text-2xl text-neo-purple">{{ profile.username[0]|upper }}</span>
+            </div>
+            
+            <!-- Mood Pet Indicator -->
+            <div class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-white dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center">
+              {% if profile.mood_pet == 'bull' %}
+                <span class="text-green-500 text-xs">🐂</span>
+              {% elif profile.mood_pet == 'bear' %}
+                <span class="text-red-500 text-xs">🐻</span>
+              {% else %}
+                <span class="text-gray-500 text-xs">🐾</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- User Info -->
+        <div class="px-6 pt-2 pb-6">
+          <div class="text-center mb-4">
+            <h3 class="font-bold text-lg text-gray-800 dark:text-gray-200">{{ profile.username }}</h3>
+            <p class="text-xs text-gray-600 dark:text-gray-400 truncate" title="{{ profile.email }}">{{ profile.email }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-500">Member since {{ profile.created_at.strftime('%b %d, %Y') }}</p>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <!-- Balance -->
+            <div class="text-center">
+              <p class="text-xs text-gray-500 dark:text-gray-500 mb-1">Balance</p>
+              <p class="font-semibold text-gray-800 dark:text-gray-200">${{ "{:,.2f}".format(profile.balance) }}</p>
+            </div>
+            
+            <!-- Profit/Loss -->
+            <div class="text-center">
+              <p class="text-xs text-gray-500 dark:text-gray-500 mb-1">Profit/Loss</p>
+              <p class="font-semibold {% if profile.profit_loss >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                ${{ "{:,.2f}".format(profile.profit_loss) }}
+              </p>
+            </div>
+            
+            <!-- XP -->
+            <div class="text-center">
+              <p class="text-xs text-gray-500 dark:text-gray-500 mb-1">XP Points</p>
+              <div class="flex items-center justify-center">
+                <svg class="w-4 h-4 text-neo-purple mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" fill-rule="evenodd"></path>
+                </svg>
+                <span class="font-semibold text-gray-800 dark:text-gray-200">{{ profile.xp }}</span>
+              </div>
+            </div>
+            
+            <!-- Total Trades -->
+            <div class="text-center">
+              <p class="text-xs text-gray-500 dark:text-gray-500 mb-1">Trades</p>
+              <div class="flex items-center justify-center">
+                <svg class="w-4 h-4 text-neo-blue mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                </svg>
+                <span class="font-semibold text-gray-800 dark:text-gray-200">{{ profile.total_trades }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- XP Progress Bar -->
+          <div class="mb-4">
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div class="bg-gradient-to-r from-neo-purple to-neo-blue h-2 rounded-full" style="width: {% if profile.xp > 0 %}{% if profile.xp > 100 %}{{ profile.xp % 100 }}{% if profile.xp % 100 == 0 %}100{% endif %}{% else %}{{ profile.xp }}{% endif %}%{% else %}0%{% endif %}"></div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex justify-center space-x-2">
+            <button class="neo-button rounded-lg px-3 py-1.5 text-xs font-medium bg-neo-purple/10 text-neo-purple border border-neo-purple/20 hover:bg-neo-purple hover:text-white transition-all duration-300">
+              Follow
+            </button>
+            <button class="neo-button rounded-lg px-3 py-1.5 text-xs font-medium bg-neo-blue/10 text-neo-blue border border-neo-blue/20 hover:bg-neo-blue hover:text-white transition-all duration-300">
+              Message
+            </button>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <!-- Empty state -->
+  {% if not profiles %}
+    <div class="text-center py-12">
+      <div class="bg-gray-100 dark:bg-gray-800 rounded-full p-4 inline-block mb-4">
+        <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-medium text-gray-900 dark:text-gray-100 mb-1">No users found</h3>
+      <p class="text-gray-600 dark:text-gray-400">Looks like everyone is busy losing money elsewhere</p>
+    </div>
+  {% endif %}
+
+  <script>
+    // Basic search and sort functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const sortSelect = document.getElementById('sort-users');
+      const searchInput = document.getElementById('search-users');
+      const userCards = document.querySelectorAll('.user-card');
+      
+      if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+          // Sort functionality would be implemented here
+          // For now this is just a placeholder UI element
+        });
+      }
+      
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          // Search functionality would be implemented here
+          // For now this is just a placeholder UI element
+        });
+      }
+    });
+  </script>
+{% endblock %}

@@ -217,6 +217,20 @@ def get_all_users():
         cur.close()
         conn.close()
 
+def get_all_profiles():
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    try:
+        cur.execute("SELECT * FROM users ORDER BY id")
+        profiles = [dict(row) for row in cur.fetchall()]
+        return profiles
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen aller Profile: {e}", exc_info=True)
+        return []
+    finally:
+        cur.close()
+        conn.close()
+
 def create_asset(symbol, name, asset_type, exchange=None, currency="USD", 
                 sector=None, industry=None, logo_url=None, description=None, default_price=None):
     """
