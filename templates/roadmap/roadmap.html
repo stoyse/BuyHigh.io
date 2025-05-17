@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Roadmap - BuyHigh.io{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+  <!-- Header -->
+  <div class="text-center mb-12">
+    <h1 class="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-neo-purple to-neo-blue mb-4">{{ roadmap['id']}}. {{ roadmap['title'] }}</h1>
+    <p class="text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+        {{ roadmap['description'] }}
+    </p>
+  </div>
+
+  <!-- Progress Bar -->
+  <div class="relative w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-12">
+    <div class="absolute left-0 top-0 h-full bg-gradient-to-r from-neo-purple to-neo-blue rounded-full" style="width: 65%"></div>
+    <div class="absolute flex justify-between w-full px-2 -top-6">
+      <span class="text-xs font-medium text-neo-purple">Phase 1</span>
+      <span class="text-xs font-medium text-neo-blue">Phase 2</span>
+      <span class="text-xs font-medium text-gray-400">Phase 3</span>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="relative">
+    <!-- Timeline line -->
+    <div class="absolute left-0 md:left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-neo-purple via-neo-blue to-gray-300 dark:to-gray-700 transform -translate-x-1/2"></div>
+    
+    {% for step in roadmap_steps %}
+    <div class="relative mb-16">
+      <div class="md:grid md:grid-cols-2 md:gap-8">
+        {% if loop.index is odd %}
+        <!-- Timeline dot and date for desktop -->
+        <div class="hidden md:flex justify-end items-center relative pr-8">
+          <div class="text-right">
+            <span class="bg-neo-purple text-white text-xs font-pixel px-2 py-1 rounded-lg shadow-neo">Step {{ step['step_number'] }}</span>
+            <h3 class="text-xl font-bold mt-2 text-neo-purple">{{ step['title'] }}</h3>
+          </div>
+          <div class="absolute right-0 transform translate-x-1/2 w-5 h-5 rounded-full bg-neo-purple border-4 border-white dark:border-gray-900 z-10"></div>
+        </div>
+
+        <!-- Content -->
+        <div class="pl-8 md:pl-0">
+          <div class="glass-card border border-neo-purple/30 p-6 rounded-xl cursor-pointer" onclick="navigateToStep({{ roadmap['id'] }}, {{ step['step_number'] }})">
+            <h4 class="text-lg font-semibold mb-3">{{ step['title'] }}</h4>
+            <p class="text-gray-700 dark:text-gray-300">{{ step['description'] }}</p>
+            {% for question in roadmap_quiz if question.step_id == step.step_number %}
+            <div class="mt-4">
+              <p class="font-semibold text-gray-800 dark:text-gray-200">{{ question.question }}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <!-- Content - Left for even milestones -->
+        <div class="md:pr-8 pl-8 md:pl-0">
+          <div class="glass-card border border-neo-blue/30 p-6 rounded-xl cursor-pointer" onclick="navigateToStep({{ roadmap['id'] }}, {{ step['step_number'] }})">
+            <h4 class="text-lg font-semibold mb-3">{{ step['title'] }}</h4>
+            <p class="text-gray-700 dark:text-gray-300">{{ step['description'] }}</p>
+            {% for question in roadmap_quiz if question.step_id == step.step_number %}
+            <div class="mt-4">
+              <p class="font-semibold text-gray-800 dark:text-gray-200">{{ question.question }}</p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Timeline dot and date for desktop - Right for even milestones -->
+        <div class="hidden md:flex items-center relative pl-8">
+          <div class="absolute left-0 transform -translate-x-1/2 w-5 h-5 rounded-full bg-neo-blue border-4 border-white dark:border-gray-900 z-10"></div>
+          <div class="text-left">
+            <span class="bg-neo-blue text-white text-xs font-pixel px-2 py-1 rounded-lg shadow-neo">Step {{ step['step_number'] }}</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  
+
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Feature suggestion form
+    const featureForm = document.getElementById('feature-suggestion-form');
+    if (featureForm) {
+      featureForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const title = document.getElementById('suggestion-title').value;
+        const description = document.getElementById('suggestion-description').value;
+        
+        if (title && description) {
+          // Here you would normally send this data to your backend
+          alert('Thanks for your suggestion! We\'ll review it soon.');
+          featureForm.reset();
+        } else {
+          alert('Please fill out both fields.');
+        }
+      });
+    }
+    
+    // FAQ toggles
+    const faqToggles = document.querySelectorAll('.faq-toggle');
+    faqToggles.forEach(toggle => {
+      toggle.addEventListener('click', function() {
+        const content = this.nextElementSibling;
+        const expanded = this.getAttribute('aria-expanded') === 'true';
+        
+        this.setAttribute('aria-expanded', !expanded);
+        this.querySelector('svg').classList.toggle('rotate-180');
+        
+        if (expanded) {
+          content.classList.add('hidden');
+        } else {
+          content.classList.remove('hidden');
+        }
+      });
+    });
+
+    // Base URL for roadmap_step endpoint
+    const roadmapStepBaseUrl = "{{ url_for('roadmap.roadmap_step', roadmap_id=0, step_id=0) }}".replace('/0/0', '');
+
+    // Function to navigate to a specific step
+    window.navigateToStep = function(roadmapId, stepId) {
+      const url = `${roadmapStepBaseUrl}/${roadmapId}/${stepId}`;
+      window.location.href = url;
+    };
+  });
+</script>
+{% endblock %}

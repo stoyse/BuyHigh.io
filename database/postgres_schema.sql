@@ -255,3 +255,80 @@ VALUES
      'A major company misses earnings expectations, leading to a sharp decline in its stock price. Players must react quickly.', 
      -10.0)
 ON CONFLICT (name) DO NOTHING;
+
+
+-- Roadmap Table
+CREATE TABLE IF NOT EXISTS roadmap (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL, -- Titel der Roadmap
+    description TEXT, -- Beschreibung der Roadmap
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Example Roadmap
+INSERT INTO roadmap (title, description)
+VALUES ('Introduction to Financial Markets', 'Learn the basics of financial markets.')
+ON CONFLICT DO NOTHING;
+
+
+
+-- Roadmap Steps Table
+CREATE TABLE IF NOT EXISTS roadmap_steps (
+    id SERIAL PRIMARY KEY,
+    roadmap_id INTEGER NOT NULL REFERENCES roadmap(id) ON DELETE CASCADE,
+    step_number INTEGER NOT NULL, -- Reihenfolge der Schritte
+    title TEXT NOT NULL, -- Titel des Schritts
+    description TEXT, -- Beschreibung des Schritts
+    page_layout INTEGER[], -- Liste von Zahlen, z.B. ARRAY[1,2,3]
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(roadmap_id, step_number) -- Sicherstellen, dass die Schritt-Reihenfolge eindeutig ist
+);
+
+-- Example steps for the roadmap
+INSERT INTO roadmap_steps (roadmap_id, step_number, title, description, page_layout)
+VALUES 
+(1, 1, 'What are financial markets?', 'Learn what financial markets are and how they work.', ARRAY[1,2,3]),
+(1, 2, 'Stocks and Bonds', 'Understand the difference between stocks and bonds.', ARRAY[1,2,3]),
+(1, 3, 'Market Mechanisms', 'Understand how supply and demand influence the markets.', ARRAY[1,2,3])
+ON CONFLICT DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS roadmap_quizzes (
+    id SERIAL PRIMARY KEY,
+    roadmap_id INTEGER NOT NULL REFERENCES roadmap(id) ON DELETE CASCADE, -- Verknüpfung mit der Roadmap
+    step_id INTEGER NOT NULL REFERENCES roadmap_steps(id) ON DELETE CASCADE, -- Verknüpfung mit einem Roadmap-Schritt
+    question TEXT NOT NULL, -- Die Quizfrage
+    possible_answer_1 TEXT NOT NULL, -- Mögliche Antwort 1
+    possible_answer_2 TEXT NOT NULL, -- Mögliche Antwort 2
+    possible_answer_3 TEXT NOT NULL, -- Mögliche Antwort 3
+    correct_answer TEXT NOT NULL, -- Die richtige Antwort
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Beispiel-Quizfragen für die Roadmap-Schritte
+INSERT INTO roadmap_quizzes (roadmap_id, step_id, question, possible_answer_1, possible_answer_2, possible_answer_3, correct_answer)
+VALUES 
+(1, 1, 'What is a financial market?', 'A place to buy groceries', 'A platform for trading financial assets', 'A type of bank', 'A platform for trading financial assets'),
+(1, 2, 'What is a stock?', 'A type of bond', 'A share in a company', 'A loan to the government', 'A share in a company'),
+(1, 3, 'What determines stock prices?', 'Government policies', 'Supply and demand', 'Company logos', 'Supply and demand');
+
+CREATE TABLE IF NOT EXISTS user_roadmap_quiz_progress (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    quiz_id INTEGER NOT NULL REFERENCES roadmap_quizzes(id) ON DELETE CASCADE,
+    is_correct BOOLEAN DEFAULT FALSE, -- Ob die Antwort korrekt war
+    attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Zeitstempel des Versuchs
+    UNIQUE(user_id, quiz_id) -- Sicherstellen, dass ein Benutzer dasselbe Quiz nicht mehrfach abschließt
+);
+
+
+-- User Roadmap Progress Table
+CREATE TABLE IF NOT EXISTS user_roadmap_progress (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    roadmap_id INTEGER NOT NULL REFERENCES roadmap(id) ON DELETE CASCADE,
+    step_id INTEGER NOT NULL REFERENCES roadmap_steps(id) ON DELETE CASCADE,
+    is_completed BOOLEAN DEFAULT FALSE, -- Fortschritt des Schritts
+    progress_percentage REAL DEFAULT 0.0, -- Fortschritt in Prozent
+    completed_at TIMESTAMP, -- Zeitstempel, wann der Schritt abgeschlossen wurde
+    UNIQUE(user_id, roadmap_id, step_id) -- Sicherstellen, dass ein Benutzer denselben Schritt nicht mehrfach abschließt
+);
