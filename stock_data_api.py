@@ -9,6 +9,7 @@ from rich import print
 from flask import g
 
 from database.handler.postgres.postgres_db_handler import app_api_request
+from database.handler.postgres.postgre_market_mayhem_handler import check_if_mayhem
 
 # Load environment variables from .env file
 dotenv.load_dotenv()
@@ -80,6 +81,9 @@ def get_demo_stock_data(symbol: str = "DEMO", days: int = 30, is_minutes: bool =
 
     df = df_temp
     df.is_demo = True 
+
+    # Mayhem-Effekt auf Demo-Daten anwenden
+    df = apply_mayhem_effect(df)
     return df
 
 def _map_interval_to_twelve_data(custom_interval: str):
@@ -215,6 +219,28 @@ def get_stock_data(symbol: str, period: str = None, interval: str = None, start_
         traceback.print_exc()
         return None
 
+def apply_mayhem_effect(df: pd.DataFrame):
+    """
+    Überprüft auf Marktereignisse und passt die Preise im DataFrame entsprechend an.
+    """
+    mayhem_data = check_if_mayhem()
+    if mayhem_data:
+        print(f"[red]Market Mayhem detected: {mayhem_data}")
+        for event_id, event_data in mayhem_data.items():
+            if 'mayhem_scenarios' in event_data and 'stock_price_change' in event_data['mayhem_scenarios']:
+                price_change_percentage = event_data['mayhem_scenarios']['stock_price_change']
+                logger.info(f"Applying price change of {price_change_percentage}% due to market mayhem.")
+                # Preise anpassen
+                df['Open'] *= (1 + price_change_percentage / 100)
+                df['High'] *= (1 + price_change_percentage / 100)
+                df['Low'] *= (1 + price_change_percentage / 100)
+                df['Close'] *= (1 + price_change_percentage / 100)
+            else:
+                logger.warning(f"Mayhem event {event_id} missing 'stock_price_change'.")
+    else:
+        print("[green]No market mayhem detected.")
+    return df
+
 def get_cached_or_live_data(symbol, timeframe):
     """
     Get stock data using Twelve Data API, with fallback to demo data.
@@ -277,6 +303,9 @@ def get_cached_or_live_data(symbol, timeframe):
         return demo_data
     else:
         print(f"✅ Live API data received for {symbol} (timeframe {timeframe}): {len(df)} datapoints. Demo flag: {getattr(df, 'is_demo', True)}")
+    
+    # Mayhem-Effekt anwenden
+    df = apply_mayhem_effect(df)
     
     if not hasattr(df, 'is_demo'):  # Sollte von get_stock_data gesetzt worden sein
         df.is_demo = False

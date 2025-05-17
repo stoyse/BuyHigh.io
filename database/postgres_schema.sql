@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS users (
     total_trades INTEGER DEFAULT 0,
     profit_loss REAL DEFAULT 0.0,
     xp INTEGER DEFAULT 0,
-    level INTEGER DEFAULT 1
+    level INTEGER DEFAULT 1,
+    mayhem_score INTEGER DEFAULT 0
 );
 
 -- ASSET TYPES TABLE
