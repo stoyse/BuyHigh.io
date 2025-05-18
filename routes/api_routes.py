@@ -1,17 +1,95 @@
-from flask import Blueprint, request, jsonify, g, send_file, url_for
+from flask import Blueprint, request, jsonify, g, send_file, url_for, session
 from datetime import datetime, timedelta
 from utils import login_required
 import os
-import stock_data_api as stock_data  # <-- NEU: Importiere das neue Modul
+import stock_data_api as stock_data
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
-from database.handler.postgres.postgres_db_handler import add_analytics # Import add_analytics
-import pandas as pd # Import pandas for pd.notna()
-import logging # Import logging module
+from database.handler.postgres.postgres_db_handler import add_analytics
+import pandas as pd
+import logging
+import auth as auth_module  # Fix the import path to match the correct module name
+import database.handler.postgres.postgres_db_handler as db_handler
 
 # Logger für dieses Modul konfigurieren
 logger = logging.getLogger(__name__)
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
+
+@api_bp.route('/login', methods=['POST'])
+def api_login():
+    """API-Route für die Benutzeranmeldung"""
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+    
+    # Add logging to help debug the issue
+    logger.info(f"Login attempt for email: {email}")
+
+    if not email or not password:
+        logger.warning("Login attempt with missing email or password")
+        return jsonify({"success": False, "message": "Email and password are required."}), 400
+
+    try:
+        # Ensure we're using the correct function name from auth_module
+        firebase_uid, id_token = auth_module.login_firebase_user_rest(email, password)
+        logger.info(f"Firebase authentication successful for email: {email}, UID: {firebase_uid}")
+        
+        if not firebase_uid or not id_token:
+            logger.warning(f"Firebase authentication returned empty UID or token for email: {email}")
+            return jsonify({"success": False, "message": "Invalid email or password."}), 401
+
+        # Get user from the database
+        local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
+        
+        # If user doesn't exist in local DB, try to find by email or create new
+        if not local_user:
+            logger.info(f"No local user found with Firebase UID: {firebase_uid}, checking by email")
+            local_user = db_handler.get_user_by_email(email)
+            
+            # Create new local user if not found
+            if not local_user:
+                logger.info(f"Creating new local user for email: {email}")
+                username = email.split('@')[0]
+                if db_handler.add_user(username, email, firebase_uid):
+                    local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
+                else:
+                    logger.error(f"Failed to create local user for email: {email}")
+                    return jsonify({"success": False, "message": "Failed to create user account."}), 500
+            else:
+                # Update the Firebase UID for existing user
+                db_handler.update_firebase_uid(local_user['id'], firebase_uid)
+                local_user['firebase_uid'] = firebase_uid
+        
+        if not local_user:
+            logger.error(f"Critical error: Could not find or create local user for email: {email}")
+            return jsonify({"success": False, "message": "User not found in the local database."}), 404
+
+        # Set session data
+        session.clear()
+        session['logged_in'] = True
+        session['user_id'] = local_user['id']
+        session['firebase_uid'] = firebase_uid
+        session['id_token'] = id_token
+        session.permanent = True
+        
+        logger.info(f"Login successful for user ID: {local_user['id']}")
+        
+        # Update last login timestamp
+        try:
+            db_handler.update_last_login(local_user['id'])
+        except Exception as e:
+            logger.warning(f"Failed to update last login timestamp: {e}")
+            # Non-critical error, continue
+
+        # Return user ID in the response for frontend use
+        return jsonify({
+            "success": True, 
+            "message": "Login successful.",
+            "userId": local_user['id']
+        }), 200
+    except Exception as e:
+        logger.error(f"Error during API login: {e}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred during login."}), 500
 
 @api_bp.route('/stock-data')
 @login_required
@@ -381,3 +459,20 @@ def api_get_profile_picture(user_id):
     else:
         add_analytics(user_id_for_analytics, "api_get_profile_picture_fail_not_found", f"api_routes:api_get_profile_picture:user_id={user_id}")
         return jsonify({"success": False, "message": "Profile picture not found."}), 404
+    
+
+@api_bp.route('/user/<user_id>', methods=['GET'])
+@login_required
+def api_get_user_data(user_id):
+    """API-Endpunkt zum Abrufen der Benutzerdaten"""
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "api_get_user_data_attempt", f"api_routes:api_get_user_data:user_id={user_id}")
+    
+    # Dummy-Daten für das Beispiel
+    user_data = {
+        "id": user_id,
+        "name": "John Doe",
+        "email": "john.doe@example.com"  # Beispiel-E-Mail hinzugefügt
+    }
+
+    return jsonify(user_data)  # Keine Weiterleitungen, direkte Antwort

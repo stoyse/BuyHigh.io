@@ -8,6 +8,7 @@ import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv
 import firebase_admin  # Added for Firebase Admin SDK
+from flask_cors import CORS  # Importiere die Flask-CORS-Erweiterung
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -26,6 +27,7 @@ from routes.roadmap_routes import roadmap_bp
 from routes.gambling_routes import gambling_bp
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)  # Aktiviert CORS mit Anmeldeinformationen
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # TODO: In Produktionsumgebung sicher verwalten!
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=7)  # Session für 7 Tage gültig
 
