@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g, send_file
 from datetime import datetime, timedelta
 from utils import login_required
 import os
@@ -297,7 +297,7 @@ def api_upload_profile_picture():
         
         # Save the file with a secure filename
         from werkzeug.utils import secure_filename
-        file_path = os.path.join(user_folder, f"profile_picture_{secure_filename(file.filename)}")
+        file_path = os.path.join(user_folder, f"profile_picture.png")
         file.save(file_path)
         
         # Update user profile in database to reference the new image
@@ -312,3 +312,22 @@ def api_upload_profile_picture():
     except Exception as e:
         logger.error(f"Error uploading profile picture: {str(e)}", exc_info=True)
         return jsonify({"success": False, "message": f"Error uploading file: {str(e)}"}), 500
+
+@api_bp.route('/get/profile-picture/<user_id>', methods=['GET'])
+@login_required
+def api_get_profile_picture(user_id):
+    """API-Endpunkt zum Abrufen des Profilbildes"""
+    # Hier wird angenommen, dass der Pfad zum Profilbild in der Datenbank gespeichert ist
+    # Zum Beispiel: db_handler.get_user_profile_picture(g.user['id'])
+    
+    # Dummy URL für das Beispiel
+    profile_pic_url = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        '..', 'static', 'user_data', str(user_id), 'profile_picture.png'
+    )
+    profile_pic_url = os.path.abspath(profile_pic_url)
+    
+    if os.path.exists(profile_pic_url):
+        return send_file(profile_pic_url)
+    else:
+        return jsonify({"success": False, "message": "Profile picture not found."}), 404

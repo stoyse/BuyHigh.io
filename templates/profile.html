@@ -39,13 +39,24 @@
     </div>
 
     <!-- User Avatar -->
-    <div class="flex justify-center -mt-24">
+    <div class="flex justify-center -mt-24 relative">
       <div class="relative w-48 h-48 rounded-full overflow-hidden bg-gradient-to-br from-neo-purple to-neo-blue p-1">
         <div class="absolute inset-0 bg-gradient-neo opacity-30 animate-gradient"></div>
         <div class="w-full h-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center relative z-10">
-          <span class="font-bold text-6xl text-neo-purple">{{ user.username[0]|upper }}</span>
+          <img 
+          src="{{ url_for('api.api_get_profile_picture', user_id=user.id) }}?{{ user.profile_picture_updated_at|default(0) }}" 
+          alt="Profile Picture" 
+          class="object-cover w-full h-full rounded-full"
+          onerror="this.onerror=null;this.style.display='none';this.parentNode.innerHTML='<span class=\'font-bold text-6xl text-neo-purple\'>{{ user.username[0]|upper }}</span>';">
         </div>
         
+        <!-- Profile Picture Upload Button - Smaller and positioned at the bottom right -->
+        <div id="profile-upload-btn" class="absolute bottom-2 right-16 w-10 h-10 rounded-full bg-white/90 dark:bg-gray-800/90 shadow-lg cursor-pointer border-2 border-neo-purple flex items-center justify-center hover:bg-neo-purple/20 transition-all duration-300 z-[100]">
+          <svg class="w-5 h-5 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+          </svg>
+        </div>
+          
         <!-- Mood Pet Indicator -->
         <div class="absolute bottom-3 right-3 w-16 h-16 rounded-full bg-white dark:bg-gray-700 border-4 border-white dark:border-gray-800 flex items-center justify-center">
           {% if user.mood_pet == 'bull' %}
@@ -56,18 +67,12 @@
             <span class="text-gray-500 text-2xl">🐾</span>
           {% endif %}
         </div>
-        
-        <!-- Profile Picture Upload Button -->
-        <div id="profile-upload-btn" class="absolute top-2 left-2 w-10 h-10 rounded-full bg-white/80 dark:bg-gray-800/90 shadow-lg cursor-pointer border-2 border-neo-purple flex items-center justify-center hover:bg-neo-purple/20 transition-all duration-300 z-20">
-          <svg class="w-5 h-5 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-          </svg>
-        </div>
-
-        <!-- Hidden file input -->
-        <input type="file" id="profile-picture-input" class="hidden" accept="image/*">
       </div>
+
+      <!-- Hidden file input -->
+      <input type="file" id="profile-picture-input" class="hidden" accept="image/*">
     </div>
+  </div>
 
     <!-- User Info -->
     <div class="px-8 pt-4 pb-8">
