@@ -155,7 +155,10 @@ def get_stock_data(symbol: str, period: str = None, interval: str = None, start_
         print(f"Fetching Twelve Data for {symbol} (interval: {td_interval}, from: {start_date} to: {end_date})...")
         
         response = requests.get("https://api.twelvedata.com/time_series", params=params)
-        app_api_request(user_id=g.user['id'], source="Twelve Data")
+        
+        # Corrected call: Provide the required api_name and endpoint arguments.
+        app_api_request(api_name="Twelve Data", endpoint="time_series") 
+        
         print(f"[red]API request to Twelve Data completed for {symbol}.")
         # Fehlerbehandlung für HTTP-Fehler
         if response.status_code == 429:  # Rate limit exceeded

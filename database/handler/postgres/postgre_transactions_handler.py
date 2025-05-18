@@ -461,21 +461,34 @@ def get_asset_value(user_id):
 def get_all_assets(active_only=True, asset_type=None):
     """
     Ruft alle Assets aus der Datenbank ab.
-    
+
     Args:
         active_only (bool): Wenn True, werden nur aktive Assets zurückgegeben
         asset_type (str): Optional Filter für Asset-Typ (stock, crypto, forex, etc.)
-        
+
     Returns:
-        List[dict]: Liste aller Assets als Dictionary-Objekte
+        dict: {"success": True, "assets": [...] } oder {"success": False, "message": "..."}
     """
     add_analytics(None, "get_all_assets", f"postgre_transactions_handler:active_only={active_only},type={asset_type}")
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 query = "SELECT * FROM assets"
-    except Exception:
-        pass
+                params = []
+                conditions = []
+                if active_only:
+                    conditions.append("is_active = TRUE")
+                if asset_type:
+                    conditions.append("asset_type = %s")
+                    params.append(asset_type)
+                if conditions:
+                    query += " WHERE " + " AND ".join(conditions)
+                cur.execute(query, params)
+                assets = cur.fetchall()
+                return {"success": True, "assets": assets}
+    except Exception as e:
+        add_analytics(None, "get_all_assets_error", f"postgre_transactions_handler:error={e}")
+        return {"success": False, "message": f"Database error: {e}"}
 
 def get_asset_by_symbol(symbol):
     """

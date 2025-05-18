@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import TestPage from './pages/TestPage/TestPage';
 import Home from './pages/Home/Home';
 import Casino from './pages/Casino';
+import Trade from './pages/Trade/Trade';
 // Import other pages as needed
 
 function App() {
@@ -43,7 +44,11 @@ function App() {
               <Casino />
             </ProtectedRoute>
           } />
-          
+          <Route path="/trade" element={
+            <ProtectedRoute>
+              <Trade />
+            </ProtectedRoute>
+          } />
           {/* Add more routes as needed */}
         </Routes>
       </Router>

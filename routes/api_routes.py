@@ -334,7 +334,16 @@ def api_get_assets():
     
     result = transactions_handler.get_all_assets(active_only, asset_type) # Analytics inside get_all_assets
     
-    if result['success']:
+    # Überprüfe, ob das Ergebnis None ist
+    if result is None:
+        logger.error(f"get_all_assets returned None for type={asset_type}, active_only={active_only}")
+        return jsonify({
+            "success": False,
+            "message": "Failed to retrieve assets data. The database query returned no result.",
+            "assets": []
+        }), 500
+    
+    if result.get('success', False):
         return jsonify(result)
     else:
         return jsonify(result), 500
@@ -496,3 +505,21 @@ def api_get_portfolio(user_id):
     add_analytics(user_id_for_analytics, "api_get_portfolio", "api_routes:api_get_portfolio")
     portfolio_data = transactions_handler.show_user_portfolio(user_id) # Analytics inside show_user_portfolio
     return jsonify(portfolio_data)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

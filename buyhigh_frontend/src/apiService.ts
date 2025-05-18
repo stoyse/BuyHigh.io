@@ -1,12 +1,38 @@
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:9876/api';
+const DEBUG = true; // Debug-Modus aktivieren/deaktivieren
+
+// Debug-Logging-Funktion
+const logDebug = (message: string, data: any = null) => {
+  if (!DEBUG) return;
+  
+  const logStyle = "background: #0047AB; color: white; padding: 2px 5px; border-radius: 3px;";
+  if (data) {
+    console.log(`%c[BuyHigh Debug]`, logStyle, message, data);
+  } else {
+    console.log(`%c[BuyHigh Debug]`, logStyle, message);
+  }
+};
+
+// Hilfsfunktion zum Loggen von API-Aufrufen
+const logApiCall = (method: string, endpoint: string, params?: any) => {
+  const url = `${API_BASE_URL}${endpoint}`;
+  
+  if (params) {
+    logDebug(`${method} Request: ${url}`, params);
+  } else {
+    logDebug(`${method} Request: ${url}`);
+  }
+};
 
 export const loginUser = async (email: string, password: string) => {
+  logApiCall('POST', '/login', { email });
   try {
     const response = await axios.post(`${API_BASE_URL}/login`, { email, password }, {
       withCredentials: true, // Sends cookies for authentication
     });
+    logDebug('Login Response:', response.data);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -19,10 +45,12 @@ export const loginUser = async (email: string, password: string) => {
 };
 
 export const fetchFunnyTips = async () => {
+  logApiCall('GET', '/funny-tips');
   try {
     const response = await axios.get(`${API_BASE_URL}/funny-tips`, {
-      withCredentials: true, // Sends cookies for authentication
+      withCredentials: true,
     });
+    logDebug('Funny Tips Response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error fetching funny tips:', error);
@@ -31,16 +59,17 @@ export const fetchFunnyTips = async () => {
 };
 
 export const GetUserInfo = async (userId: string) => {
+  logApiCall('GET', `/user/${userId}`);
   try {
     const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
-      withCredentials: true, // Sends cookies for authentication
+      withCredentials: true,
     });
+    logDebug('User Info Response:', response.data);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
         console.error('User is not authenticated. Redirecting to login.');
-        // Handle redirection to login page if needed
         window.location.href = '/login';
       }
       console.error('Error fetching user info:', error.response?.data || error.message);
@@ -52,10 +81,12 @@ export const GetUserInfo = async (userId: string) => {
 };
 
 export const GetPortfolioData = async (userId: string) => {
+  logApiCall('GET', `/user/portfolio/${userId}`);
   try {
     const response = await axios.get(`${API_BASE_URL}/user/portfolio/${userId}`, {
-      withCredentials: true, // Sends cookies for authentication
+      withCredentials: true,
     });
+    logDebug('Portfolio Data Response:', response.data);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -68,10 +99,12 @@ export const GetPortfolioData = async (userId: string) => {
 };
 
 export const GetRecentTransactions = async (userId: string) => {
+  logApiCall('GET', `/user/transactions/${userId}`);
   try {
     const response = await axios.get(`${API_BASE_URL}/user/transactions/${userId}`, {
-      withCredentials: true, // Sends cookies for authentication
+      withCredentials: true,
     });
+    logDebug('Recent Transactions Response:', response.data);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -84,10 +117,12 @@ export const GetRecentTransactions = async (userId: string) => {
 };
 
 export const GetDailyQuiz = async () => {
+  logApiCall('GET', '/daily-quiz');
   try {
     const response = await axios.get(`${API_BASE_URL}/daily-quiz`, {
-      withCredentials: true, // Sends cookies for authentication
+      withCredentials: true,
     });
+    logDebug('Daily Quiz Response:', response.data);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -97,4 +132,105 @@ export const GetDailyQuiz = async () => {
     }
     throw error;
   }
-}
+};
+
+export const GetAssets = async (type?: string, activeOnly: boolean = true) => {
+  const queryParams = new URLSearchParams();
+  if (type) queryParams.append('type', type);
+  queryParams.append('active_only', activeOnly.toString());
+  
+  logApiCall('GET', `/assets?${queryParams.toString()}`);
+  try {
+    const response = await axios.get(`${API_BASE_URL}/assets?${queryParams.toString()}`, {
+      withCredentials: true,
+    });
+    logDebug('Assets Response:', response.data);
+    
+    // Sicherstellen, dass wir immer ein Array zurückgeben
+    let result = response.data;
+    if (!Array.isArray(result)) {
+      if (result && typeof result === 'object') {
+        // Suchen nach einem Array-Property in der Response
+        const possibleArrayKey = Object.keys(result).find(key => Array.isArray(result[key]));
+        if (possibleArrayKey) {
+          result = result[possibleArrayKey];
+        } else {
+          // Fallback zu leerem Array
+          console.warn('Assets API returned non-array data:', result);
+          result = [];
+        }
+      } else {
+        result = [];
+      }
+    }
+    return result;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error fetching assets:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error:', error);
+    }
+    // Bei Fehlern leeres Array zurückgeben
+    return [];
+  }
+};
+
+export const GetStockData = async (symbol: string, timeframe: string) => {
+  const params = { symbol, timeframe };
+  logApiCall('GET', '/stock-data', params);
+  try {
+    const response = await axios.get(`${API_BASE_URL}/stock-data`, {
+      params,
+      withCredentials: true,
+    });
+    logDebug('Stock Data Response:', { symbol, timeframe, dataPoints: response.data.length });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error fetching stock data:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error:', error);
+    }
+    throw error;
+  }
+};
+
+export const BuyStock = async (symbol: string, quantity: number, price: number) => {
+  const payload = { symbol, quantity, price };
+  logApiCall('POST', '/trade/buy', payload);
+  try {
+    const response = await axios.post(`${API_BASE_URL}/trade/buy`, 
+      payload,
+      { withCredentials: true }
+    );
+    logDebug('Buy Stock Response:', response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error buying stock:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error:', error);
+    }
+    throw error;
+  }
+};
+
+export const SellStock = async (symbol: string, quantity: number, price: number) => {
+  const payload = { symbol, quantity, price };
+  logApiCall('POST', '/trade/sell', payload);
+  try {
+    const response = await axios.post(`${API_BASE_URL}/trade/sell`, 
+      payload,
+      { withCredentials: true }
+    );
+    logDebug('Sell Stock Response:', response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error selling stock:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error:', error);
+    }
+    throw error;
+  }
+};
