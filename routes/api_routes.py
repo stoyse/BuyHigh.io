@@ -9,6 +9,8 @@ import pandas as pd
 import logging
 import auth as auth_module  # Fix the import path to match the correct module name
 import database.handler.postgres.postgres_db_handler as db_handler
+import database.handler.postgres.postgre_education_handler as education_handler
+
 
 # Logger für dieses Modul konfigurieren
 logger = logging.getLogger(__name__)
@@ -320,14 +322,6 @@ def api_sell_stock():
         add_analytics(user_id_for_analytics, "api_trade_sell_fail_handler", f"api_routes:api_sell_stock:symbol={symbol},msg={result.get('message')}")
     return jsonify(result)
 
-@api_bp.route('/portfolio', methods=['GET'])
-@login_required
-def api_get_portfolio():
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_get_portfolio", "api_routes:api_get_portfolio")
-    user_id = g.user['id']
-    portfolio_data = transactions_handler.show_user_portfolio(user_id) # Analytics inside show_user_portfolio
-    return jsonify(portfolio_data)
 
 @api_bp.route('/assets')
 @login_required
@@ -461,18 +455,44 @@ def api_get_profile_picture(user_id):
         return jsonify({"success": False, "message": "Profile picture not found."}), 404
     
 
+@api_bp.route('/daily-quiz', methods=['GET'])
+@login_required
+def api_get_daily_quiz():
+    """API-Endpunkt zum Abrufen des täglichen Quiz"""
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "api_get_daily_quiz", "api_routes:api_get_daily_quiz")
+    today = datetime.today().strftime('%Y-%m-%d')
+    return jsonify(education_handler.get_daily_quiz(date=today))  # Keine Weiterleitungen, direkte Antwort
+
+
 @api_bp.route('/user/<user_id>', methods=['GET'])
 @login_required
 def api_get_user_data(user_id):
     """API-Endpunkt zum Abrufen der Benutzerdaten"""
     user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
     add_analytics(user_id_for_analytics, "api_get_user_data_attempt", f"api_routes:api_get_user_data:user_id={user_id}")
-    
-    # Dummy-Daten für das Beispiel
-    user_data = {
-        "id": user_id,
-        "name": "John Doe",
-        "email": "john.doe@example.com"  # Beispiel-E-Mail hinzugefügt
-    }
 
-    return jsonify(user_data)  # Keine Weiterleitungen, direkte Antwort
+    return jsonify(db_handler.get_user_by_id(user_id=user_id))  # Keine Weiterleitungen, direkte Antwort
+
+@api_bp.route('/user/transactions/<user_id>', methods=['GET'])
+@login_required
+def api_get_user_last_transactions(user_id):
+    """API-Endpunkt zum Abrufen der letzten Transaktionen eines Benutzers"""
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "api_get_user_last_transactions_attempt", f"api_routes:api_get_user_last_transactions:user_id={user_id}")
+
+    transactions = transactions_handler.get_recent_transactions(user_id=user_id)
+    if transactions:
+        add_analytics(user_id_for_analytics, "api_get_user_last_transactions_success", f"api_routes:api_get_user_last_transactions:user_id={user_id}")
+        return jsonify(transactions)
+    else:
+        add_analytics(user_id_for_analytics, "api_get_user_last_transactions_fail", f"api_routes:api_get_user_last_transactions:user_id={user_id}")
+        return jsonify({"success": False, "message": "No transactions found."}), 404
+
+@api_bp.route('/user/portfolio/<user_id>', methods=['GET'])
+@login_required
+def api_get_portfolio(user_id):
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "api_get_portfolio", "api_routes:api_get_portfolio")
+    portfolio_data = transactions_handler.show_user_portfolio(user_id) # Analytics inside show_user_portfolio
+    return jsonify(portfolio_data)

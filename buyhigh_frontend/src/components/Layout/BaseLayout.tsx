@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './BaseLayout.css';
+import { GetUserInfo } from '../../apiService';
 
 interface BaseLayoutProps {
   children: React.ReactNode;
@@ -46,6 +47,38 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
     };
     
     checkAuth();
+  }, []);
+
+  const [userData, setUserData] = React.useState<any>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const data = await GetUserInfo('1'); // Beispiel-User-ID
+        setUserData(data);
+      } catch (err) {
+        setError('Fehler beim Abrufen der Benutzerdaten.');
+        console.error(err);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const data = await GetUserInfo('1');
+        setUser(data);
+      } catch (err) {
+        setError('Fehler beim Abrufen der Benutzerdaten.');
+        console.error(err);
+      }
+    };
+
+    fetchUserData();
   }, []);
 
   return (

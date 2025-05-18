@@ -4,8 +4,10 @@ import './App.css';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/Login/LoginPage';
-import Dashboard from './pages/Dashboard/';
+import Dashboard from './pages/Dashboard/Dashboard';
 import TestPage from './pages/TestPage/TestPage';
+import Home from './pages/Home/Home';
+import Casino from './pages/Casino';
 // Import other pages as needed
 
 function App() {
@@ -14,7 +16,6 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route 
             path="/dashboard" 
             element={
@@ -31,7 +32,19 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          {/* Add other protected routes as needed */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+          />
+          <Route path="/casino" element={
+            <ProtectedRoute>
+              <Casino />
+            </ProtectedRoute>
+          } />
+          
+          {/* Add more routes as needed */}
         </Routes>
       </Router>
     </AuthProvider>

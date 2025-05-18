@@ -50,3 +50,51 @@ export const GetUserInfo = async (userId: string) => {
     throw error;
   }
 };
+
+export const GetPortfolioData = async (userId: string) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/user/portfolio/${userId}`, {
+      withCredentials: true, // Sends cookies for authentication
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error fetching portfolio data:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error:', error);
+    }
+    throw error;
+  }
+};
+
+export const GetRecentTransactions = async (userId: string) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/user/transactions/${userId}`, {
+      withCredentials: true, // Sends cookies for authentication
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error fetching recent transactions:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error:', error);
+    }
+    throw error;
+  }
+};
+
+export const GetDailyQuiz = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/daily-quiz`, {
+      withCredentials: true, // Sends cookies for authentication
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error fetching daily quiz:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error:', error);
+    }
+    throw error;
+  }
+}
