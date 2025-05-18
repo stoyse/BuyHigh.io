@@ -1,0 +1,202 @@
+/* Base Styles */
+body {
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+/* Advanced Glass Effects */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
+}
+
+.dark .glass-card {
+  background: rgba(17, 24, 39, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark .glass-nav {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Neon Elements */
+.neon-border {
+  position: relative;
+}
+
+.neon-border::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.5), 0 0 20px rgba(139, 92, 246, 0.2);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.neon-border:hover::after {
+  opacity: 1;
+}
+
+/* Gradient Backgrounds */
+.bg-gradient-neo {
+  background: linear-gradient(-45deg, #8b5cf6, #3b82f6, #06b6d4, #8b5cf6);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+}
+
+.dark .bg-gradient-neo {
+  background: linear-gradient(-45deg, #4c1d95, #1e40af, #0e7490, #4c1d95);
+  background-size: 400% 400%;
+  animation: gradient 15s ease infinite;
+}
+
+/* Custom Grid Background */
+.neo-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+}
+
+.dark .neo-grid {
+  background-image: 
+    linear-gradient(to right, rgba(139, 92, 246, 0.075) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(139, 92, 246, 0.075) 1px, transparent 1px);
+}
+
+/* Neo Buttons */
+.neo-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.neo-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.neo-button:hover::before {
+  left: 100%;
+}
+
+/* Text glowing effect */
+.text-glow {
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.7);
+}
+
+.dark .text-glow {
+  text-shadow: 0 0 10px rgba(139, 92, 246, 0.9);
+}
+
+/* Dropdown Menu Styles */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  min-width: 220px;
+  z-index: 60;
+}
+
+/* Dropdown arrow */
+.dropdown-content::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 20px;
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transform: rotate(45deg);
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .dropdown-content::before {
+  background: rgba(17, 24, 39, 0.7);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Dropdown item hover effect */
+.dropdown-item {
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(139, 92, 246, 0.15);
+  transform: translateX(5px);
+}
+
+/* Animations */
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes float {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(10px, -10px) rotate(10deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+@keyframes blurIn {
+  0% { filter: blur(10px); opacity: 0; }
+  100% { filter: blur(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse-slow {
+  animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-gradient {
+  animation: gradient 15s ease infinite;
+}
+
+.animate-blur-in {
+  animation: blurIn 0.7s ease forwards;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}

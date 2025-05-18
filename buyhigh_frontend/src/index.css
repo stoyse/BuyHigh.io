@@ -1,0 +1,54 @@
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Füge Tailwind-Direktiven hinzu, falls sie noch nicht vorhanden sind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Stelle sicher, dass einige grundlegende Casino-Animationen global verfügbar sind */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-25%); }
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+/* Füge die für alle Komponenten benötigten Grundstile hinzu */
+html, body, #root {
+  height: 100%;
+  min-height: 100vh;
+}
+
+/* Dark Mode Support */
+.dark {
+  color-scheme: dark;
+}
+
+/* Unterstützung für die Pixel-Schriftart */
+.font-pixel {
+  font-family: 'Press Start 2P', cursive;
+  letter-spacing: -0.05em;
+}
