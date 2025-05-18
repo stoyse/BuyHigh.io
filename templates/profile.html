@@ -56,6 +56,16 @@
             <span class="text-gray-500 text-2xl">🐾</span>
           {% endif %}
         </div>
+        
+        <!-- Profile Picture Upload Button -->
+        <div id="profile-upload-btn" class="absolute top-2 left-2 w-10 h-10 rounded-full bg-white/80 dark:bg-gray-800/90 shadow-lg cursor-pointer border-2 border-neo-purple flex items-center justify-center hover:bg-neo-purple/20 transition-all duration-300 z-20">
+          <svg class="w-5 h-5 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+          </svg>
+        </div>
+
+        <!-- Hidden file input -->
+        <input type="file" id="profile-picture-input" class="hidden" accept="image/*">
       </div>
     </div>
 
@@ -208,4 +218,70 @@
     </div>
   </div>
 </div>
+
+<!-- Add JavaScript for handling the file upload -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const uploadBtn = document.getElementById('profile-upload-btn');
+    const fileInput = document.getElementById('profile-picture-input');
+    
+    // Open file dialog when the edit button is clicked
+    if (uploadBtn) {
+      uploadBtn.addEventListener('click', function() {
+        fileInput.click();
+      });
+    }
+    
+    // Handle file selection
+    if (fileInput) {
+      fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+          const file = this.files[0];
+          
+          // Check file type and size
+          if (!file.type.match('image.*')) {
+            alert('Please select an image file');
+            return;
+          }
+          
+          if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            alert('File size should be less than 5MB');
+            return;
+          }
+          
+          // Create form data and send to server
+          const formData = new FormData();
+          formData.append('file', file);  // Changed from 'profile_picture' to 'file' to match API expectation
+          
+          // Show loading indicator
+          uploadBtn.innerHTML = '<div class="animate-spin h-4 w-4 border-2 border-neo-purple border-t-transparent rounded-full"></div>';
+          
+          // Send to server
+          fetch('{{ url_for("api.api_upload_profile_picture") }}', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Reload page to show new profile picture
+              window.location.reload();
+            } else {
+              alert(data.message || 'Failed to upload profile picture');
+              // Reset button
+              uploadBtn.innerHTML = '<svg class="w-5 h-5 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>';
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while uploading the profile picture');
+            // Reset button
+            uploadBtn.innerHTML = '<svg class="w-5 h-5 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>';
+          });
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}

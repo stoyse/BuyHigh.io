@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, g
 from datetime import datetime, timedelta
 from utils import login_required
+import os
 import stock_data_api as stock_data  # <-- NEU: Importiere das neue Modul
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
 import pandas as pd # Import pandas for pd.notna()
@@ -272,3 +273,42 @@ def api_status():
 @login_required
 def api_stock_data_symbol(symbol):
     return jsonify({"message": f"Data for symbol {symbol} not yet implemented."}), 404
+
+
+@api_bp.route('/upload/profile-picture', methods=['POST'])
+@login_required
+def api_upload_profile_picture():
+    """API-Endpunkt zum Hochladen eines Profilbildes"""
+    if 'file' not in request.files:
+        return jsonify({"success": False, "message": "No file part in the request."}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"success": False, "message": "No selected file."}), 400
+
+    try:
+        # Get the application's root directory
+        from flask import current_app
+        upload_folder = os.path.join(current_app.root_path, 'static', 'user_data')
+        
+        # Create directory structure if it doesn't exist
+        user_folder = os.path.join(upload_folder, str(g.user['id']))
+        os.makedirs(user_folder, exist_ok=True)
+        
+        # Save the file with a secure filename
+        from werkzeug.utils import secure_filename
+        file_path = os.path.join(user_folder, f"profile_picture_{secure_filename(file.filename)}")
+        file.save(file_path)
+        
+        # Update user profile in database to reference the new image
+        profile_pic_url = f"/static/user_data/{g.user['id']}/profile_picture_{secure_filename(file.filename)}"
+        
+        # Here you would update the user's profile in the database
+        # For example: db_handler.update_user_profile_picture(g.user['id'], profile_pic_url)
+        
+        logger.info(f"Profile picture uploaded successfully for user {g.user['id']}")
+        return jsonify({"success": True, "message": "File uploaded successfully.", "url": profile_pic_url})
+    
+    except Exception as e:
+        logger.error(f"Error uploading profile picture: {str(e)}", exc_info=True)
+        return jsonify({"success": False, "message": f"Error uploading file: {str(e)}"}), 500
