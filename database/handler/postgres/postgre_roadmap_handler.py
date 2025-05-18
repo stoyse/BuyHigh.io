@@ -1,10 +1,10 @@
-import os  # Dieser Import fehlte
+import os
 import psycopg2
 import psycopg2.extras
 from datetime import datetime
 import logging
 from rich import print
-from .postgres_db_handler import add_analytics  # Import add_analytics
+from database.handler.postgres.postgres_db_handler import add_analytics
 
 logger = logging.getLogger(__name__)
 

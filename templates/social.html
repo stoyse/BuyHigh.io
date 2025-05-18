@@ -65,8 +65,9 @@
         <div class="flex justify-center -mt-12">
           <div class="relative w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-neo-purple to-neo-blue p-0.5">
             <div class="absolute inset-0 bg-gradient-neo opacity-30 animate-gradient"></div>
-            <div class="w-full h-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center relative z-10">
-              <span class="font-bold text-2xl text-neo-purple">{{ profile.username[0]|upper }}</span>
+            <div class="w-full h-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center relative z-10" id="avatar-container-{{ profile.id }}">
+              <img id="avatar-img-{{ profile.id }}" class="w-full h-full object-cover hidden" alt="{{ profile.username }}'s avatar">
+              <span id="avatar-letter-{{ profile.id }}" class="font-bold text-2xl text-neo-purple">{{ profile.username[0]|upper }}</span>
             </div>
             
             <!-- Mood Pet Indicator -->
@@ -170,6 +171,11 @@
       const searchInput = document.getElementById('search-users');
       const userCards = document.querySelectorAll('.user-card');
       
+      // Load profile pictures for all users
+      {% for profile in profiles %}
+        loadProfilePicture({{ profile.id }});
+      {% endfor %}
+      
       if (sortSelect) {
         sortSelect.addEventListener('change', function() {
           // Sort functionality would be implemented here
@@ -184,5 +190,34 @@
         });
       }
     });
+    
+    // Function to load profile picture for a user
+    function loadProfilePicture(userId) {
+      fetch(`/api/get/profile-picture/${userId}`)
+        .then(response => {
+          if (response.ok) {
+            return response.blob();
+          }
+          throw new Error('Profile picture not found');
+        })
+        .then(blob => {
+          const imgUrl = URL.createObjectURL(blob);
+          const imgElement = document.getElementById(`avatar-img-${userId}`);
+          const letterElement = document.getElementById(`avatar-letter-${userId}`);
+          
+          imgElement.onload = function() {
+            // Show the image and hide the letter once loaded
+            imgElement.classList.remove('hidden');
+            letterElement.classList.add('hidden');
+          };
+          
+          imgElement.src = imgUrl;
+        })
+        .catch(error => {
+          console.log(`No profile picture for user ${userId}: ${error.message}`);
+          // Keep the letter display if no profile picture is found
+          // No action needed as the letter is the default state
+        });
+    }
   </script>
 {% endblock %}
