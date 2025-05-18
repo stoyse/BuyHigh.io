@@ -4,10 +4,12 @@ import logging
 from datetime import datetime
 import os
 from rich import print
+from .postgres_db_handler import add_analytics
 
 logger = logging.getLogger(__name__)
 
 def is_int(val):
+    # Internal helper, analytics not typically added.
     try:
         int(val)
         return True
@@ -17,6 +19,7 @@ def is_int(val):
 def get_db_connection():
     """Verbindung zur PostgreSQL-Datenbank herstellen"""
     print('[bold blue]Connection to DB from Chat Handler[/bold blue]')
+    add_analytics(None, "get_db_connection_chat_handler", "postgres_chat_db_handler:get_db_connection")
     try:
         conn = psycopg2.connect(
             host=os.getenv('POSTGRES_HOST'),
@@ -28,10 +31,12 @@ def get_db_connection():
         return conn
     except Exception as e:
         logger.error(f"Fehler beim Öffnen der PostgreSQL-Verbindung: {e}", exc_info=True)
+        add_analytics(None, "get_db_connection_chat_handler_error", f"postgres_chat_db_handler:get_db_connection:error={e}")
         raise
 
 def get_user_chats(user_id):
     logger.info(f"get_user_chats (Postgres) aufgerufen für Benutzer ID: {user_id}")
+    add_analytics(user_id, "get_user_chats", "postgres_chat_db_handler")
     ensure_user_in_default_chat(user_id)
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -83,6 +88,7 @@ def get_user_chats(user_id):
 
 def ensure_user_in_default_chat(user_id):
     logger.info(f"ensure_user_in_default_chat (Postgres) aufgerufen für Benutzer ID: {user_id}")
+    add_analytics(user_id, "ensure_user_in_default_chat", "postgres_chat_db_handler")
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
@@ -112,6 +118,7 @@ def ensure_user_in_default_chat(user_id):
 
 def get_default_chat_id():
     logger.info("get_default_chat_id (Postgres) aufgerufen.")
+    add_analytics(None, "get_default_chat_id", "postgres_chat_db_handler")
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     try:
@@ -128,6 +135,7 @@ def get_default_chat_id():
 
 def get_chat_by_id(chat_id):
     logger.info(f"get_chat_by_id (Postgres) aufgerufen für Chat ID: {chat_id}")
+    add_analytics(None, "get_chat_by_id", f"postgres_chat_db_handler:chat_id={chat_id}")
     if not is_int(chat_id):
         logger.warning(f"get_chat_by_id: Chat-ID '{chat_id}' ist kein Integer. Breche ab.")
         return None
@@ -147,6 +155,7 @@ def get_chat_by_id(chat_id):
 
 def is_chat_participant(chat_id, user_id):
     logger.info(f"is_chat_participant (Postgres) aufgerufen für Chat ID: {chat_id}, Benutzer ID: {user_id}")
+    add_analytics(user_id, "is_chat_participant", f"postgres_chat_db_handler:chat_id={chat_id}")
     if not is_int(chat_id) or not is_int(user_id):
         logger.warning(f"is_chat_participant: Chat-ID '{chat_id}' oder User-ID '{user_id}' ist kein Integer. Breche ab.")
         return False
@@ -163,6 +172,7 @@ def is_chat_participant(chat_id, user_id):
 
 def join_chat(chat_id, user_id):
     logger.info(f"join_chat (Postgres) aufgerufen für Chat ID: {chat_id}, Benutzer ID: {user_id}")
+    add_analytics(user_id, "join_chat", f"postgres_chat_db_handler:chat_id={chat_id}")
     if not is_int(chat_id) or not is_int(user_id):
         logger.warning(f"join_chat: Chat-ID '{chat_id}' oder User-ID '{user_id}' ist kein Integer. Breche ab.")
         return False
@@ -184,6 +194,7 @@ def join_chat(chat_id, user_id):
 
 def create_chat(chat_name, user_id):
     logger.info(f"create_chat (Postgres) aufgerufen: Name='{chat_name}', Ersteller-ID={user_id}")
+    add_analytics(user_id, "create_chat", f"postgres_chat_db_handler:chat_name={chat_name}")
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -202,6 +213,7 @@ def create_chat(chat_name, user_id):
 
 def add_message_and_get_details(chat_id, user_id, message_text):
     logger.info(f"add_message_and_get_details (Postgres): ChatID={chat_id}, UserID={user_id}, Nachricht (gekürzt)='{message_text[:50]}'")
+    add_analytics(user_id, "add_message_and_get_details", f"postgres_chat_db_handler:chat_id={chat_id}")
     if not is_int(chat_id) or not is_int(user_id):
         logger.warning(f"add_message_and_get_details: Chat-ID '{chat_id}' oder User-ID '{user_id}' ist kein Integer. Breche ab.")
         return None
@@ -238,6 +250,7 @@ def add_message_and_get_details(chat_id, user_id, message_text):
 
 def get_chat_messages(chat_id, limit=50, offset=0):
     logger.info(f"get_chat_messages (Postgres): ChatID={chat_id}, Limit={limit}, Offset={offset}")
+    add_analytics(None, "get_chat_messages", f"postgres_chat_db_handler:chat_id={chat_id}")
     if not is_int(chat_id):
         logger.warning(f"get_chat_messages: Chat-ID '{chat_id}' ist kein Integer. Breche ab.")
         return []
@@ -278,6 +291,7 @@ def get_chat_messages(chat_id, limit=50, offset=0):
 
 def delete_chat(chat_id):
     logger.info(f"delete_chat (Postgres) aufgerufen für Chat ID: {chat_id}")
+    add_analytics(None, "delete_chat", f"postgres_chat_db_handler:chat_id={chat_id}")
     if not is_int(chat_id):
         logger.warning(f"delete_chat: Chat-ID '{chat_id}' ist kein Integer. Breche ab.")
         return False

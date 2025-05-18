@@ -14,6 +14,7 @@ load_dotenv()  # Load environment variables from .env file
 import database.handler.postgres.postgres_db_handler as db_handler
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
 import auth as auth_module  # Import our updated auth module
+from database.handler.postgres.postgres_db_handler import add_analytics  # Import add_analytics
 
 # Import Blueprints
 from routes.main_routes import main_bp
@@ -28,8 +29,8 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # TODO: In Produktionsumgebu
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(days=7)  # Session für 7 Tage gültig
 
 # Configure logging early to use it immediately
-if not logging.getLogger().hasHandlers():
-    logging.basicConfig(level=logging.DEBUG)  # Behält die Basiskonfiguration für die Konsole bei
+if not logging.getLogger().hasHandlers():  # This check might be too simple if other libs configure logging
+    logging.basicConfig(level=logging.INFO)  # Changed from DEBUG to INFO for less noise from basicConfig
 logger = logging.getLogger(__name__)  # Logger für app.py
 
 # Dateiprotokollierung einrichten
@@ -45,15 +46,16 @@ file_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %
 # Rotiert bei 1MB, behält 5 Backup-Dateien
 file_handler = RotatingFileHandler(log_file, maxBytes=1024 * 1024, backupCount=5)
 file_handler.setFormatter(file_formatter)
-file_handler.setLevel(logging.DEBUG)  # Protokolliert DEBUG und höhere Level in die Datei
+file_handler.setLevel(logging.INFO)  # Changed from DEBUG to INFO for file logs unless DEBUG is truly needed for app.log
 
 # Füge den Handler zum Root-Logger hinzu, damit alle Module ihn verwenden können
 logging.getLogger().addHandler(file_handler)
 # Füge den Handler auch zum App-Logger hinzu (obwohl der Root-Logger ihn bereits abdeckt, schadet es nicht)
 app.logger.addHandler(file_handler)
-app.logger.setLevel(logging.DEBUG)
+app.logger.setLevel(logging.INFO)  # Changed from DEBUG to INFO
 
 logger.info("Flask App Logger initialisiert und Dateiprotokollierung konfiguriert.")
+add_analytics(None, "app_logger_initialized", "app:module_level")
 
 # Load database path from environment variable or default value
 DATABASE_ENV_PATH_RAW = os.getenv('DATABASE_FILE_PATH', 'database/database.db')
@@ -93,13 +95,16 @@ else:
 # Initialize Firebase Admin SDK
 if not os.getenv('FIREBASE_WEB_API_KEY'):
     logger.warning("FIREBASE_WEB_API_KEY Umgebungsvariable ist nicht gesetzt. Login-Funktionalität wird fehlschlagen.")
+    add_analytics(None, "firebase_web_api_key_missing_warning", "app:module_level")
 
 # Check if the Firebase Default-App is already initialized
 if not firebase_admin._apps:
-    logger.info("Keine Firebase-App von anderen Modulen initialisiert. Rufe auth_module.initialize_firebase_app() auf.")
-    auth_module.initialize_firebase_app()
+    logger.info("Keine Firebase-App von anderen Modulen initialisiert. Rufe auth_module.initialize_firebase_admin_sdk() auf.")
+    # Use the renamed function from auth.py
+    auth_module.initialize_firebase_admin_sdk()  # Analytics inside this function
 else:
-    logger.info("Firebase Admin SDK App bereits initialisiert. Überspringe redundanten Aufruf von auth_module.initialize_firebase_app().")
+    logger.info("Firebase Admin SDK App bereits initialisiert. Überspringe redundanten Aufruf.")
+    add_analytics(None, "firebase_sdk_already_initialized_skip", "app:module_level")
 
 # --- Klarer Hinweis, welche DB verwendet wird ---
 USE_FIREBASE = os.getenv('USE_FIREBASE', 'true').lower() == 'true'
@@ -107,11 +112,11 @@ if USE_FIREBASE:
     try:
         # Korrigiere den Import-Pfad - entferne 'sqlite' da es nicht existiert
         import firebase_admin.db as firebase_db_handler
-        
+
         # Füge eine einfache can_use_firebase Funktion hinzu
         def can_use_firebase():
             return firebase_admin._apps and 'default' in firebase_admin._apps
-            
+
         if can_use_firebase():
             logger.info("✅ SYSTEM: Verwende Firebase Realtime Database als primäres Daten-Backend.")
         else:
@@ -123,12 +128,14 @@ else:
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 logger.info("SocketIO initialisiert.")
+add_analytics(None, "socketio_initialized", "app:module_level")
 
 # Initialize database
 logger.info("Initialisiere Datenbank und Asset-Typen...")
 db_handler.init_db()  # Ensure init_db() uses app.config['DATABASE'] or is consistent
 transactions_handler.init_asset_types()  # Ensure asset types are initialized
 logger.info("Datenbank und Asset-Typen initialisiert.")
+add_analytics(None, "db_and_asset_types_initialized", "app:module_level")
 
 # New database helper functions
 def get_db():
@@ -199,11 +206,15 @@ app.jinja_env.filters['timestamp_to_date'] = timestamp_to_date
 
 @app.errorhandler(404)
 def page_not_found(e):
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "error_404", f"app:page_not_found:url={request.url},error={e}")
     logger.warning(f"404 Fehler - Seite nicht gefunden: {request.url}", exc_info=e)
     return render_template('404.html'), 404
 
 @app.errorhandler(405)
 def method_not_allowed(e):
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "error_405", f"app:method_not_allowed:url={request.url},method={request.method},error={e}")
     logger.warning(f"405 Fehler - Methode nicht erlaubt: {request.method} für {request.url}", exc_info=e)
     return render_template('405.html'), 405
 
@@ -216,20 +227,24 @@ app.register_blueprint(chat_bp, url_prefix='/chat')
 app.register_blueprint(dev_bp, url_prefix='/dev')
 app.register_blueprint(roadmap_bp, url_prefix='/roadmap')
 logger.info("Blueprints registriert.")
+add_analytics(None, "blueprints_registered", "app:module_level")
 
 from routes.chat_routes import register_chat_events
 logger.info("Registriere Chat-Events für SocketIO...")
 register_chat_events(socketio)
 logger.info("Chat-Events registriert.")
+add_analytics(None, "chat_events_registered", "app:module_level")
 
 @app.route('/auth/google-signin', methods=['POST'])
 def google_signin():
+    add_analytics(None, "google_signin_attempt", "app:google_signin")
     logger.info("Google Sign-In Anfrage erhalten.")
     try:
         data = request.get_json()
         id_token = data.get('idToken')
         if not id_token:
             logger.warning("Kein ID-Token im Google Sign-In Request angegeben.")
+            add_analytics(None, "google_signin_fail_no_id_token", "app:google_signin")
             return jsonify({"success": False, "error": "No ID token provided."}), 400
 
         logger.debug(f"Empfangenes ID-Token (erste 30 Zeichen): {id_token[:30]}...")
@@ -240,12 +255,14 @@ def google_signin():
             db_conn = get_db()
         except psycopg2.OperationalError as db_err:
             logger.error(f"PostgreSQL-Verbindungsfehler während Google Sign-In: {db_err}", exc_info=True)
+            add_analytics(None, "google_signin_db_conn_error", f"app:google_signin:error={db_err}")
             return jsonify({"success": False, "error": "Database connection failed. Please try again later."}), 503
 
         local_user = auth_module.get_or_create_local_user_from_firebase(decoded_token, db_conn)
 
         if not local_user:
             logger.error("Fehler beim Abrufen oder Erstellen des lokalen Benutzers nach Google Sign-In.")
+            add_analytics(decoded_token.get('uid'), "google_signin_fail_get_or_create_local_user", "app:google_signin")
             return jsonify({"success": False, "error": "Failed to get or create local user."}), 500
 
         logger.info(f"Lokaler Benutzer (ID: {local_user['id']}) für Google Sign-In erhalten/erstellt.")
@@ -255,18 +272,22 @@ def google_signin():
         session['user_id'] = local_user['id']
         session.permanent = True
         logger.info(f"Session für Benutzer {local_user['id']} (Firebase UID: {decoded_token.get('uid')}) nach Google Sign-In gesetzt.")
+        add_analytics(local_user['id'], "google_signin_success", f"app:google_signin:uid={decoded_token.get('uid')}")
 
         return jsonify({"success": True, "redirect_url": url_for('main.index')})
 
     except ValueError as e:
         logger.error(f"ValueError während Google Sign-In: {e}", exc_info=True)
+        add_analytics(None, "google_signin_value_error", f"app:google_signin:error={e}")
         return jsonify({"success": False, "error": str(e)}), 401
     except Exception as e:
         logger.error(f"Unerwarteter Fehler während Google Sign-In: {e}", exc_info=True)
+        add_analytics(None, "google_signin_exception", f"app:google_signin:error={e}")
         return jsonify({"success": False, "error": "An unexpected error occurred."}), 500
 
 @app.route('/auth/firebase-config')
 def firebase_config():
+    add_analytics(None, "get_firebase_config", "app:firebase_config")
     logger.debug("Firebase-Konfigurationsanfrage empfangen.")
     config = {
         "apiKey": os.environ.get("FIREBASE_WEB_API_KEY"),
@@ -275,6 +296,7 @@ def firebase_config():
     }
     if not all([config["apiKey"], config["authDomain"], config["projectId"]]):
         logger.error("Firebase Web-Konfiguration ist unvollständig. Bitte Umgebungsvariablen prüfen.")
+        add_analytics(None, "get_firebase_config_incomplete", "app:firebase_config")
         return jsonify({"error": "Firebase configuration is incomplete on the server."}), 500
 
     logger.debug(f"Firebase-Konfiguration gesendet: {config}")
@@ -282,12 +304,14 @@ def firebase_config():
 
 @app.route('/auth/anonymous-login', methods=['POST'])
 def anonymous_login():
+    add_analytics(None, "anonymous_login_attempt", "app:anonymous_login")
     logger.info("Anonyme Anmeldung angefordert.")
     try:
         # Generiere eine anonyme Firebase-Benutzer-ID
         anonymous_user = auth_module.create_anonymous_user()
         if not anonymous_user:
             logger.error("Fehler beim Erstellen eines anonymen Benutzers.")
+            add_analytics(None, "anonymous_login_fail_create_fb_user", "app:anonymous_login")
             return jsonify({"success": False, "error": "Failed to create anonymous user."}), 500
 
         logger.info(f"Anonymer Benutzer erstellt: UID={anonymous_user['uid']}")
@@ -298,6 +322,7 @@ def anonymous_login():
 
         if not local_user:
             logger.error("Fehler beim Abrufen oder Erstellen des lokalen Benutzers für anonymen Login.")
+            add_analytics(anonymous_user['uid'], "anonymous_login_fail_get_or_create_local_user", "app:anonymous_login")
             return jsonify({"success": False, "error": "Failed to get or create local user."}), 500
 
         logger.info(f"Lokaler Benutzer (ID: {local_user['id']}) für anonymen Login erhalten/erstellt.")
@@ -308,15 +333,18 @@ def anonymous_login():
         session['user_id'] = local_user['id']
         session.permanent = True
         logger.info(f"Session für anonymen Benutzer {local_user['id']} (Firebase UID: {anonymous_user['uid']}) gesetzt.")
+        add_analytics(local_user['id'], "anonymous_login_success", f"app:anonymous_login:uid={anonymous_user['uid']}")
 
         return jsonify({"success": True, "redirect_url": url_for('main.index')})
 
     except Exception as e:
         logger.error(f"Fehler während der anonymen Anmeldung: {e}", exc_info=True)
+        add_analytics(None, "anonymous_login_exception", f"app:anonymous_login:error={e}")
         return jsonify({"success": False, "error": "An unexpected error occurred."}), 500
 
 application = app
 
 #if __name__ == '__main__':
+#    add_analytics(None, "app_start_main_block", "app:main_block")
 #    logger.info("Starte Flask App mit SocketIO im Debug-Modus auf Port 5000...")
 #    socketio.run(app, debug=True, port=5000)

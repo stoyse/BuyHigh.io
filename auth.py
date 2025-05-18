@@ -5,6 +5,14 @@ import os
 import dotenv
 import json
 import logging
+# Import add_analytics; adjust path if auth.py is moved or postgres_db_handler is elsewhere
+try:
+    from database.handler.postgres.postgres_db_handler import add_analytics
+except ImportError:
+    # Fallback if the structure is different or this file is run standalone
+    def add_analytics(user_id, action, source): # pragma: no cover
+        print(f"Analytics (fallback): user_id={user_id}, action='{action}', source='{source}'")
+
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -16,31 +24,34 @@ logger.addHandler(handler)
 
 # Lade .env Datei falls vorhanden
 dotenv.load_dotenv()
-
+add_analytics(None, "auth_module_loaded", "auth:module_level")
 
 
 # Initialize Firebase Admin SDK
-# It's better to initialize it once in app.py
-# For now, ensure it's initialized before use.
-# Consider moving initialization to app.py for a central place.
-
-def initialize_firebase_app():
+def initialize_firebase_admin_sdk(): # Renamed to avoid conflict if called directly
     # Initialisiert das Firebase Admin SDK (wird beim App-Start aufgerufen)
-    # Path to your Firebase service account key JSON file
-    # Recommended: Use environment variable GOOGLE_APPLICATION_CREDENTIALS
-    # If not set, fallback to a local file path (adjust as needed)
+    add_analytics(None, "initialize_firebase_admin_sdk_attempt", "auth:initialize_firebase_admin_sdk")
     cred_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'firebase-service-account-key.json')
     if os.path.exists(cred_path):
         try:
             cred = credentials.Certificate(cred_path)
-            firebase_admin.initialize_app(cred)
-            print("Firebase Admin SDK initialized successfully.")
+            if not firebase_admin._apps: # Initialize only if not already done
+                firebase_admin.initialize_app(cred)
+                logger.info("Firebase Admin SDK initialized successfully.")
+                add_analytics(None, "initialize_firebase_admin_sdk_success", "auth:initialize_firebase_admin_sdk")
+            else:
+                logger.info("Firebase Admin SDK already initialized.")
+                add_analytics(None, "initialize_firebase_admin_sdk_already_init", "auth:initialize_firebase_admin_sdk")
         except Exception as e:
-            print(f"Error initializing Firebase Admin SDK: {e}")
-            # Handle initialization error, maybe raise an exception or log critical error
+            logger.error(f"Error initializing Firebase Admin SDK: {e}")
+            add_analytics(None, "initialize_firebase_admin_sdk_error", f"auth:initialize_firebase_admin_sdk:error={e}")
     else:
-        print(f"Firebase service account key not found at {cred_path}. Firebase Admin SDK not initialized.")
-        # Handle missing key file
+        logger.warning(f"Firebase service account key not found at {cred_path}. Firebase Admin SDK not initialized.")
+        add_analytics(None, "initialize_firebase_admin_sdk_key_not_found", f"auth:initialize_firebase_admin_sdk:path={cred_path}")
+
+# Call initialize_firebase_admin_sdk at module level if not already initialized by app.py
+if not firebase_admin._apps:
+    initialize_firebase_admin_sdk()
 
 # Get Firebase Web API Key from various sources with fallbacks
 def get_firebase_web_api_key():
@@ -108,18 +119,22 @@ if not FIREBASE_WEB_API_KEY:
 def create_firebase_user(email, password, username):
     # Legt einen neuen User in Firebase Authentication an
     """Creates a new user in Firebase Authentication."""
+    add_analytics(None, "create_firebase_user_attempt", f"auth:create_firebase_user:email={email}")
     try:
         user_record = firebase_auth.create_user(
             email=email,
             password=password,
             display_name=username  # Firebase can store a display name
         )
+        add_analytics(None, "create_firebase_user_success", f"auth:create_firebase_user:email={email},uid={user_record.uid}")
         return user_record.uid
     except firebase_auth.EmailAlreadyExistsError:
+        add_analytics(None, "create_firebase_user_email_exists", f"auth:create_firebase_user:email={email}")
         raise ValueError(f"Email {email} is already registered with Firebase.")
     except Exception as e:
         # Log the detailed error from Firebase
-        print(f"Firebase user creation error: {e}")
+        logger.error(f"Firebase user creation error: {e}")
+        add_analytics(None, "create_firebase_user_exception", f"auth:create_firebase_user:email={email},error={e}")
         raise ValueError(f"Could not create user in Firebase: {e}")
 
 
@@ -129,9 +144,11 @@ def login_firebase_user_rest(email, password):
     Signs in a user using Firebase Auth REST API.
     Returns user's UID and ID token on success.
     """
+    add_analytics(None, "login_firebase_user_rest_attempt", f"auth:login_firebase_user_rest:email={email}")
     if not FIREBASE_WEB_API_KEY:
         error_message = "FIREBASE_WEB_API_KEY ist nicht gesetzt. Login unmöglich."
-        print(error_message)
+        logger.error(error_message)
+        add_analytics(None, "login_firebase_user_rest_no_api_key", "auth:login_firebase_user_rest")
         raise EnvironmentError(error_message)
 
     rest_api_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={FIREBASE_WEB_API_KEY}"
@@ -142,14 +159,15 @@ def login_firebase_user_rest(email, password):
     }
     
     try:
-        print(f"Attempting Firebase login for email: {email}")
+        logger.info(f"Attempting Firebase login for email: {email}")
         response = requests.post(rest_api_url, json=payload)
         
         if response.status_code == 400:
             # Verbesserte Fehlerverarbeitung für 400-Fehler
             error_data = response.json()
             error_message = error_data.get("error", {}).get("message", "Unknown error")
-            print(f"Firebase login failed with error: {error_message}")
+            logger.warning(f"Firebase login failed with error: {error_message}")
+            add_analytics(None, "login_firebase_user_rest_400_error", f"auth:login_firebase_user_rest:email={email},msg={error_message}")
             
             # Ausführlichere Fehlermeldung basierend auf dem Fehlercode
             if error_message == "INVALID_LOGIN_CREDENTIALS":
@@ -167,26 +185,32 @@ def login_firebase_user_rest(email, password):
         
         response.raise_for_status()
         data = response.json()
-        print(f"Firebase login successful for email: {email}")
+        logger.info(f"Firebase login successful for email: {email}")
+        add_analytics(data.get('localId'), "login_firebase_user_rest_success", f"auth:login_firebase_user_rest:email={email}")
         return data.get('localId'), data.get('idToken')
     except requests.exceptions.HTTPError as e:
         error_json = e.response.json() if hasattr(e, 'response') and e.response is not None else {}
         error_message = error_json.get("error", {}).get("message", "Unknown login error")
-        print(f"Firebase HTTP error: {error_message}")
+        logger.warning(f"Firebase HTTP error: {error_message}")
+        add_analytics(None, "login_firebase_user_rest_http_error", f"auth:login_firebase_user_rest:email={email},msg={error_message}")
         raise ValueError(f"Firebase login failed: {error_message}")
     except Exception as e:
-        print(f"Firebase REST API login error: {e}")
+        logger.error(f"Firebase REST API login error: {e}")
+        add_analytics(None, "login_firebase_user_rest_exception", f"auth:login_firebase_user_rest:email={email},error={e}")
         raise ValueError(f"Could not sign in via Firebase REST API: {e}")
 
 
 def delete_firebase_user(uid):
     # Löscht einen User aus Firebase Authentication
     """Deletes a user from Firebase Authentication."""
+    add_analytics(None, "delete_firebase_user_attempt", f"auth:delete_firebase_user:uid={uid}")
     try:
         firebase_auth.delete_user(uid)
+        add_analytics(None, "delete_firebase_user_success", f"auth:delete_firebase_user:uid={uid}")
         return True
     except Exception as e:
-        print(f"Error deleting Firebase user {uid}: {e}")
+        logger.error(f"Error deleting Firebase user {uid}: {e}")
+        add_analytics(None, "delete_firebase_user_error", f"auth:delete_firebase_user:uid={uid},error={e}")
         return False
 
 def verify_firebase_password_rest(email, password):
@@ -196,24 +220,32 @@ def verify_firebase_password_rest(email, password):
     This is essentially trying to log in.
     Returns True if password is correct, False otherwise.
     """
+    add_analytics(None, "verify_firebase_password_rest_attempt", f"auth:verify_firebase_password_rest:email={email}")
     try:
         _, _ = login_firebase_user_rest(email, password)
+        add_analytics(None, "verify_firebase_password_rest_success", f"auth:verify_firebase_password_rest:email={email}")
         return True  # Login successful means password is correct
-    except ValueError:  # Catches "Incorrect email or password" or other login failures
+    except ValueError:
+        add_analytics(None, "verify_firebase_password_rest_fail_value_error", f"auth:verify_firebase_password_rest:email={email}")
         return False
-    except Exception:
-        return False  # Catch any other unexpected errors
+    except Exception as e:
+        add_analytics(None, "verify_firebase_password_rest_fail_exception", f"auth:verify_firebase_password_rest:email={email},error={e}")
+        return False
 
 def verify_firebase_id_token(id_token):
     """Verifiziert ein Firebase ID Token mit dem Admin SDK."""
+    add_analytics(None, "verify_firebase_id_token_attempt", "auth:verify_firebase_id_token")
     try:
         decoded_token = firebase_auth.verify_id_token(id_token)
+        add_analytics(decoded_token.get('uid'), "verify_firebase_id_token_success", f"auth:verify_firebase_id_token:uid={decoded_token.get('uid')}")
         return decoded_token
     except firebase_auth.FirebaseError as e:
-        print(f"Error verifying Firebase ID token: {e}")
+        logger.error(f"Error verifying Firebase ID token: {e}")
+        add_analytics(None, "verify_firebase_id_token_firebase_error", f"auth:verify_firebase_id_token:error={e}")
         raise ValueError(f"Invalid Firebase ID token: {e}")
     except Exception as e:
-        print(f"Unexpected error verifying Firebase ID token: {e}")
+        logger.error(f"Unexpected error verifying Firebase ID token: {e}")
+        add_analytics(None, "verify_firebase_id_token_exception", f"auth:verify_firebase_id_token:error={e}")
         raise ValueError(f"Could not verify ID token: {e}")
 
 def get_or_create_local_user_from_firebase(decoded_token, db): # db ist Ihre Datenbankverbindung/-cursor
@@ -222,6 +254,7 @@ def get_or_create_local_user_from_firebase(decoded_token, db): # db ist Ihre Dat
     in der lokalen Datenbank.
     """
     firebase_uid = decoded_token['uid']
+    add_analytics(None, "get_or_create_local_user_start", f"auth:firebase_uid={firebase_uid}")
     email = decoded_token.get('email')
     # Username-Logik robust machen für anonyme User ohne E-Mail
     if email:
@@ -233,11 +266,13 @@ def get_or_create_local_user_from_firebase(decoded_token, db): # db ist Ihre Dat
 
     cursor = db.cursor()
     cursor.execute("SELECT * FROM users WHERE firebase_uid = %s", (firebase_uid,))
+    add_analytics(None, "get_or_create_local_user_select", f"auth:firebase_uid={firebase_uid}")
     user = cursor.fetchone()
 
     if user:
         # Benutzer existiert, ggf. last_login aktualisieren
         cursor.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE firebase_uid = %s", (firebase_uid,))
+        add_analytics(user['id'] if isinstance(user, dict) else user[0] if user else None, "get_or_create_local_user_update_login", f"auth:firebase_uid={firebase_uid}")
         db.commit()
         print(f"Local user found and updated: {firebase_uid}")
     else:
@@ -247,6 +282,7 @@ def get_or_create_local_user_from_firebase(decoded_token, db): # db ist Ihre Dat
             "INSERT INTO users (username, email, firebase_uid, email_verified, last_login) VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP) RETURNING id",
             (username, email, firebase_uid, decoded_token.get('email_verified', False))
         )
+        add_analytics(None, "get_or_create_local_user_insert", f"auth:firebase_uid={firebase_uid},username={username}")
         user_id_row = cursor.fetchone()
         db.commit()
         user_id = user_id_row['id'] if user_id_row else None
@@ -262,7 +298,9 @@ def get_or_create_local_user_from_firebase(decoded_token, db): # db ist Ihre Dat
 
 def send_password_reset_email(email):
     """Sends a password reset email using Firebase Auth REST API."""
+    add_analytics(None, "send_password_reset_email_attempt", f"auth:send_password_reset_email:email={email}")
     if not FIREBASE_WEB_API_KEY:
+        add_analytics(None, "send_password_reset_email_no_api_key", "auth:send_password_reset_email")
         raise EnvironmentError("FIREBASE_WEB_API_KEY is not set.")
 
     rest_api_url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={FIREBASE_WEB_API_KEY}"
@@ -273,39 +311,44 @@ def send_password_reset_email(email):
     try:
         response = requests.post(rest_api_url, json=payload)
         response.raise_for_status()  # Raises an HTTPError for bad responses (4XX or 5XX)
+        add_analytics(None, "send_password_reset_email_success", f"auth:send_password_reset_email:email={email}")
         return response.json()
     except requests.exceptions.HTTPError as e:
         error_json = e.response.json()
         error_message = error_json.get("error", {}).get("message", "Unknown error")
+        add_analytics(None, "send_password_reset_email_http_error", f"auth:send_password_reset_email:email={email},msg={error_message}")
         if "EMAIL_NOT_FOUND" in error_message:
             raise ValueError("No account exists with this email address.")
         raise ValueError(f"Password reset failed: {error_message}")
     except Exception as e:
-        print(f"Firebase REST API password reset error: {e}")
+        logger.error(f"Firebase REST API password reset error: {e}")
+        add_analytics(None, "send_password_reset_email_exception", f"auth:send_password_reset_email:email={email},error={e}")
         raise ValueError(f"Could not send password reset email: {e}")
 
 def change_firebase_password(uid, new_password):
     """Changes a Firebase user's password using the Admin SDK."""
+    add_analytics(uid, "change_firebase_password_attempt", f"auth:change_firebase_password:uid={uid}")
     try:
         firebase_auth.update_user(
             uid,
             password=new_password
         )
+        add_analytics(uid, "change_firebase_password_success", f"auth:change_firebase_password:uid={uid}")
         return True
     except firebase_auth.FirebaseError as e:
-        print(f"Firebase error changing password: {e}")
+        logger.error(f"Firebase error changing password: {e}")
+        add_analytics(uid, "change_firebase_password_firebase_error", f"auth:change_firebase_password:uid={uid},error={e}")
         if "WEAK_PASSWORD" in str(e):
             raise ValueError("Password should be at least 6 characters long")
         raise ValueError(f"Could not change password: {e}")
     except Exception as e:
-        print(f"Unexpected error changing Firebase password: {e}")
+        logger.error(f"Unexpected error changing Firebase password: {e}")
+        add_analytics(uid, "change_firebase_password_exception", f"auth:change_firebase_password:uid={uid},error={e}")
         raise ValueError(f"Could not change password: {e}")
 
 def get_google_auth_url():
     """Erstellt eine Google OAuth-URL"""
-    import os
-    from google.oauth2 import id_token
-    from google.auth.transport import requests
+    add_analytics(None, "get_google_auth_url_attempt", "auth:get_google_auth_url")
     import urllib.parse
     
     # Google OAuth Konfiguration aus Umgebungsvariablen
@@ -313,6 +356,7 @@ def get_google_auth_url():
     redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
     
     if not client_id or not redirect_uri:
+        add_analytics(None, "get_google_auth_url_config_missing", "auth:get_google_auth_url")
         raise ValueError("GOOGLE_CLIENT_ID und GOOGLE_REDIRECT_URI müssen in den Umgebungsvariablen gesetzt sein")
     
     # OAuth-Parameter
@@ -326,11 +370,12 @@ def get_google_auth_url():
     
     # URL erstellen
     auth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urllib.parse.urlencode(params)
+    add_analytics(None, "get_google_auth_url_success", "auth:get_google_auth_url")
     return auth_url
 
 def exchange_google_code(auth_code):
     """Tauscht den OAuth-Code gegen Benutzerinformationen aus"""
-    import os
+    add_analytics(None, "exchange_google_code_attempt", "auth:exchange_google_code")
     import requests
     from google.oauth2 import id_token
     from google.auth.transport import requests as google_requests
@@ -341,6 +386,7 @@ def exchange_google_code(auth_code):
     redirect_uri = os.getenv('GOOGLE_REDIRECT_URI')
     
     if not client_id or not client_secret or not redirect_uri:
+        add_analytics(None, "exchange_google_code_config_missing", "auth:exchange_google_code")
         raise ValueError("Google OAuth Konfiguration unvollständig")
     
     # Token-Request an Google OAuth-Server
@@ -355,6 +401,7 @@ def exchange_google_code(auth_code):
     
     response = requests.post(token_url, data=token_data)
     if not response.ok:
+        add_analytics(None, "exchange_google_code_token_request_fail", f"auth:exchange_google_code:status={response.status_code}")
         return None
     
     token_json = response.json()
@@ -366,6 +413,7 @@ def exchange_google_code(auth_code):
     
     # Firebase Custom Token erstellen
     firebase_uid = 'google_' + id_info['sub']  # Google-Benutzer-ID als Firebase UID verwenden
+    add_analytics(firebase_uid, "exchange_google_code_success", f"auth:exchange_google_code:email={id_info['email']}")
     
     # Benutzerinformationen zurückgeben
     return {
@@ -379,10 +427,21 @@ def create_anonymous_user():
     """
     Erstellt einen anonymen Benutzer in Firebase.
     """
+    add_analytics(None, "create_anonymous_user_attempt", "auth:create_anonymous_user")
     try:
+        # Ensure Firebase is initialized
+        if not firebase_admin._apps:
+            initialize_firebase_admin_sdk()
+            if not firebase_admin._apps:
+                logger.error("Firebase not initialized, cannot create anonymous user.")
+                add_analytics(None, "create_anonymous_user_fail_fb_not_init", "auth:create_anonymous_user")
+                return None
+
         user_record = firebase_admin.auth.create_user()
         logger.info(f"Anonymer Firebase-Benutzer erstellt: UID={user_record.uid}")
+        add_analytics(user_record.uid, "create_anonymous_user_success", "auth:create_anonymous_user")
         return {"uid": user_record.uid}
     except Exception as e:
         logger.error(f"Fehler beim Erstellen eines anonymen Firebase-Benutzers: {e}", exc_info=True)
+        add_analytics(None, "create_anonymous_user_exception", f"auth:create_anonymous_user:error={e}")
         return None

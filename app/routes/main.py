@@ -5,6 +5,12 @@ from app import db
 from datetime import datetime, timedelta
 import random
 
+try:
+    from database.handler.postgres.postgres_db_handler import add_analytics
+except ImportError:
+    def add_analytics(user_id, action, source):  # pragma: no cover
+        print(f"Analytics (fallback for app.routes.main): user_id={user_id}, action='{action}', source='{source}'")
+
 main = Blueprint('main', __name__)
 
 # Other routes...
@@ -12,6 +18,9 @@ main = Blueprint('main', __name__)
 @main.route('/dashboard')
 @login_required
 def dashboard():
+    user_id_for_analytics = current_user.id if current_user and current_user.is_authenticated else None
+    add_analytics(user_id_for_analytics, "view_dashboard_alt_structure", "app.routes.main:dashboard")
+    
     # Get recent transactions
     recent_transactions = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(5).all()
     
@@ -75,6 +84,7 @@ def dashboard():
         "Paper hands lose money, diamond hands gain glory! 💰"
     ]
     dog_message = random.choice(dog_messages)
+    add_analytics(user_id_for_analytics, "generated_dog_message_alt_dashboard", f"app.routes.main:dashboard,message={dog_message[:20]}")
     
     return render_template('dashboard.html', 
                            recent_transactions=recent_transactions,

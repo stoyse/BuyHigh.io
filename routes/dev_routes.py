@@ -8,6 +8,7 @@ import database.handler.postgres.postgre_market_mayhem_handler as mayhem_handler
 from rich import print
 import tools.api_check as api_check
 import tools.config as config
+from database.handler.postgres.postgres_db_handler import add_analytics  # Import add_analytics
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,8 @@ dev_bp = Blueprint('dev', __name__)
 @login_required
 @dev_required
 def index():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "dev_view_index", "dev_routes:index")
     logger.debug("Rendering developer dashboard page")
     
     return render_template(
@@ -30,6 +33,8 @@ def index():
 @login_required
 @dev_required
 def db_explorer():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "dev_view_db_explorer", "dev_routes:db_explorer")
     logger.debug("Rendering database explorer page")
     tables = dev_handler.get_all_tables()
     table_data = {}
@@ -45,7 +50,11 @@ def db_explorer():
     )
 
 @dev_bp.route('/daily-quiz', methods=['GET', 'POST'])
+@login_required
+@dev_required
 def daily_quiz():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, f"dev_daily_quiz_method_{request.method}", "dev_routes:daily_quiz")
     logger.debug("Handling daily quiz submission")
     if request.method == 'POST':
         quizDate = request.form.get('date')
@@ -66,27 +75,37 @@ def daily_quiz():
 @login_required
 @dev_required
 def delete_daily_quiz(quiz_id):
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, f"dev_delete_daily_quiz_method_{request.method}", f"dev_routes:delete_daily_quiz:quiz_id={quiz_id}")
     logger.debug(f"Deleting daily quiz with ID: {quiz_id}")
     if request.method == 'POST':
         edu_handler.delete_daily_quiz(quiz_id)
         flash('Quiz deleted successfully!', 'success')
         return redirect(url_for('dev.daily_quiz'))
     
-    quiz = edu_handler.get_daily_quiz_by_id(quiz_id)
-    return render_template('dev/daily_quiz.html', quiz=quiz)
+    return redirect(url_for('dev.daily_quiz'))
 
 @dev_bp.route('/logs',)
 @login_required
 @dev_required
 def logs():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "dev_view_logs", "dev_routes:logs")
     logger.debug("Rendering logs page")
-    logs = open('logs/app.log', 'r').readlines()
-    return render_template('dev/logs.html', logs=logs)
+    try:
+        with open('logs/app.log', 'r') as f:
+            log_lines = f.readlines()
+    except FileNotFoundError:
+        log_lines = ["Log file not found."]
+        flash("Log file not found.", "warning")
+    return render_template('dev/logs.html', logs=log_lines)
 
 @dev_bp.route('/api-explorer')
 @login_required
 @dev_required
 def api_explorer():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "dev_view_api_explorer", "dev_routes:api_explorer")
     print(f"[bold green]{api_check.check_api_status()}[/bold green]")
     return render_template('dev/api_explorer.html',
                            api_check=api_check.check_api_status(),
@@ -97,6 +116,8 @@ def api_explorer():
 @login_required
 @dev_required
 def user_management():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "dev_view_user_management", "dev_routes:user_management")
     logger.debug("Rendering user management page")
     print(f"[bold green]{db_handler.get_all_users()}[/bold green]")
     return render_template('dev/user_management.html',
@@ -105,7 +126,9 @@ def user_management():
 @dev_bp.route('/user-management/delete/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 @dev_required
-def delete_user_view(user_id):  # Name geändert
+def delete_user_view(user_id):
+    admin_user_id = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(admin_user_id, f"dev_delete_user_method_{request.method}", f"dev_routes:delete_user_view:user_to_delete={user_id}")
     logger.debug(f"Deleting user with ID: {user_id}")
     print(f'[red]Deleting user with ID: {user_id}[/]')
     if request.method == 'POST':
@@ -115,11 +138,12 @@ def delete_user_view(user_id):  # Name geändert
     
     return redirect(url_for('dev.user_management'))
 
-
 @dev_bp.route('/mayhem')
 @login_required
 @dev_required
 def mayhem():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "dev_view_mayhem", "dev_routes:mayhem")
     logger.debug("Rendering mayhem page")
     return render_template('dev/mayhem.html',
                            all_mayhem=mayhem_handler.get_all_mayhem(),
@@ -130,6 +154,8 @@ def mayhem():
 @login_required
 @dev_required
 def mayhem_shedule(scenario_id):
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, f"dev_schedule_mayhem_method_{request.method}", f"dev_routes:mayhem_shedule:scenario={scenario_id}")
     logger.debug(f"Scheduling mayhem for scenario ID: {scenario_id}")
     if request.method == 'POST':
         start_time = request.form.get('start_time')
@@ -137,10 +163,17 @@ def mayhem_shedule(scenario_id):
         result = request.form.get('result')
         print(f"[purple]Start Time: {start_time}, End Time: {end_time}, Result: {result}")
         
-        # Updated function call with all parameters
         mayhem_handler.schedule_mayhem(scenario_id, start_time, end_time, result)
         flash('Mayhem scheduled successfully!', 'success')
         return redirect(url_for('dev.mayhem'))
     
     mayhem_data = mayhem_handler.get_mayhem_data(scenario_id)
-    return render_template('dev/mayhem.html', mayhem_data=mayhem_data)
+    return render_template('dev/mayhem_schedule_form.html', mayhem_data=mayhem_data, scenario_id=scenario_id)
+
+
+@dev_bp.route('/analytics')
+@login_required
+@dev_required
+def analytics():
+    return render_template('dev/analytics.html',
+                           all_analytics=db_handler.get_all_analytics())

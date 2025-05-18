@@ -5,6 +5,7 @@ from datetime import datetime
 import logging
 from rich import print
 import datetime
+from .postgres_db_handler import add_analytics  # Import add_analytics
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +17,9 @@ PG_USER = os.getenv('POSTGRES_USER', 'postgres')
 PG_PASSWORD = os.getenv('POSTGRES_PASSWORD', '')
 
 def get_db_connection():
-    print('[bold blue]Connection to DB from DEV Handler[/bold blue]')
+    print('[bold blue]Connection to DB from Market Mayhem Handler[/bold blue]')
     """Stellt eine Verbindung zur PostgreSQL-Datenbank her."""
+    add_analytics(None, "get_db_connection_mayhem_handler", "postgre_market_mayhem_handler:get_db_connection")
     try:
         conn = psycopg2.connect(
             host=PG_HOST,
@@ -30,9 +32,11 @@ def get_db_connection():
         return conn
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Öffnen der PostgreSQL-Verbindung: {e}", exc_info=True)
+        add_analytics(None, "get_db_connection_mayhem_handler_error", f"postgre_market_mayhem_handler:get_db_connection:error={e}")
         raise
 
 def get_all_mayhem():
+    add_analytics(None, "get_all_mayhem", "postgre_market_mayhem_handler")
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -47,6 +51,7 @@ def get_all_mayhem():
         raise
 
 def get_all_mayhem_scenarios():
+    add_analytics(None, "get_all_mayhem_scenarios", "postgre_market_mayhem_handler")
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -62,6 +67,7 @@ def get_all_mayhem_scenarios():
 
 def get_mayhem_data(scenario_id):
     data = {}
+    add_analytics(None, "get_mayhem_data", f"postgre_market_mayhem_handler:scenario_id={scenario_id}")
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -78,6 +84,7 @@ def get_mayhem_data(scenario_id):
     return data    
 
 def check_if_mayhem():
+    add_analytics(None, "check_if_mayhem", "postgre_market_mayhem_handler")
     data = get_all_mayhem()
     today = datetime.datetime.now().strftime('%Y-%m-%d')  # Get today's date as a string
     events = {}
@@ -94,6 +101,7 @@ def check_if_mayhem():
     return events
 
 def schedule_mayhem(scenario_id, start_time=None, end_time=None, result=None):
+    add_analytics(None, "schedule_mayhem", f"postgre_market_mayhem_handler:scenario_id={scenario_id}")
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:

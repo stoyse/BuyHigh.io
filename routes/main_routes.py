@@ -7,6 +7,7 @@ from rich import print
 import database.handler.postgres.postgre_education_handler as edu_handler
 import datetime
 import database.handler.postgres.postgre_market_mayhem_handler as market_mayhem_handler
+from database.handler.postgres.postgres_db_handler import add_analytics  # Import add_analytics
 
 # Configure basic logging
 # logging.basicConfig(level=logging.DEBUG) # Wird jetzt in app.py global konfiguriert
@@ -17,6 +18,8 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route('/')
 @login_required
 def index():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "view_index", "main_routes:index")
     logger.info(f"Index-Seite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Nicht angemeldet'}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     logger.debug(f"Index: Dark Mode Active: {dark_mode_active}")
@@ -25,6 +28,8 @@ def index():
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "view_dashboard", "main_routes:dashboard")
     logger.info(f"Dashboard aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'} (ID: {g.user.get('id') if g.user else 'N/A'})")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     
@@ -58,6 +63,7 @@ def dashboard():
         """
         Berechnet den prozentualen Fortschritt zum nächsten Level basierend auf aktuellem XP und XP-Anforderung des nächsten Levels.
         """
+        add_analytics(g.user.get('id') if hasattr(g, 'user') and g.user else None, "calculate_xp_percentage", "main_routes:dashboard:calculate_xp_percentage")
         current_level_data = next((lvl for lvl in levels if lvl['level'] == current_level), None)
         next_level_data = next((lvl for lvl in levels if lvl['level'] == current_level + 1), None)
 
@@ -177,6 +183,8 @@ def dashboard():
 
 # Generate a personalized dog message based on user data and portfolio
 def generate_dog_message(user, portfolio_data):
+    user_id_for_analytics = user.get('id') if user else None
+    add_analytics(user_id_for_analytics, "generate_dog_message", "main_routes:generate_dog_message")
     logger.debug(f"generate_dog_message called for user: {user.get('username')}")
     # Default message if we can't personalize
     default_message = "Woof! Welcome to your dashboard!"
@@ -213,6 +221,8 @@ def generate_dog_message(user, portfolio_data):
 @main_bp.route('/trade')
 @login_required
 def trade():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "view_trade", "main_routes:trade")
     logger.info(f"Trade-Seite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     
@@ -228,6 +238,8 @@ def trade():
 @main_bp.route('/news')
 @login_required
 def news():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "view_news_general", "main_routes:news")
     logger.info(f"News-Seite (allgemein) aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     news_data = stock_news.fetch_general_news("general")
@@ -238,6 +250,8 @@ def news():
 @main_bp.route('/news/<symbol>')
 @login_required
 def company_news(symbol):
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "view_news_company", f"main_routes:company_news:symbol={symbol}")
     logger.info(f"News-Seite für Symbol '{symbol}' aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     news_data = stock_news.fetch_company_news(symbol, "2025-01-01", "2025-01-02") # Daten sind statisch, ggf. anpassen
@@ -248,12 +262,15 @@ def company_news(symbol):
 @main_bp.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, f"view_settings_method_{request.method}", "main_routes:settings")
     logger.info(f"Einstellungsseite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'} (Methode: {request.method})")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     import auth as auth_module
 
     if request.method == 'POST':
         form_type = request.form.get('form_type')
+        add_analytics(user_id_for_analytics, f"settings_post_form_{form_type}", "main_routes:settings")
         logger.debug(f"POST-Anfrage an Einstellungen: form_type='{form_type}'")
 
         if form_type == 'theme_settings':
@@ -313,6 +330,8 @@ def settings():
 @main_bp.route('/profile')
 @login_required
 def profile():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "view_profile", "main_routes:profile")
     logger.info(f"Profilseite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     print(f'[cyan]Profilseite aufgerufen von Benutzer: {g.user}')
@@ -321,6 +340,8 @@ def profile():
 @main_bp.route('/transactions')
 @login_required
 def transactions():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "view_transactions", "main_routes:transactions")
     logger.info(f"Transaktionsseite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     
@@ -336,6 +357,8 @@ def transactions():
 @main_bp.route('/trader_badges')
 @login_required
 def trader_badges():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "view_trader_badges", "main_routes:trader_badges")
     logger.info(f"Trader Badges-Seite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     
@@ -379,6 +402,8 @@ def trader_badges():
 @main_bp.route('/daily-quiz', methods=['GET', 'POST'])
 @login_required
 def daily_quiz():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, f"daily_quiz_submission_method_{request.method}", "main_routes:daily_quiz")
     possible_answer_1 = request.form.get("possible_answer_1")
     possible_answer_2 = request.form.get("possible_answer_2")
     possible_answer_3 = request.form.get("possible_answer_3")
@@ -407,6 +432,8 @@ def api_mayhem():
     """
     API-Route, um aktuelle Marktereignisse zurückzugeben.
     """
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "api_get_mayhem", "main_routes:api_mayhem")
     mayhem_data = market_mayhem_handler.check_if_mayhem()
     if mayhem_data:
         return mayhem_data, 200
@@ -416,6 +443,8 @@ def api_mayhem():
 @main_bp.route('/social')
 @login_required
 def social():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "view_social", "main_routes:social")
     logger.info(f"Soziale Seite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     print(f'[cynan] All profiles:', db_handler.get_all_profiles())

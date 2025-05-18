@@ -4,6 +4,7 @@ import psycopg2.extras
 from datetime import datetime
 import logging
 from rich import print
+from .postgres_db_handler import add_analytics  # Import add_analytics
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ PG_PASSWORD = os.getenv('POSTGRES_PASSWORD', '')
 def get_db_connection():
     print('[bold blue]Connection to DB from Education Handler[/bold blue]')
     """Stellt eine Verbindung zur PostgreSQL-Datenbank her."""
+    add_analytics(None, "get_db_connection_edu_handler", "postgre_education_handler:get_db_connection")
     try:
         conn = psycopg2.connect(
             host=PG_HOST,
@@ -29,6 +31,7 @@ def get_db_connection():
         return conn
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Öffnen der PostgreSQL-Verbindung: {e}", exc_info=True)
+        add_analytics(None, "get_db_connection_edu_handler_error", f"postgre_education_handler:get_db_connection:error={e}")
         raise
 
 def _parse_user_timestamps(user_row):
@@ -47,6 +50,7 @@ def _parse_user_timestamps(user_row):
 
 def get_daily_quiz(date):
     """Lädt das tägliche Quiz für ein bestimmtes Datum aus der PostgreSQL-Datenbank."""
+    add_analytics(None, "get_daily_quiz", f"postgre_education_handler:date={date}")
     try:
         conn = get_db_connection()
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -64,6 +68,7 @@ def insert_daily_quiz_attempt(user_id, quiz_id, selected_answer, is_correct):
     """
     Fügt einen neuen Eintrag in die Tabelle daily_quiz_attempts ein.
     """
+    add_analytics(user_id, "insert_daily_quiz_attempt", f"postgre_education_handler:quiz_id={quiz_id},correct={is_correct}")
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
@@ -84,6 +89,7 @@ def get_daily_quiz_attempts(user_id):
     """
     Lädt alle täglichen Quizversuche eines Benutzers aus der PostgreSQL-Datenbank.
     """
+    add_analytics(user_id, "get_daily_quiz_attempts", "postgre_education_handler")
     try:
         conn = get_db_connection()
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -103,6 +109,7 @@ def get_dayly_quiz_attempt_day(user_id, date):
     """
     Lädt den täglichen Quizversuch eines Benutzers für ein bestimmtes Datum aus der PostgreSQL-Datenbank.
     """
+    add_analytics(user_id, "get_dayly_quiz_attempt_day", f"postgre_education_handler:date={date}")
     try:
         conn = get_db_connection()
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -125,6 +132,7 @@ def create_daily_quiz(date, question, possible_answer_1, possible_answer_2, poss
     """
     Erstellt ein neues tägliches Quiz in der PostgreSQL-Datenbank.
     """
+    add_analytics(None, "create_daily_quiz", f"postgre_education_handler:date={date}")
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:
@@ -144,6 +152,7 @@ def get_all_daily_quizzes():
     """
     Lädt alle täglichen Quiz aus der PostgreSQL-Datenbank.
     """
+    add_analytics(None, "get_all_daily_quizzes", "postgre_education_handler")
     try:
         conn = get_db_connection()
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -161,6 +170,7 @@ def delete_daily_quiz(quiz_id):
     """
     Löscht ein tägliches Quiz aus der PostgreSQL-Datenbank.
     """
+    add_analytics(None, "delete_daily_quiz", f"postgre_education_handler:quiz_id={quiz_id}")
     try:
         conn = get_db_connection()
         with conn.cursor() as cursor:

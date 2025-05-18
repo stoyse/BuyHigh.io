@@ -342,3 +342,12 @@ CREATE TABLE IF NOT EXISTS user_roadmap_progress (
     completed_at TIMESTAMP, -- Zeitstempel, wann der Schritt abgeschlossen wurde
     UNIQUE(user_id, roadmap_id, step_id) -- Sicherstellen, dass ein Benutzer denselben Schritt nicht mehrfach abschließt
 );
+
+CREATE TABLE IF NOT EXISTS analytics (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NULL, 
+    action TEXT NOT NULL, -- Die Aktion des Benutzers (z. B. 'login', 'trade', 'view_asset')
+    source_details TEXT, -- Details zur Quelle der Aktion (z. B. 'web', 'mobile')
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Zeitstempel der Aktion
+    details JSONB -- Zusätzliche Details zur Aktion (z. B. Asset-Symbol, Preis)
+);

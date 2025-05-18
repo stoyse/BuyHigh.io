@@ -1,0 +1,428 @@
+{% extends 'dev/base.html' %}
+
+{% block title %}Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .filter-item {
+        transition: all 0.2s ease;
+    }
+    
+    .filter-item:hover {
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    
+    .filter-item.active {
+        background-color: rgba(59, 130, 246, 0.2);
+        border-color: #3b82f6;
+    }
+    
+    /* Custom scrollbar for the analytics table */
+    .analytics-table-container {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .analytics-table-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .analytics-table-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .analytics-table-container::-webkit-scrollbar-thumb {
+        background: #c5c5c5;
+        border-radius: 4px;
+    }
+    
+    .analytics-table-container::-webkit-scrollbar-thumb:hover {
+        background: #a0a0a0;
+    }
+    
+    /* Highlight effect for table rows */
+    tr.analytics-row {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    tr.analytics-row:hover {
+        background-color: rgba(59, 130, 246, 0.05);
+    }
+    
+    /* Source type badges */
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 9999px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold">System Analytics</h1>
+        <div class="flex space-x-2">
+            <button id="refresh-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center">
+                <i class="fas fa-sync-alt mr-1"></i> Refresh
+            </button>
+            <button id="export-btn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md flex items-center">
+                <i class="fas fa-file-export mr-1"></i> Export
+            </button>
+        </div>
+    </div>
+    
+    <!-- Analytics Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="stats-card bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-medium mb-2">Total Events</h3>
+            <p class="text-3xl font-bold" id="total-events">{{ all_analytics|length }}</p>
+            <p class="text-sm mt-2">
+                <i class="fas fa-chart-line"></i> System activity
+            </p>
+        </div>
+        
+        <div class="stats-card bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-medium mb-2">Unique Actions</h3>
+            <p class="text-3xl font-bold" id="unique-actions">
+                {{ all_analytics|map(attribute='action')|unique|list|length }}
+            </p>
+            <p class="text-sm mt-2">
+                <i class="fas fa-code-branch"></i> Different operations
+            </p>
+        </div>
+        
+        <div class="stats-card bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-medium mb-2">User Actions</h3>
+            <p class="text-3xl font-bold" id="user-actions">
+                {{ all_analytics|selectattr('user_id', 'ne', None)|list|length }}
+            </p>
+            <p class="text-sm mt-2">
+                <i class="fas fa-user-cog"></i> User-initiated events
+            </p>
+        </div>
+        
+        <div class="stats-card bg-gradient-to-br from-red-500 to-red-600 text-white p-4 rounded-lg shadow-md">
+            <h3 class="text-lg font-medium mb-2">System Events</h3>
+            <p class="text-3xl font-bold" id="system-events">
+                {{ all_analytics|selectattr('user_id', 'eq', None)|list|length }}
+            </p>
+            <p class="text-sm mt-2">
+                <i class="fas fa-server"></i> System-initiated events
+            </p>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="bg-white border rounded-lg shadow-sm p-4">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center">
+                <label for="filter-search" class="mr-2 font-medium">Search:</label>
+                <input type="text" id="filter-search" class="px-3 py-2 border rounded-md w-64" placeholder="Filter by action or source...">
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <label class="font-medium">Filter by:</label>
+                <button class="filter-item active px-3 py-1 border rounded-md" data-filter="all">All</button>
+                <button class="filter-item px-3 py-1 border rounded-md" data-filter="user">User Events</button>
+                <button class="filter-item px-3 py-1 border rounded-md" data-filter="system">System Events</button>
+                <button class="filter-item px-3 py-1 border rounded-md" data-filter="errors">Errors</button>
+            </div>
+        </div>
+        
+        <div class="mt-4 flex flex-wrap gap-2" id="action-filters">
+            <span class="text-sm font-medium mr-2">Common Actions:</span>
+            <!-- Will be populated with JavaScript -->
+        </div>
+    </div>
+    
+    <!-- Analytics Table -->
+    <div class="bg-white border rounded-lg shadow-sm p-4">
+        <h2 class="text-xl font-bold mb-4">Event Log</h2>
+        <div class="analytics-table-container">
+            <table class="min-w-full table-auto" id="analytics-table">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-4 py-2 text-left">ID</th>
+                        <th class="px-4 py-2 text-left">Timestamp</th>
+                        <th class="px-4 py-2 text-left">User ID</th>
+                        <th class="px-4 py-2 text-left">Action</th>
+                        <th class="px-4 py-2 text-left">Source</th>
+                        <th class="px-4 py-2 text-left">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in all_analytics %}
+                    <tr class="analytics-row border-b hover:bg-gray-50" data-id="{{ entry.id }}">
+                        <td class="px-4 py-3 text-sm">{{ entry.id }}</td>
+                        <td class="px-4 py-3 text-sm">{{ entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if entry.user_id %}
+                            <span class="badge bg-blue-100 text-blue-800">{{ entry.user_id }}</span>
+                            {% else %}
+                            <span class="badge bg-gray-100 text-gray-800">System</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            {% if 'error' in entry.action.lower() %}
+                            <span class="text-red-600 font-medium">{{ entry.action }}</span>
+                            {% elif 'success' in entry.action.lower() %}
+                            <span class="text-green-600 font-medium">{{ entry.action }}</span>
+                            {% else %}
+                            {{ entry.action }}
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm">{{ entry.source_details }}</td>
+                        <td class="px-4 py-3 text-sm">{{ entry.details or "-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Event Details Modal (Hidden by default) -->
+    <div id="event-details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-lg w-11/12 md:w-3/4 lg:w-1/2 max-h-[90vh] overflow-auto">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold" id="modal-title">Event Details</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6" id="modal-content">
+                <!-- Content will be filled with JavaScript -->
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end">
+                <button id="close-modal-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all analytics data from the table
+        const analyticsRows = document.querySelectorAll('.analytics-row');
+        const searchInput = document.getElementById('filter-search');
+        const filterButtons = document.querySelectorAll('.filter-item');
+        const modal = document.getElementById('event-details-modal');
+        const closeModal = document.getElementById('close-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        
+        // Generate action filters
+        const actionFiltersContainer = document.getElementById('action-filters');
+        const actions = new Map();
+        
+        // Count occurrences of each action
+        analyticsRows.forEach(row => {
+            const action = row.querySelector('td:nth-child(4)').textContent.trim();
+            actions.set(action, (actions.get(action) || 0) + 1);
+        });
+        
+        // Sort actions by frequency and take top 10
+        const topActions = Array.from(actions.entries())
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+        
+        // Create filter buttons for top actions
+        topActions.forEach(([action, count]) => {
+            const actionButton = document.createElement('button');
+            actionButton.className = 'filter-item text-xs px-2 py-1 border rounded-md';
+            actionButton.textContent = `${action} (${count})`;
+            actionButton.dataset.action = action;
+            actionFiltersContainer.appendChild(actionButton);
+            
+            // Add event listener to filter by this action
+            actionButton.addEventListener('click', () => {
+                // Reset all action filter buttons
+                document.querySelectorAll('#action-filters .filter-item').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                // Set this button as active
+                actionButton.classList.add('active');
+                
+                // Apply filter
+                filterTable({ action: action });
+            });
+        });
+        
+        // Filter functions
+        function filterTable(filters = {}) {
+            analyticsRows.forEach(row => {
+                let show = true;
+                
+                // Filter by search text if provided
+                if (filters.search) {
+                    const searchableContent = row.textContent.toLowerCase();
+                    if (!searchableContent.includes(filters.search.toLowerCase())) {
+                        show = false;
+                    }
+                }
+                
+                // Filter by type (user/system/error)
+                if (filters.type) {
+                    const userId = row.querySelector('td:nth-child(3)').textContent.trim();
+                    const action = row.querySelector('td:nth-child(4)').textContent.trim().toLowerCase();
+                    
+                    if (filters.type === 'user' && userId.includes('System')) {
+                        show = false;
+                    } else if (filters.type === 'system' && !userId.includes('System')) {
+                        show = false;
+                    } else if (filters.type === 'errors' && !action.includes('error')) {
+                        show = false;
+                    }
+                }
+                
+                // Filter by specific action if provided
+                if (filters.action) {
+                    const action = row.querySelector('td:nth-child(4)').textContent.trim();
+                    if (action !== filters.action) {
+                        show = false;
+                    }
+                }
+                
+                row.style.display = show ? '' : 'none';
+            });
+        }
+        
+        // Search input event listener
+        searchInput.addEventListener('input', () => {
+            filterTable({ search: searchInput.value });
+        });
+        
+        // Type filter buttons
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Update active state
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Reset action filters
+                document.querySelectorAll('#action-filters .filter-item').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                const filterType = button.dataset.filter;
+                
+                // Apply filter
+                if (filterType === 'all') {
+                    filterTable();
+                } else {
+                    filterTable({ type: filterType });
+                }
+            });
+        });
+        
+        // Modal handling
+        analyticsRows.forEach(row => {
+            row.addEventListener('click', () => {
+                const id = row.dataset.id;
+                const timestamp = row.querySelector('td:nth-child(2)').textContent.trim();
+                const userId = row.querySelector('td:nth-child(3)').textContent.trim();
+                const action = row.querySelector('td:nth-child(4)').textContent.trim();
+                const source = row.querySelector('td:nth-child(5)').textContent.trim();
+                const details = row.querySelector('td:nth-child(6)').textContent.trim();
+                
+                document.getElementById('modal-title').textContent = `Event #${id}: ${action}`;
+                
+                const content = document.getElementById('modal-content');
+                content.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-500">TIMESTAMP</h4>
+                            <p>${timestamp}</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-500">USER</h4>
+                            <p>${userId}</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-500">ACTION</h4>
+                            <p>${action}</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-500">SOURCE</h4>
+                            <p>${source}</p>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-gray-500">DETAILS</h4>
+                            <p>${details === '-' ? 'No additional details' : details}</p>
+                        </div>
+                    </div>
+                `;
+                
+                modal.classList.remove('hidden');
+            });
+        });
+        
+        // Close modal handlers
+        closeModal.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+        
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+        
+        // Refresh button handler
+        document.getElementById('refresh-btn').addEventListener('click', function() {
+            this.classList.add('animate-pulse');
+            setTimeout(() => {
+                this.classList.remove('animate-pulse');
+                window.location.reload();
+            }, 800);
+        });
+        
+        // Export button handler
+        document.getElementById('export-btn').addEventListener('click', function() {
+            // Create CSV content
+            let csv = 'ID,Timestamp,User ID,Action,Source,Details\n';
+            
+            analyticsRows.forEach(row => {
+                if (row.style.display !== 'none') {
+                    const id = row.querySelector('td:nth-child(1)').textContent.trim();
+                    const timestamp = row.querySelector('td:nth-child(2)').textContent.trim();
+                    const userId = row.querySelector('td:nth-child(3)').innerText.trim();
+                    const action = row.querySelector('td:nth-child(4)').textContent.trim();
+                    const source = row.querySelector('td:nth-child(5)').textContent.trim();
+                    const details = row.querySelector('td:nth-child(6)').textContent.trim();
+                    
+                    // Escape fields that might contain commas
+                    csv += `"${id}","${timestamp}","${userId}","${action}","${source}","${details}"\n`;
+                }
+            });
+            
+            // Create download link
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'analytics-export.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+    });
+</script>
+{% endblock %}

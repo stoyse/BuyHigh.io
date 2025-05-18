@@ -92,6 +92,7 @@ def roadmap(roadmap_id=1):  # Default to roadmap ID 1 if none provided
 @roadmap_bp.route('/step/<int:roadmap_id>/<step_id>')
 @login_required
 def roadmap_step(roadmap_id, step_id): # step_id is a string from URL
+    add_analytics(g.user.get('id') if hasattr(g, 'user') and g.user else None, "roadmap_step_view", f"roadmap_routes:roadmap_id={roadmap_id},step_id={step_id}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     
     all_steps_for_roadmap = roadmap_handler.get_roadmap_steps(roadmap_id)
@@ -200,6 +201,7 @@ def roadmap_step(roadmap_id, step_id): # step_id is a string from URL
 @roadmap_bp.route('/submit_quiz', methods=['POST'])
 @login_required
 def submit_quiz():
+    add_analytics(g.user.get('id') if hasattr(g, 'user') and g.user else None, "submit_quiz_attempt", "roadmap_routes")
     # Log all form data for debugging - hilfreich, um zu sehen, was ankommt
     logger.debug(f"submit_quiz called. Form data: {request.form.to_dict()}")
 
@@ -332,6 +334,7 @@ def submit_quiz():
 @roadmap_bp.route('/roadmap-collection')
 @login_required
 def roadmap_collection():
+    add_analytics(g.user.get('id') if hasattr(g, 'user') and g.user else None, "roadmap_collection_view", "roadmap_routes")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     user_id = g.user.get('id')
     
@@ -374,7 +377,9 @@ def roadmap_collection():
 @roadmap_bp.route('/create_roadmap', methods=['GET', 'POST'])
 @login_required
 def create_roadmap():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
     if request.method == 'POST':
+        add_analytics(user_id_for_analytics, "create_roadmap_post_start", "roadmap_routes")
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
         roadmap_title = request.form.get('roadmap_title')
@@ -395,6 +400,7 @@ def create_roadmap():
                 "INSERT INTO roadmap (title, description) VALUES (%s, %s) RETURNING id",
                 (roadmap_title, roadmap_description)
             )
+            add_analytics(user_id_for_analytics, "create_roadmap_insert_roadmap", "roadmap_routes")
             roadmap_id = cursor.fetchone()[0]
             
             step_titles = request.form.getlist('step_title[]')
@@ -433,6 +439,7 @@ def create_roadmap():
                     """,
                     (roadmap_id, step_number, step_title, step_description, layout_array, step_explain)
                 )
+                add_analytics(user_id_for_analytics, "create_roadmap_insert_step", f"roadmap_routes:roadmap_id={roadmap_id}")
                 step_id = cursor.fetchone()[0]
                 step_ids.append(step_id)
             
@@ -459,8 +466,10 @@ def create_roadmap():
                             """,
                             (roadmap_id, step_id, question, answer1, answer2, answer3, correct_answer)
                         )
+                        add_analytics(user_id_for_analytics, "create_roadmap_insert_quiz", f"roadmap_routes:roadmap_id={roadmap_id},step_id={step_id}")
             
             conn.commit()
+            add_analytics(user_id_for_analytics, "create_roadmap_commit", f"roadmap_routes:roadmap_id={roadmap_id}")
             
             if is_ajax:
                 return jsonify({
@@ -477,6 +486,7 @@ def create_roadmap():
         except Exception as e:
             if conn:
                 conn.rollback()
+            add_analytics(user_id_for_analytics, "create_roadmap_error_rollback", f"roadmap_routes:{str(e)}")
             logger.error(f"Error creating roadmap: {e}", exc_info=True)
             
             if is_ajax:
@@ -489,6 +499,7 @@ def create_roadmap():
             if conn:
                 conn.close()
     
+    add_analytics(user_id_for_analytics, "create_roadmap_get_view", "roadmap_routes")
     return render_template('roadmap/create_roadmap.html',
                           user = g.user,
                           darkmode = g.user.get('theme') == 'dark',

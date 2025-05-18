@@ -4,6 +4,7 @@ import psycopg2.extras
 from datetime import datetime
 import logging
 from rich import print
+from .postgres_db_handler import add_analytics  # Import add_analytics
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +16,9 @@ PG_USER = os.getenv('POSTGRES_USER', 'postgres')
 PG_PASSWORD = os.getenv('POSTGRES_PASSWORD', '')
 
 def get_db_connection():
-    print('[bold blue]Connection to DB from Education Handler[/bold blue]')
+    print('[bold blue]Connection to DB from Roadmap Handler[/bold blue]') # Corrected from Education Handler
     """Stellt eine Verbindung zur PostgreSQL-Datenbank her."""
+    add_analytics(None, "get_db_connection_roadmap_handler", "postgre_roadmap_handler:get_db_connection")
     try:
         conn = psycopg2.connect(
             host=PG_HOST,
@@ -29,10 +31,12 @@ def get_db_connection():
         return conn
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Öffnen der PostgreSQL-Verbindung: {e}", exc_info=True)
+        add_analytics(None, "get_db_connection_roadmap_handler_error", f"postgre_roadmap_handler:get_db_connection:error={e}")
         raise
 
 def get_roadmap(id):
     """Lädt die Roadmap mit der angegebenen ID aus der Datenbank."""
+    add_analytics(None, "get_roadmap", f"postgre_roadmap_handler:id={id}")
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -51,6 +55,7 @@ def get_roadmap(id):
 
 def get_roadmap_steps(roadmap_id):
     """Lädt die Schritte der Roadmap mit der angegebenen ID aus der Datenbank."""
+    add_analytics(None, "get_roadmap_steps", f"postgre_roadmap_handler:roadmap_id={roadmap_id}")
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -65,6 +70,7 @@ def get_roadmap_steps(roadmap_id):
 
 def get_roadmap_quizes_roadmapid(roadmap_id):
     """Lädt die Quizze für eine bestimmte Roadmap-ID."""
+    add_analytics(None, "get_roadmap_quizes_roadmapid", f"postgre_roadmap_handler:roadmap_id={roadmap_id}")
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -82,6 +88,7 @@ def get_roadmap_quizes_stepid(roadmap_step, roadmap_id=None):
     Lädt die Quizze für einen bestimmten Roadmap-Schritt.
     Optional kann eine roadmap_id angegeben werden, um die Ergebnisse weiter einzuschränken.
     """
+    add_analytics(None, "get_roadmap_quizes_stepid", f"postgre_roadmap_handler:step_id={roadmap_step},roadmap_id={roadmap_id}")
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -107,6 +114,7 @@ def get_roadmap_quizes_specific(step_id, roadmap_id):
     Lädt die Quizze für eine spezifische Kombination aus Roadmap-ID und Step-ID.
     Dies ist die präziseste Abfrage und sollte bevorzugt verwendet werden.
     """
+    add_analytics(None, "get_roadmap_quizes_specific", f"postgre_roadmap_handler:step_id={step_id},roadmap_id={roadmap_id}")
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -139,6 +147,7 @@ def get_roadmap_quizes_specific(step_id, roadmap_id):
 
 def check_and_fix_quiz_mappings():
     """Diagnostische Funktion zur Überprüfung und Reparatur inkonsistenter Quiz-Mappings."""
+    add_analytics(None, "check_and_fix_quiz_mappings", "postgre_roadmap_handler")
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -184,6 +193,7 @@ def get_user_progress_for_quizzes(user_id, quiz_ids):
     Lädt den Fortschritt eines Benutzers für eine gegebene Liste von Quiz-IDs.
     Gibt ein Dictionary zurück, das quiz_id auf {'attempted': bool, 'is_correct': bool} abbildet.
     """
+    add_analytics(user_id, "get_user_progress_for_quizzes", f"postgre_roadmap_handler:quiz_count={len(quiz_ids)}")
     if not quiz_ids:
         return {}
     
@@ -220,6 +230,7 @@ def get_user_progress_for_quizzes(user_id, quiz_ids):
 
 def get_quiz_by_id(quiz_id):
     """Lädt ein einzelnes Quiz anhand seiner ID."""
+    add_analytics(None, "get_quiz_by_id", f"postgre_roadmap_handler:quiz_id={quiz_id}")
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -236,6 +247,7 @@ def get_quiz_by_id(quiz_id):
 
 def record_user_quiz_attempt(user_id, quiz_id, is_correct):
     """Speichert den Quiz-Versuch eines Benutzers oder aktualisiert ihn."""
+    add_analytics(user_id, "record_user_quiz_attempt", f"postgre_roadmap_handler:quiz_id={quiz_id},correct={is_correct}")
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
@@ -259,6 +271,7 @@ def record_user_quiz_attempt(user_id, quiz_id, is_correct):
 
 def get_xp_for_action(action_name):
     """Ruft den XP-Betrag für eine bestimmte Aktion ab."""
+    add_analytics(None, "get_xp_for_action", f"postgre_roadmap_handler:action={action_name}")
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -276,6 +289,7 @@ def get_xp_for_action(action_name):
 
 def add_xp_to_user(user_id, xp_to_add):
     """Fügt einem Benutzer XP hinzu und aktualisiert sein Level, falls erforderlich."""
+    add_analytics(user_id, "add_xp_to_user", f"postgre_roadmap_handler:xp_added={xp_to_add}")
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -322,6 +336,7 @@ def update_user_roadmap_step_progress(user_id, roadmap_id, step_id, is_completed
     Aktualisiert den Fortschritt eines Benutzers für einen bestimmten Roadmap-Schritt.
     Setzt completed_at, wenn is_completed True ist.
     """
+    add_analytics(user_id, "update_user_roadmap_step_progress", f"postgre_roadmap_handler:roadmap_id={roadmap_id},step_id={step_id},completed={is_completed}")
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
@@ -356,6 +371,7 @@ def get_user_roadmap_progress_all_steps(user_id, roadmap_id):
     Ruft den Fortschritt aller Schritte einer Roadmap für einen bestimmten Benutzer ab.
     Gibt ein Dictionary zurück, das step_id auf {'is_completed': bool, 'progress_percentage': float} abbildet.
     """
+    add_analytics(user_id, "get_user_roadmap_progress_all_steps", f"postgre_roadmap_handler:roadmap_id={roadmap_id}")
     conn = get_db_connection()
     progress_map = {}
     try:
@@ -380,6 +396,7 @@ def get_user_roadmap_progress_all_steps(user_id, roadmap_id):
 
 def get_roadmap_collection():
     """Lädt alle Roadmaps aus der Datenbank."""
+    add_analytics(None, "get_roadmap_collection", "postgre_roadmap_handler")
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -406,6 +423,7 @@ if __name__ == "__main__":
     EXAMPLE_PROBLEM_ROADMAP_ID = 3
     EXAMPLE_PROBLEM_STEP_ID = 4 # Dies ist roadmap_steps.id
 
+    # --- Test für funktionierendes Beispiel ---
     print(f"[bold green]Test für Roadmap {EXAMPLE_WORKING_ROADMAP_ID} (funktionierendes Beispiel):[/bold green]")
     roadmap_working = get_roadmap(EXAMPLE_WORKING_ROADMAP_ID)
     if roadmap_working:
@@ -416,19 +434,19 @@ if __name__ == "__main__":
             actual_first_step_id_working = steps_working_roadmap[0]['id'] if steps_working_roadmap else EXAMPLE_WORKING_STEP_ID
             print(f"Quizze für Roadmap {EXAMPLE_WORKING_ROADMAP_ID}, Step ID {actual_first_step_id_working} (spezifisch):")
             print(get_roadmap_quizes_specific(step_id=actual_first_step_id_working, roadmap_id=EXAMPLE_WORKING_ROADMAP_ID))
-        print(f"Alle Quizze für Roadmap {EXAMPLE_WORKING_ROADMAP_ID}:")
-        print(get_roadmap_quizes_roadmapid(EXAMPLE_WORKING_ROADMAP_ID))
+        else:
+            print(f"Keine Schritte für Roadmap {EXAMPLE_WORKING_ROADMAP_ID} gefunden.")
     else:
         print(f"Roadmap {EXAMPLE_WORKING_ROADMAP_ID} nicht gefunden.")
-    print("-" * 50)
+    print("-" * 30)
 
-    print(f"[bold red]Test für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}, Step ID {EXAMPLE_PROBLEM_STEP_ID} (Beispiel für Fehlersuche):[/bold red]")
-    problem_roadmap = get_roadmap(EXAMPLE_PROBLEM_ROADMAP_ID)
-    if problem_roadmap:
-        print(f"Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}: {problem_roadmap}")
-        
-        problem_step_details = None
+    # --- Test für problematisches Beispiel ---
+    print(f"[bold red]Test für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} (problematisches Beispiel):[/bold red]")
+    roadmap_problem = get_roadmap(EXAMPLE_PROBLEM_ROADMAP_ID)
+    if roadmap_problem:
+        print(f"Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}: {roadmap_problem}")
         steps_problem_roadmap = get_roadmap_steps(EXAMPLE_PROBLEM_ROADMAP_ID)
+        problem_step_details = None # Initialisieren
         if steps_problem_roadmap:
             for step in steps_problem_roadmap:
                 if step['id'] == EXAMPLE_PROBLEM_STEP_ID: # Vergleiche mit roadmap_steps.id
@@ -456,8 +474,6 @@ if __name__ == "__main__":
              print(f"[bold yellow]WARNUNG: Quiz für Step ID {EXAMPLE_PROBLEM_STEP_ID} wurde spezifisch gefunden, aber nicht in der Gesamtliste der Quizze für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} über step_id-Attribut.[/bold yellow]")
         elif not found_in_all and not quizzes_specific:
              print(f"[bold yellow]INFO: Weder spezifisch noch in der Gesamtliste wurde ein Quiz für Step ID {EXAMPLE_PROBLEM_STEP_ID} (roadmap_steps.id) in Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} gefunden.[/bold yellow]")
-
-
     else:
         print(f"Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} nicht gefunden.")
     print("-" * 50)

@@ -3,12 +3,14 @@ import psycopg2.extras
 import logging
 import os
 from rich import print
+from .postgres_db_handler import add_analytics  # Import add_analytics
 
 logger = logging.getLogger(__name__)
 
 def get_db_connection():
     """Stellt eine Verbindung zur PostgreSQL-Datenbank her."""
     print('[bold blue]Connection to DB from Badge Handler[/bold blue]')
+    add_analytics(None, "get_db_connection_badge_handler", "postgres_badges_handler:get_db_connection")
     try:
         conn = psycopg2.connect(
             host=os.getenv('POSTGRES_HOST'),
@@ -20,6 +22,7 @@ def get_db_connection():
         return conn
     except Exception as e:
         logger.error(f"Fehler beim Öffnen der PostgreSQL-Verbindung: {e}", exc_info=True)
+        add_analytics(None, "get_db_connection_badge_handler_error", f"postgres_badges_handler:get_db_connection:error={e}")
         raise
 
 def get_user_badges(user_id):
@@ -32,6 +35,7 @@ def get_user_badges(user_id):
     Returns:
         dict: Erfolgsstatus und nach Kategorie gruppierte Abzeichen
     """
+    add_analytics(user_id, "get_user_badges", "postgres_badges_handler")
     try:
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -103,6 +107,7 @@ def award_badge_to_user(user_id, badge_id):
     Returns:
         bool: True bei Erfolg, False bei Fehler
     """
+    add_analytics(user_id, "award_badge_to_user", f"postgres_badges_handler:badge_id={badge_id}")
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -135,6 +140,7 @@ def revoke_badge_from_user(user_id, badge_id):
     Returns:
         bool: True bei Erfolg, False bei Fehler
     """
+    add_analytics(user_id, "revoke_badge_from_user", f"postgres_badges_handler:badge_id={badge_id}")
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -163,6 +169,7 @@ def get_badge_by_id(badge_id):
     Returns:
         dict: Abzeichendetails oder None, wenn nicht gefunden
     """
+    add_analytics(None, "get_badge_by_id", f"postgres_badges_handler:badge_id={badge_id}")
     try:
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
