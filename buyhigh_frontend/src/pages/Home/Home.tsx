@@ -19,6 +19,33 @@ const Home: React.FC = () => {
   useEffect(() => {
     setTip(funnyTips[Math.floor(Math.random() * funnyTips.length)]);
   }, []);
+
+  // Easter egg: Konami code implementation
+  useEffect(() => {
+    const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+    let konamiIndex = 0;
+    
+    const checkKonami = (e: KeyboardEvent) => {
+      if (e.key === konamiCode[konamiIndex]) {
+        konamiIndex++;
+        if (konamiIndex === konamiCode.length) {
+          // Reset for next time
+          konamiIndex = 0;
+          // Show the easter egg message
+          const hint = atob('U0VMTExPVyBpcyB0aGUga2V5IHRvIHJpY2hlcw==');
+          alert(`🧙‍♂️ You found a secret! Use '${hint.split(' ')[0]}' for extra credits!`);
+        }
+      } else {
+        konamiIndex = 0;
+      }
+    };
+    
+    document.addEventListener('keydown', checkKonami);
+    
+    return () => {
+      document.removeEventListener('keydown', checkKonami);
+    };
+  }, []);
   
   return (
     <BaseLayout title="BuyHigh.io - Buy High, Sell Low">

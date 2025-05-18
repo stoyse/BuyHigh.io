@@ -316,6 +316,40 @@
       }
       
     </style>
+    
+    <!-- Easter Egg System -->
+    <script>
+      // Secret sequence detector
+      let keySequence = '';
+      const secretSequence = 'TOTHEMOON';
+      
+      document.addEventListener('keydown', function(e) {
+        keySequence += e.key.toUpperCase();
+        
+        // Only keep the last N characters where N is the length of the secret
+        if (keySequence.length > secretSequence.length) {
+          keySequence = keySequence.substring(keySequence.length - secretSequence.length);
+        }
+        
+        // Check if the sequence matches
+        if (keySequence === secretSequence) {
+          // Show a popup with the easter egg code
+          alert('🚀 TO THE MOON! Use code TOTHEMOON for a surprise!');
+          keySequence = '';
+        }
+      });
+      
+      // Console easter egg
+      console.log("%c🔥 Found me! Use code 'HODLGANG' for a surprise! 🔥", "font-size: 20px; color: #8b5cf6; background: #f3f4f6; padding: 10px;");
+      
+      // Check for special date - 4/20
+      const today = new Date();
+      if(today.getMonth() === 3 && today.getDate() === 20) {
+        setTimeout(() => {
+          console.log("%c🌱 Special day! Use code 'STONKS' for a bonus! 📈", "font-size: 18px; color: green; background: #f3f4f6; padding: 8px;");
+        }, 5000);
+      }
+    </script>
     {% block head_extra %}{% endblock %}
   </head>
   <body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 neo-grid transition-colors duration-300">
@@ -673,5 +707,187 @@
         }
       });
     </script>
-  </body>
+  
+  <!-- Easter Egg Console for Code Entry -->
+  <div id="easter-egg-console" class="fixed bottom-0 left-0 right-0 bg-gray-800/95 backdrop-blur-md text-white p-4 transform translate-y-full transition-transform duration-300 z-50 shadow-xl border-t border-neo-purple/50">
+    <div class="container mx-auto flex items-center">
+      <span class="text-neo-purple font-pixel mr-3">BuyHigh&gt;</span>
+      <input type="text" id="easter-egg-input" class="bg-transparent border-none focus:outline-none flex-grow text-white placeholder-gray-500" placeholder="Enter secret code..." autocomplete="off">
+      <button id="easter-egg-submit" class="ml-2 px-3 py-1 bg-neo-purple/20 hover:bg-neo-purple/40 rounded-md border border-neo-purple/50 transition-colors">
+        Submit
+      </button>
+      <button id="easter-egg-close" class="ml-2 text-gray-400 hover:text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+    <div id="easter-egg-message" class="container mx-auto mt-2 text-sm italic text-gray-400 hidden"></div>
+  </div>
+
+  <script>
+    // Easter Egg Console Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const easterEggConsole = document.getElementById('easter-egg-console');
+      const easterEggInput = document.getElementById('easter-egg-input');
+      const easterEggSubmit = document.getElementById('easter-egg-submit');
+      const easterEggClose = document.getElementById('easter-egg-close');
+      const easterEggMessage = document.getElementById('easter-egg-message');
+      
+      // Toggle console with Ctrl+E
+      document.addEventListener('keydown', function(e) {
+        // Check if Ctrl+E is pressed
+        if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+          e.preventDefault();
+          toggleConsole();
+        }
+        
+        // Check if Escape is pressed while console is open
+        if (e.key === 'Escape' && easterEggConsole.classList.contains('translate-y-0')) {
+          closeConsole();
+        }
+      });
+      
+      // Open/close console functions
+      function toggleConsole() {
+        if (easterEggConsole.classList.contains('translate-y-full')) {
+          easterEggConsole.classList.remove('translate-y-full');
+          easterEggConsole.classList.add('translate-y-0');
+          easterEggInput.focus();
+        } else {
+          closeConsole();
+        }
+      }
+      
+      function closeConsole() {
+        easterEggConsole.classList.remove('translate-y-0');
+        easterEggConsole.classList.add('translate-y-full');
+        easterEggInput.value = '';
+        easterEggMessage.classList.add('hidden');
+      }
+      
+      // Submit code via button or Enter key
+      easterEggSubmit.addEventListener('click', submitCode);
+      easterEggInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          submitCode();
+        }
+      });
+      
+      // Close button functionality
+      easterEggClose.addEventListener('click', closeConsole);
+      
+      function submitCode() {
+        const code = easterEggInput.value.trim().toUpperCase();
+        if (!code) return;
+        
+        // Show loading indicator
+        easterEggMessage.textContent = '⏳ Verarbeite den Code...';
+        easterEggMessage.className = 'container mx-auto mt-2 text-sm text-gray-400';
+        easterEggMessage.classList.remove('hidden');
+        
+        // Send code to server for validation
+        fetch('/api/easter-egg/redeem', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ code: code }),
+        })
+        .then(response => {
+          if (!response.ok) {
+            if (response.status === 404) {
+              // Backend endpoint not found - handle gracefully
+              throw new Error('Der Easter Egg Server ist noch nicht bereit. Bitte versuche es später noch einmal.');
+            }
+            return response.text().then(text => {
+              throw new Error('Serverfehler: ' + (text || response.statusText));
+            });
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Easter egg response:', data); // Debug-Ausgabe der Server-Antwort
+          
+          // Show message
+          easterEggMessage.textContent = data.success 
+            ? `✨ ${data.message || 'Easter Egg aktiviert!'}`
+            : `❌ ${data.message || 'Ungültiger Code oder bereits eingelöst.'}`;
+          
+          // Clear input for next entry
+          easterEggInput.value = '';
+          
+          // If successful, handle special effects or reload for changes
+          if (data.success) {
+            easterEggMessage.className = 'container mx-auto mt-2 text-sm text-neo-emerald';
+            
+            if (data.reload) {
+              setTimeout(() => {
+                window.location.reload();
+              }, 1500);
+            }
+            
+            // Update balance if provided - verbesserte Logik mit Fallbacks
+            if (data.new_balance) {
+              // Zuerst nach dem Standard-Balance-Element suchen
+              const balanceElements = [
+                document.getElementById('user-balance'),
+                document.querySelector('.user-balance'),
+                document.querySelector('[data-balance]')
+              ];
+              
+              // Alle Elemente im Dokument finden, die die Balance anzeigen könnten
+              const balancePattern = /\$[\d,]+(\.\d{2})?/;
+              const possibleBalanceElements = [];
+              
+              document.querySelectorAll('.font-medium, .font-bold, .text-neo-purple').forEach(el => {
+                if (el.textContent && balancePattern.test(el.textContent)) {
+                  possibleBalanceElements.push(el);
+                }
+              });
+              
+              // Probiere sowohl die Standard- als auch die gefundenen Elemente
+              const allPossibleElements = [...balanceElements, ...possibleBalanceElements];
+              let updated = false;
+              
+              allPossibleElements.forEach(el => {
+                if (el) {
+                  const oldContent = el.textContent;
+                  // Wenn das Element die Balance anzeigt, aktualisiere es
+                  if (balancePattern.test(oldContent)) {
+                    el.textContent = oldContent.replace(
+                      balancePattern, 
+                      '$' + parseFloat(data.new_balance).toFixed(2)
+                    );
+                    el.classList.add('text-neo-emerald', 'font-bold');
+                    setTimeout(() => {
+                      el.classList.remove('text-neo-emerald', 'font-bold');
+                    }, 3000);
+                    updated = true;
+                    console.log('Updated balance display:', el);
+                  }
+                }
+              });
+              
+              if (!updated) {
+                console.warn('Konnte kein Balance-Element zum Aktualisieren finden');
+                // Seite nach kurzer Verzögerung neu laden, wenn wir die Balance nicht aktualisieren konnten
+                setTimeout(() => {
+                  window.location.reload();
+                }, 2000);
+              }
+            }
+          } else {
+            easterEggMessage.className = 'container mx-auto mt-2 text-sm text-neo-red';
+          }
+        })
+        .catch(error => {
+          console.error('Error submitting code:', error);
+          easterEggMessage.textContent = `❌ ${error.message || 'Fehler bei der Verarbeitung des Codes.'}`;
+          easterEggMessage.className = 'container mx-auto mt-2 text-sm text-neo-red';
+        });
+      }
+    });
+  </script>
+</body>
 </html>

@@ -1,0 +1,27 @@
+<script>
+  // Easter Egg: If you roll three 7s in a row (very rare!)
+  document.addEventListener('DOMContentLoaded', function() {
+    const lastRolls = [];
+    
+    // Monkey-patch any roll function or create a fake one for demo
+    const originalRoll = window.rollDice || function() { return Math.floor(Math.random() * 6) + 1; };
+    
+    window.rollDice = function() {
+      const result = originalRoll();
+      lastRolls.push(result);
+      
+      // Only keep the last 3 rolls
+      if (lastRolls.length > 3) {
+        lastRolls.shift();
+      }
+      
+      // Check for three 7s in a row
+      if (lastRolls.length === 3 && lastRolls.every(roll => roll === 7)) {
+        console.log("%c🎲🎲🎲 JACKPOT! Use code 'APESSTRONG' for a reward! 🦍", 
+                   "font-size: 20px; color: gold; background: #222; padding: 10px;");
+      }
+      
+      return result;
+    };
+  });
+</script>

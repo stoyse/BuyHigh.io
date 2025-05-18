@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, g, request, flash, redirect, url_for, jsonify
-from utils import login_required
+from utils import process_easter_egg, login_required
 import database.handler.postgres.postgres_db_handler as db_handler
 import logging  # Add logging import
 import stock_news
@@ -575,3 +575,13 @@ def api_rescue_wheel():
         logger.error(f"Error in rescue wheel API: {e}", exc_info=True)
         add_analytics(user_id_for_analytics, "api_rescue_wheel_error", f"main_routes:api_rescue_wheel:error={str(e)}")
         return jsonify({"success": False, "message": f"An error occurred: {str(e)}"}), 500
+
+@main_bp.route('/easteregg/<code>')
+@login_required
+def easter_egg(code):
+    success, message = process_easter_egg(code)
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'error')
+    return redirect(url_for('main.index'))

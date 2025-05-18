@@ -472,6 +472,35 @@ def add_analytics(user_id, action, source_details):
         if conn:
             conn.close()
 
+def update_user_balance(user_id, new_balance):
+    """
+    Aktualisiert die Balance eines Benutzers in der Datenbank.
+    
+    Args:
+        user_id (int): Die ID des Benutzers
+        new_balance (float): Der neue Kontostand
+        
+    Returns:
+        bool: True, wenn Update erfolgreich, False sonst
+    """
+    add_analytics(user_id, "update_user_balance", f"postgres_db_handler:update_user_balance:user_id={user_id},new_balance={new_balance}")
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        logger.info(f"Updating balance for user {user_id} to {new_balance}")
+        cur.execute("UPDATE users SET balance = %s WHERE id = %s", (new_balance, user_id))
+        conn.commit()
+        affected_rows = cur.rowcount
+        logger.info(f"Balance update affected {affected_rows} rows")
+        return affected_rows > 0
+    except psycopg2.Error as e:
+        conn.rollback()
+        logger.error(f"Fehler beim Aktualisieren der Balance für Benutzer ID {user_id}: {e}", exc_info=True)
+        add_analytics(user_id, "update_user_balance_error", f"postgres_db_handler:update_user_balance:user_id={user_id},error={e}")
+        return False
+    finally:
+        cur.close()
+        conn.close()
 
 def get_all_analytics():
     """

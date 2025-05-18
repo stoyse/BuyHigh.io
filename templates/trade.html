@@ -103,6 +103,8 @@
     <span class="font-medium">Market Mayhem:</span> <span id="mayhem-description"></span>
   </div>
 
+  <!-- 🚀🚀🚀 Wow, you're checking the source code? Try "SECRETLAMBO" for a nice surprise 🏎️ -->
+
   <!-- Main Trading Interface -->
   <div class="flex flex-col lg:flex-row gap-6">
     <!-- Left Column: Stock List and Search -->
@@ -492,6 +494,109 @@
 
     // Lade Marktereignisse beim Laden der Seite
     loadMayhemAlert();
+    
+    // Liste aller Easter Eggs in BuyHigh.io
+    console.log("%c🔎 BuyHigh.io Easter Eggs Guide 🔎", "font-size: 20px; color: #8b5cf6; background: #f3f4f6; padding: 10px; border-radius: 5px; margin: 10px 0;");
+    console.log("%c1. Search them across the app and win cash", "font-size: 14px; color: #10b981; padding: 5px;");
+
+    // Easter Egg Funktionalität - SECRETLAMBO Erkennung
+    let easterEggCode = '';
+    const targetCode = 'SECRETLAMBO';
+    
+    document.addEventListener('keydown', function(event) {
+      // Füge den gedrückten Buchstaben zum Code hinzu
+      easterEggCode += event.key.toUpperCase();
+      
+      // Kürze den Code, wenn er zu lang wird
+      if (easterEggCode.length > targetCode.length) {
+        easterEggCode = easterEggCode.substring(easterEggCode.length - targetCode.length);
+      }
+      
+      // Überprüfe, ob der Code übereinstimmt
+      if (easterEggCode === targetCode) {
+        redeemEasterEgg(targetCode);
+        easterEggCode = ''; // Code zurücksetzen
+      }
+    });
+    
+    // Funktion zum Einlösen des Easter Eggs
+    function redeemEasterEgg(code) {
+      fetch('/api/easter-egg/redeem', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code: code }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showEasterEggReward(data);
+        } else {
+          // Wenn es bereits eingelöst wurde oder ein anderer Fehler auftrat
+          console.log(data.message || 'Easter Egg konnte nicht eingelöst werden');
+        }
+      })
+      .catch(error => {
+        console.error('Easter Egg Fehler:', error);
+      });
+    }
+    
+    // Zeige Belohnung & Animation für das Easter Egg
+    function showEasterEggReward(data) {
+      // Erstelle ein Lamborghini-Element
+      const lambo = document.createElement('div');
+      lambo.style.cssText = `
+        position: fixed;
+        bottom: -100px;
+        left: 10%;
+        width: 120px;
+        height: 40px;
+        background-image: url('/static/img/lambo.svg');
+        background-size: contain;
+        background-repeat: no-repeat;
+        z-index: 9999;
+        transition: all 6s cubic-bezier(.5,0,.5,1);
+        transform: rotate(-5deg);
+      `;
+      document.body.appendChild(lambo);
+      
+      // Animiere das Lamborghini-Element
+      setTimeout(() => {
+        lambo.style.bottom = '30%';
+        lambo.style.left = '110%';
+        lambo.style.transform = 'rotate(15deg)';
+      }, 100);
+      
+      // Zeige Belohnungsbenachrichtigung
+      const notification = document.createElement('div');
+      notification.className = 'glass-card p-4 rounded-lg shadow-neo fixed top-20 left-1/2 transform -translate-x-1/2 z-[1000] flex items-center bg-neo-emerald/20 border border-neo-emerald';
+      notification.innerHTML = `
+        <svg class="w-6 h-6 text-neo-emerald mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <div>
+          <p class="font-bold text-neo-emerald">Easter Egg gefunden!</p>
+          <p class="text-sm">Du hast ${data.reward || '5000'} Credits erhalten! 🏎️💨</p>
+        </div>
+      `;
+      document.body.appendChild(notification);
+      
+      // Entferne die Elemente nach der Animation
+      setTimeout(() => {
+        document.body.removeChild(lambo);
+        document.body.removeChild(notification);
+        // Aktualisiere den angezeigten Kontostand ohne Neuladen
+        const balanceElement = document.getElementById('user-balance');
+        if (balanceElement && data.new_balance) {
+          balanceElement.textContent = '$' + parseFloat(data.new_balance).toFixed(2);
+          balanceElement.classList.add('text-neo-emerald', 'font-bold');
+          setTimeout(() => {
+            balanceElement.classList.remove('text-neo-emerald', 'font-bold');
+          }, 3000);
+        }
+      }, 6000);
+    }
   });
 </script>
 {% endblock %}

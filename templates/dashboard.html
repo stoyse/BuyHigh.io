@@ -175,6 +175,42 @@
     animation: spin 3s linear infinite;
     transform-origin: center center;
   }
+
+  /* Tiny hidden easter egg element */
+  .secret-pixel {
+    position: fixed;
+    bottom: 5px;
+    right: 5px;
+    width: 3px;
+    height: 3px;
+    background-color: #8b5cf6;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 9999;
+    opacity: 0.5;
+    transition: all 0.3s;
+    transform-origin: center center;
+  }
+  
+  .secret-pixel:hover {
+    transform: scale(20);
+    opacity: 1;
+    background-color: rgba(139, 92, 246, 0.9);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
+  }
+  
+  .secret-pixel:hover:after {
+    content: "BUYHIGH";
+    position: absolute;
+    font-size: 5px;
+    font-weight: bold;
+    color: white;
+    top: -200%;
+    left: -900%;
+    white-space: nowrap;
+    text-shadow: 0px 0px 3px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.5px;
+  }
 </style>
 {% endblock %}
 
@@ -777,6 +813,8 @@
     </div>
   </div>
 </div>
+
+<div class="secret-pixel" title="I'm just a pixel, nothing to see here..."></div>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {

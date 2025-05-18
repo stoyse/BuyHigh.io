@@ -7,12 +7,8 @@ const DEBUG = true; // Debug-Modus aktivieren/deaktivieren
 const logDebug = (message: string, data: any = null) => {
   if (!DEBUG) return;
 
-  const logStyle = "background: #0047AB; color: white; padding: 2px 5px; border-radius: 3px;";
-  if (data) {
-    console.log(`%c[BuyHigh Debug]`, logStyle, message, data);
-  } else {
-    console.log(`%c[BuyHigh Debug]`, logStyle, message);
-  }
+  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+  console.debug(`[${timestamp}]`, message, data);
 };
 
 // Hilfsfunktion zum Loggen von API-Aufrufen

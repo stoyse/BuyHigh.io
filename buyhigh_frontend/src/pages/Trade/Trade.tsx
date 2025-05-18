@@ -90,7 +90,11 @@ const Trade: React.FC = () => {
           return stock;
         });
         
-        console.log('Processed stocks data:', enrichedStocks);
+        if (process.env.NODE_ENV === 'development' && enrichedStocks.length > 0) {
+          const firstItem = enrichedStocks[0];
+          console.debug('Market data loaded:', firstItem.symbol);
+        }
+        
         setStocks(enrichedStocks);
         
         if (enrichedStocks.length > 0) {

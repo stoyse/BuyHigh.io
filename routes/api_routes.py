@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, g, send_file, url_for, session
+from flask import Blueprint, request, jsonify, g, send_file, url_for, session, current_app
 from datetime import datetime, timedelta
 from utils import login_required
 import os
@@ -10,12 +10,18 @@ import logging
 import auth as auth_module  # Fix the import path to match the correct module name
 import database.handler.postgres.postgres_db_handler as db_handler
 import database.handler.postgres.postgre_education_handler as education_handler
-
-
-# Logger für dieses Modul konfigurieren
 logger = logging.getLogger(__name__)
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
+
+# CSRF-Schutz für bestimmte Routes deaktivieren
+@api_bp.before_request
+def csrf_exempt_for_easter_eggs():
+    """Deaktiviert CSRF-Schutz für bestimmte API-Endpunkte"""
+    if request.path == '/api/easter-egg/redeem':
+        flask_csrf = current_app.extensions.get('csrf', None)
+        if flask_csrf:
+            flask_csrf._exempt_views.add(request.endpoint)
 
 @api_bp.route('/login', methods=['POST'])
 def api_login():
@@ -506,6 +512,293 @@ def api_get_portfolio(user_id):
     portfolio_data = transactions_handler.show_user_portfolio(user_id) # Analytics inside show_user_portfolio
     return jsonify(portfolio_data)
 
+
+@api_bp.route('/easter-egg/redeem', methods=['POST'])
+def redeem_easter_egg():
+    """
+    Endpunkt zum Einlösen von Easter Egg-Codes
+    Funktioniert sowohl für authentifizierte als auch für nicht authentifizierte Benutzer
+    """
+    logger.info("Easter egg redemption endpoint called")
+    print("Easter egg redemption endpoint called")
+    
+    # Debug-Ausgabe für den Request
+    print(f"Request headers: {request.headers}")
+    print(f"Request content type: {request.content_type}")
+    print(f"Request method: {request.method}")
+    
+    try:
+        # Explizit Request-Body als raw data auslesen für Debug-Zwecke
+        raw_data = request.get_data(as_text=True)
+        print(f"Raw request data: {raw_data}")
+        
+        # JSON-Daten parsen
+        data = request.get_json(force=True, silent=True)
+        print(f"Parsed JSON data: {data}")
+        
+        if not data:
+            logger.warning("No JSON data found in request")
+            return jsonify({"success": False, "message": "Keine Daten gefunden. Bitte gib einen Code ein."}), 400
+        
+        if 'code' not in data:
+            logger.warning("No code found in request data")
+            return jsonify({"success": False, "message": "Kein Code in der Anfrage gefunden."}), 400
+        
+        code = data['code'].upper()
+        logger.info(f"Processing easter egg code: {code}")
+        
+        # Standardmäßig ein Gast oder der aktuelle Benutzer
+        user_id = None
+        
+        # Wenn Benutzer authentifiziert ist, seinen Account aktualisieren
+        if hasattr(g, 'user') and g.user:
+            user_id = g.user.get('id')
+            
+            # Immer den aktuellen Benutzer direkt aus der Datenbank laden, um die aktuelle Balance zu haben
+            user_data_from_db = db_handler.get_user_by_id(user_id) # Renamed for clarity
+            if not user_data_from_db: # Check if user object itself is None
+                logger.warning(f"Benutzer {user_id} konnte nicht geladen werden für Easter Egg Einlösung (nicht in DB gefunden)")
+                return jsonify({"success": False, "message": "Benutzer nicht gefunden"}), 404
+                
+            # Die tatsächliche aktuelle Balance aus der Datenbank holen
+            current_balance = user_data_from_db.get('balance', 0) # Access balance directly
+            print(f"Aktuelle Balance aus DB: {current_balance}")
+            logger.info(f"Authenticated user: ID={user_id}, Current DB Balance={current_balance}")
+        else:
+            # Für Gast-Benutzer in der Session speichern
+            guest_rewards = session.get('guest_rewards', {})
+            current_balance = guest_rewards.get('balance', 0)
+            logger.info(f"Guest user, session balance: {current_balance}")
+        
+        # Prüfen ob der Code bereits eingelöst wurde
+        if user_id:
+            # Vereinfachte Version für dieses Beispiel
+            redeemed_codes = session.get(f"user_{user_id}_redeemed_codes", [])
+            if code in redeemed_codes:
+                logger.warning(f"Code {code} already redeemed by user {user_id}")
+                return jsonify({
+                    "success": False, 
+                    "message": "Du hast diesen Code bereits eingelöst"
+                })
+        
+        # Easter Egg Code Logik
+        if code == "SECRETLAMBO":
+            reward = 5000
+            message = "Du hast einen virtuellen Lamborghini und 5000 Credits gewonnen!"
+            reload = False
+        elif code == "TOTHEMOON":
+            reward = 1000
+            message = "Deine Investitionen gehen TO THE MOON! +1000 Credits"
+            reload = False
+        elif code == "HODLGANG":
+            reward = 2500
+            message = "HODL! HODL! HODL! Du hast 2500 Credits für deine Diamond Hands erhalten!"
+            reload = False
+        elif code == "STONKS":
+            # Spezielle Logik für den 4/20 Code
+            today = datetime.now()
+            if today.month == 4 and today.day == 20:
+                reward = 4200
+                message = "STONKS! Du hast den speziellen 4/20 Code gefunden! +4200 Credits"
+            else:
+                reward = 420
+                message = "STONKS! Aber es ist nicht der richtige Tag für den vollen Bonus! +420 Credits"
+            reload = False
+        elif code == "1337":
+            reward = 1337
+            message = "Retro-Gaming-Modus aktiviert! +1337 Credits"
+            reload = True  # Seite neu laden für den Retro-Modus
+        else:
+            logger.warning(f"Invalid easter egg code: {code}")
+            return jsonify({
+                "success": False, 
+                "message": "Ungültiger Code"
+            })
+        
+        # Belohnung anwenden - Wichtig: current_balance von der DB verwenden!
+        new_balance = current_balance + reward
+        logger.info(f"Reward applied: +{reward}, current balance: {current_balance}, new balance: {new_balance}")
+        
+        # Wenn wir einen authentifizierten Benutzer haben, aktualisiere die Datenbank
+        if user_id:
+            try:
+                # Versuche zuerst, die update_user_balance Funktion zu verwenden
+                update_result = db_handler.update_user_balance(user_id, new_balance)
+                print(f"Update result: {update_result}")
+                
+                # Überprüfe, ob das Update funktioniert hat, indem wir die Balance nochmal abrufen
+                user_data_after_update = db_handler.get_user_by_id(user_id) # Renamed for clarity
+                if user_data_after_update: # Check if user object itself is not None
+                    updated_balance = user_data_after_update.get('balance', current_balance) # Access balance directly
+                    print(f"Balance nach Update: {updated_balance}")
+                    
+                    # Wenn die Balance nicht aktualisiert wurde, versuchen wir es mit einer direkten DB-Verbindung
+                    if updated_balance != new_balance:
+                        logger.warning(f"Balance wurde nicht korrekt aktualisiert: erwartet={new_balance}, ist={updated_balance}")
+                        logger.warning("Versuche direktes Update mit SQL")
+                        with transactions_handler.get_connection() as conn:
+                            with conn.cursor() as cur:
+                                cur.execute("""
+                                    UPDATE users SET balance = %s WHERE id = %s
+                                """, (new_balance, user_id))
+                                conn.commit()
+                                logger.info(f"Direct database update for user {user_id} completed")
+                else:
+                    logger.error(f"Konnte Benutzerdaten nach Update nicht abrufen für Benutzer {user_id}")
+                
+                # Redeemed Code speichern
+                redeemed_codes = session.get(f"user_{user_id}_redeemed_codes", [])
+                redeemed_codes.append(code)
+                session[f"user_{user_id}_redeemed_codes"] = redeemed_codes
+                
+                # Analytics erfassen
+                add_analytics(user_id, "easter_egg_redeemed", f"code={code},reward={reward},old_balance={current_balance},new_balance={new_balance}")
+                logger.info(f"Database updated for user {user_id}")
+                
+            except Exception as e:
+                logger.exception(f"Konnte Easter Egg nicht in DB speichern: {str(e)}")
+                # Trotzdem fortfahren und dem Benutzer die Belohnung anzeigen
+        else:
+            # Für Gast-Benutzer in der Session speichern
+            guest_rewards = session.get('guest_rewards', {})
+            guest_rewards['balance'] = new_balance
+            guest_rewards['redeemed_codes'] = guest_rewards.get('redeemed_codes', []) + [code]
+            session['guest_rewards'] = guest_rewards
+            logger.info("Guest rewards updated in session")
+        
+        response_data = {
+            "success": True,
+            "message": message,
+            "reload": reload,
+            "reward": reward,
+            "new_balance": new_balance,
+            "debug": {
+                "old_balance": current_balance,
+                "reward": reward,
+                "new_balance": new_balance
+            }
+        }
+        logger.info(f"Successful response: {response_data}")
+        return jsonify(response_data)
+        
+    except Exception as e:
+        logger.exception(f"Easter Egg Fehler: {str(e)}")
+        return jsonify({
+            "success": False,
+            "message": f"Easter Egg Fehler: {str(e)}",
+            "error_details": str(e)
+        }), 200  # 200 statt 500, um dem Frontend keine Fehler zu zeigen
+
+
+@api_bp.route('/redeem-code', methods=['POST'])
+@login_required
+def api_redeem_code():
+    """
+    API-Endpunkt zum Einlösen von Promo- und Easter-Egg-Codes
+    Benutzer muss authentifiziert sein (login_required)
+    """
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "api_redeem_code_attempt", "api_routes:api_redeem_code")
+    
+    data = request.get_json()
+    if not data or 'code' not in data:
+        add_analytics(user_id_for_analytics, "api_redeem_code_missing_data", "api_routes:api_redeem_code")
+        return jsonify({"success": False, "message": "Bitte gib einen Code ein"}), 400
+    
+    code = data['code'].upper()
+    user_id = g.user['id']
+    
+    # Versuche den User aus der Datenbank zu laden
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            add_analytics(user_id_for_analytics, "api_redeem_code_user_not_found", f"api_routes:api_redeem_code:code={code}")
+            return jsonify({"success": False, "message": "Benutzer nicht gefunden"}), 404
+            
+        # Prüfen, ob der Benutzer diesen Code bereits eingelöst hat
+        existing_redemption = EasterEggRedemption.query.filter_by(
+            user_id=user.id, code=code
+        ).first()
+        
+        if existing_redemption:
+            add_analytics(user_id_for_analytics, "api_redeem_code_already_redeemed", f"api_routes:api_redeem_code:code={code}")
+            return jsonify({
+                "success": False, 
+                "message": "Du hast diesen Code bereits eingelöst"
+            })
+        
+        # Code-Logik
+        if code == "SECRETLAMBO":
+            reward = 5000
+            message = "Du hast einen virtuellen Lamborghini und 5000 Credits gewonnen!"
+            reload = False
+        elif code == "TOTHEMOON":
+            reward = 1000
+            message = "Deine Investitionen gehen TO THE MOON! +1000 Credits"
+            reload = False
+        elif code == "HODLGANG":
+            reward = 2500
+            message = "HODL! HODL! HODL! Du hast 2500 Credits für deine Diamond Hands erhalten!"
+            reload = False
+        elif code == "STONKS":
+            # Spezielle Logik für den 4/20 Code
+            today = datetime.now()
+            if today.month == 4 and today.day == 20:
+                reward = 4200
+                message = "STONKS! Du hast den speziellen 4/20 Code gefunden! +4200 Credits"
+            else:
+                reward = 420
+                message = "STONKS! Aber es ist nicht der richtige Tag für den vollen Bonus! +420 Credits"
+            reload = False
+        elif code == "1337":
+            reward = 1337
+            message = "Retro-Gaming-Modus aktiviert! +1337 Credits"
+            reload = True  # Seite neu laden für den Retro-Modus
+        else:
+            add_analytics(user_id_for_analytics, "api_redeem_code_invalid", f"api_routes:api_redeem_code:code={code}")
+            return jsonify({
+                "success": False, 
+                "message": "Ungültiger Code"
+            })
+        
+        # Code Einlösung speichern
+        new_redemption = EasterEggRedemption(
+            user_id=user.id,
+            code=code,
+            redeemed_at=datetime.now()
+        )
+        db.session.add(new_redemption)
+        
+        # Belohnung anwenden
+        old_balance = user.balance if hasattr(user, 'balance') else 0
+        if hasattr(user, 'balance'):
+            user.balance += reward
+        
+        # Änderungen speichern
+        db.session.commit()
+        
+        add_analytics(user_id_for_analytics, "api_redeem_code_success", f"api_routes:api_redeem_code:code={code},reward={reward}")
+        return jsonify({
+            "success": True,
+            "message": message,
+            "reload": reload,
+            "reward": reward,
+            "new_balance": user.balance if hasattr(user, 'balance') else old_balance + reward
+        })
+    
+    except Exception as e:
+        try:
+            db.session.rollback()
+        except:
+            pass
+        
+        logger.error(f"Fehler beim Einlösen des Codes: {str(e)}")
+        add_analytics(user_id_for_analytics, "api_redeem_code_error", f"api_routes:api_redeem_code:code={code},error={str(e)}")
+        
+        return jsonify({
+            "success": False,
+            "message": "Ein Fehler ist aufgetreten. Bitte versuche es später noch einmal."
+        }), 500
 
 
 @api_bp.route('/health')
