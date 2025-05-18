@@ -69,6 +69,44 @@
   animation: price-change 1s ease;
 }
 
+/* Preis-Änderungs-Animationen */
+.price-up {
+  animation: highlight-green 1s ease;
+}
+
+.price-down {
+  animation: highlight-red 1s ease;
+}
+
+@keyframes highlight-green {
+  0% {
+    background-color: rgba(12, 172, 110, 0.3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes highlight-red {
+  0% {
+    background-color: rgba(211, 47, 47, 0.3);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.price-value {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 2px;
+  letter-spacing: -0.5px;
+}
+
+.stock-item.selected .price-value {
+  color: #3b82f6;
+}
+
 .trade-container {
   padding: 20px;
   max-width: 1400px;
@@ -141,13 +179,19 @@
 }
 
 .stock-price {
-  text-align: right;
-  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+  margin-left: auto; /* Drängt das Preiselement nach rechts */
 }
 
-.stock-price .change {
+.change {
   display: block;
   font-size: 0.8rem;
+  font-weight: 500;
 }
 
 .positive {

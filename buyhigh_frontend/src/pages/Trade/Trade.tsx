@@ -8,8 +8,9 @@ interface Stock {
   id: string;
   symbol: string;
   name: string;
-  price?: number; // Optional kennzeichnen
-  change_24h?: number; // Optional kennzeichnen
+  price?: number | string; // Erweitert, um sowohl Zahlen als auch Strings zu erlauben
+  change_24h?: number | string; // Erweitert, um sowohl Zahlen als auch Strings zu erlauben
+  currency?: string;
 }
 
 interface CandlestickData {
@@ -34,6 +35,8 @@ const Trade: React.FC = () => {
   const [chartData, setChartData] = useState<CandlestickData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [prevPrices, setPrevPrices] = useState<{[key: string]: number}>({});
+  const [priceChangeClass, setPriceChangeClass] = useState<{[key: string]: string}>({});
 
   // Lade Aktien beim ersten Render
   useEffect(() => {
@@ -68,11 +71,28 @@ const Trade: React.FC = () => {
           stock.name
         );
         
-        console.log('Stocks data received:', stocksArray);
-        setStocks(stocksArray);
+        // Füge Demo-Preise hinzu, falls keine vorhanden sind
+        const enrichedStocks = stocksArray.map(stock => {
+          // Wenn kein Preis vorhanden ist, generiere einen zufälligen Preis
+          if (!stock.price) {
+            const basePrice = Math.floor(Math.random() * 500) + 50; // Zufälliger Preis zwischen 50 und 550
+            const change = (Math.random() * 10 - 5).toFixed(2); // Zufällige Änderung zwischen -5% und +5%
+            
+            return {
+              ...stock,
+              price: basePrice,
+              change_24h: parseFloat(change),
+              currency: '$'
+            };
+          }
+          return stock;
+        });
         
-        if (stocksArray.length > 0) {
-          setSelectedStock(stocksArray[0]);
+        console.log('Processed stocks data:', enrichedStocks);
+        setStocks(enrichedStocks);
+        
+        if (enrichedStocks.length > 0) {
+          setSelectedStock(enrichedStocks[0]);
         }
         setLoading(false);
       } catch (err) {
@@ -134,6 +154,83 @@ const Trade: React.FC = () => {
 
     fetchChartData();
   }, [selectedStock, timeframe]);
+
+  // Aktualisiere Preis-Änderungs-Klassen, wenn sich die Aktien ändern
+  useEffect(() => {
+    // Speichere aktuelle Preise
+    const newPriceChanges: {[key: string]: string} = {};
+    const newPrices: {[key: string]: number} = {};
+    
+    stocks.forEach(stock => {
+      if (!stock.id || typeof stock.price === 'undefined') return;
+      
+      const currentPrice = typeof stock.price === 'string' ? 
+        parseFloat(stock.price) : stock.price;
+      
+      if (isNaN(currentPrice)) return;
+      
+      const prevPrice = prevPrices[stock.id];
+      
+      if (prevPrice) {
+        if (currentPrice > prevPrice) {
+          newPriceChanges[stock.id] = 'price-up';
+        } else if (currentPrice < prevPrice) {
+          newPriceChanges[stock.id] = 'price-down';
+        }
+      }
+      
+      newPrices[stock.id] = currentPrice;
+    });
+    
+    setPrevPrices(newPrices);
+    setPriceChangeClass(newPriceChanges);
+    
+    // Entferne Animationsklassen nach kurzer Zeit
+    const timer = setTimeout(() => {
+      setPriceChangeClass({});
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [stocks]);
+
+  // Verbesserte Funktion zum Formatieren von Preisen
+  const formatPrice = (price: number | string | undefined, currency: string = '$'): string => {
+    if (price === undefined || price === null) return 'N/A';
+    
+    // Konvertiere String zu Nummer, falls notwendig
+    let numericPrice: number;
+    
+    if (typeof price === 'string') {
+      numericPrice = parseFloat(price);
+    } else {
+      numericPrice = price;
+    }
+    
+    // Prüfe, ob die Konversion erfolgreich war
+    if (isNaN(numericPrice)) return 'N/A';
+    
+    // Formatiere den Preis abhängig von seinem Wert
+    if (numericPrice >= 1000) {
+      return `${currency}${numericPrice.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+    } else if (numericPrice >= 10) {
+      return `${currency}${numericPrice.toFixed(2)}`;
+    } else {
+      return `${currency}${numericPrice.toFixed(3)}`;
+    }
+  };
+  
+  const formatPercentage = (percentage: number | string | undefined): string => {
+    if (typeof percentage === 'undefined') return 'N/A';
+    
+    // Konvertiere String zu Nummer, falls notwendig
+    const numericPercentage = typeof percentage === 'string' ? 
+      parseFloat(percentage) : percentage;
+    
+    // Prüfe, ob die Konversion erfolgreich war
+    if (isNaN(numericPercentage)) return 'N/A';
+    
+    return `${numericPercentage >= 0 ? '+' : ''}${numericPercentage.toFixed(2)}%`;
+  };
 
   // Chart-Konfiguration
   const chartOptions = {
@@ -260,15 +357,12 @@ const Trade: React.FC = () => {
                 >
                   <div className="stock-symbol">{stock.symbol}</div>
                   <div className="stock-name">{stock.name}</div>
-                  <div className={`stock-price ${(stock.change_24h || 0) >= 0 ? 'positive' : 'negative'}`}>
-                    {/* Hier fügen wir Null-Checks hinzu */}
-                    {typeof stock.price === 'number' ? stock.price.toFixed(2) : 'N/A'}
-                    <span className="change">
-                      {typeof stock.change_24h === 'number' ? (
-                        <>
-                          {stock.change_24h >= 0 ? '+' : ''}{stock.change_24h.toFixed(2)}%
-                        </>
-                      ) : 'N/A'}
+                  <div className={`stock-price ${priceChangeClass[stock.id] || ''}`}>
+                    <div className="price-value">
+                      {formatPrice(stock.price, stock.currency || '$')}
+                    </div>
+                    <span className={`change ${(parseFloat(String(stock.change_24h || 0)) >= 0) ? 'positive' : 'negative'}`}>
+                      {formatPercentage(stock.change_24h)}
                     </span>
                   </div>
                 </li>
