@@ -508,7 +508,10 @@ def api_get_portfolio(user_id):
 
 
 
-
+@api_bp.route('/health')
+def api_health_check():
+    """API-Endpunkt für den Gesundheitscheck der API"""
+    return jsonify({"status": "ok", "message": "API is running."}), 200
 
 
 

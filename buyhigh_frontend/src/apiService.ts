@@ -1,12 +1,12 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:9876/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:9876/api'; // Fallback für den Fall, dass die Umgebungsvariable fehlt
 const DEBUG = true; // Debug-Modus aktivieren/deaktivieren
 
 // Debug-Logging-Funktion
 const logDebug = (message: string, data: any = null) => {
   if (!DEBUG) return;
-  
+
   const logStyle = "background: #0047AB; color: white; padding: 2px 5px; border-radius: 3px;";
   if (data) {
     console.log(`%c[BuyHigh Debug]`, logStyle, message, data);
@@ -18,7 +18,7 @@ const logDebug = (message: string, data: any = null) => {
 // Hilfsfunktion zum Loggen von API-Aufrufen
 const logApiCall = (method: string, endpoint: string, params?: any) => {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   if (params) {
     logDebug(`${method} Request: ${url}`, params);
   } else {
@@ -138,14 +138,14 @@ export const GetAssets = async (type?: string, activeOnly: boolean = true) => {
   const queryParams = new URLSearchParams();
   if (type) queryParams.append('type', type);
   queryParams.append('active_only', activeOnly.toString());
-  
+
   logApiCall('GET', `/assets?${queryParams.toString()}`);
   try {
     const response = await axios.get(`${API_BASE_URL}/assets?${queryParams.toString()}`, {
       withCredentials: true,
     });
     logDebug('Assets Response:', response.data);
-    
+
     // Sicherstellen, dass wir immer ein Array zurückgeben
     let result = response.data;
     if (!Array.isArray(result)) {
@@ -199,7 +199,7 @@ export const BuyStock = async (symbol: string, quantity: number, price: number) 
   const payload = { symbol, quantity, price };
   logApiCall('POST', '/trade/buy', payload);
   try {
-    const response = await axios.post(`${API_BASE_URL}/trade/buy`, 
+    const response = await axios.post(`${API_BASE_URL}/trade/buy`,
       payload,
       { withCredentials: true }
     );
@@ -219,7 +219,7 @@ export const SellStock = async (symbol: string, quantity: number, price: number)
   const payload = { symbol, quantity, price };
   logApiCall('POST', '/trade/sell', payload);
   try {
-    const response = await axios.post(`${API_BASE_URL}/trade/sell`, 
+    const response = await axios.post(`${API_BASE_URL}/trade/sell`,
       payload,
       { withCredentials: true }
     );
