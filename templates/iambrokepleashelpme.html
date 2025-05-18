@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}HELP! I'm Broke! - BuyHigh.io{% endblock %}
+
+{% block content %}
+<div class="text-center mb-8">
+  <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-500 to-purple-500 animate-pulse">I'M FINANCIALLY RUINED!</h1>
+  <p class="mt-2 text-gray-600 dark:text-gray-400 italic">Congratulations on your terrible investment choices!</p>
+</div>
+
+<!-- Desperation Meter -->
+<div class="glass-card rounded-xl p-6 mb-8 text-center">
+  <h2 class="text-2xl font-bold text-red-500 dark:text-red-400 mb-3">Desperation Level: CRITICAL</h2>
+  <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 mb-4">
+    <div class="h-4 rounded-full bg-gradient-to-r from-yellow-500 via-red-500 to-pink-500 animate-pulse" style="width: 98%"></div>
+  </div>
+  <p class="text-gray-700 dark:text-gray-300 font-medium">Your account is on financial life support!</p>
+  <div class="mt-4 flex justify-center">
+    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 animate-bounce">
+      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+      </svg>
+      DANGER ZONE
+    </span>
+  </div>
+</div>
+
+<!-- Financial rescue section with spinning wheel -->
+<div class="glass-card rounded-xl overflow-hidden mb-8">
+  <div class="bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 p-4">
+    <h2 class="text-2xl font-extrabold text-white text-center">THE WHEEL OF FINANCIAL RESCUE</h2>
+  </div>
+  
+  <div class="p-6">
+    <p class="text-gray-700 dark:text-gray-300 text-center mb-6">Spin the wheel to receive an emergency bailout! Warning: Results may vary from "life-changing" to "utterly useless".</p>
+    
+    <!-- Wheel container -->
+    <div class="flex justify-center mb-6">
+      <div class="relative wheel-container">
+        <!-- Pointer -->
+        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
+          <svg class="w-10 h-10 text-yellow-500 filter drop-shadow-lg" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 3.22l-.61-.6a5.5 5.5 0 0 0-7.78 7.77L10 18.78l8.39-8.4a5.5 5.5 0 0 0-7.78-7.77l-.61.61z"/>
+          </svg>
+        </div>
+        
+        <!-- The Wheel -->
+        <div class="wheel relative w-64 h-64 md:w-80 md:h-80 rounded-full shadow-xl border-8 border-yellow-600 bg-yellow-500 transform transition-all duration-3000 ease-out">
+          <!-- Wheel segments -->
+          <div class="segment absolute inset-0 clip-path-segment-1 bg-red-500 text-white font-bold">
+            <span class="absolute top-8 left-1/2 transform -translate-x-1/2 rotate-[18deg]">$500</span>
+          </div>
+          <div class="segment absolute inset-0 clip-path-segment-2 bg-blue-500 text-white font-bold">
+            <span class="absolute top-8 left-1/2 transform -translate-x-1/2 rotate-[54deg]">$10</span>
+          </div>
+          <div class="segment absolute inset-0 clip-path-segment-3 bg-green-500 text-white font-bold">
+            <span class="absolute top-8 left-1/2 transform -translate-x-1/2 rotate-[90deg]">$1000</span>
+          </div>
+          <div class="segment absolute inset-0 clip-path-segment-4 bg-purple-500 text-white font-bold">
+            <span class="absolute top-8 left-1/2 transform -translate-x-1/2 rotate-[126deg]">$5</span>
+          </div>
+          <div class="segment absolute inset-0 clip-path-segment-5 bg-pink-500 text-white font-bold">
+            <span class="absolute top-8 left-1/2 transform -translate-x-1/2 rotate-[162deg]">$250</span>
+          </div>
+          <div class="segment absolute inset-0 clip-path-segment-6 bg-yellow-400 text-white font-bold">
+            <span class="absolute top-8 left-1/2 transform -translate-x-1/2 rotate-[198deg]">$0</span>
+          </div>
+          <div class="segment absolute inset-0 clip-path-segment-7 bg-indigo-500 text-white font-bold">
+            <span class="absolute top-8 left-1/2 transform -translate-x-1/2 rotate-[234deg]">$100</span>
+          </div>
+          <div class="segment absolute inset-0 clip-path-segment-8 bg-gray-600 text-white font-bold">
+            <span class="absolute top-8 left-1/2 transform -translate-x-1/2 rotate-[270deg]">BANKRUPT</span>
+          </div>
+          <div class="segment absolute inset-0 clip-path-segment-9 bg-orange-500 text-white font-bold">
+            <span class="absolute top-8 left-1/2 transform -translate-x-1/2 rotate-[306deg]">$50</span>
+          </div>
+          <div class="segment absolute inset-0 clip-path-segment-10 bg-emerald-500 text-white font-bold">
+            <span class="absolute top-8 left-1/2 transform -translate-x-1/2 rotate-[342deg]">$25</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Spin button -->
+    <div class="text-center">
+      <button id="spin-button" class="neo-button text-xl font-extrabold rounded-lg px-8 py-4 bg-gradient-to-r from-yellow-500 to-red-500 text-white hover:from-yellow-600 hover:to-red-600 transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-300 disabled:opacity-50 disabled:cursor-not-allowed">
+        SPIN TO WIN!
+      </button>
+    </div>
+    
+    <!-- Result display -->
+    <div class="mt-8 text-center">
+      <div id="result-display" class="hidden animate-bounce">
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-gray-200">You won: <span id="result-amount" class="text-green-500 dark:text-green-400">$0</span>!</h3>
+        <p id="result-message" class="text-gray-700 dark:text-gray-300 mt-2">Keep dreaming, buddy.</p>
+      </div>
+      
+      <div id="spinning-message" class="hidden">
+        <p class="text-xl text-pink-500 dark:text-pink-400 animate-pulse">Calculating your financial future...</p>
+        <div class="flex justify-center mt-3">
+          <svg class="animate-spin h-8 w-8 text-pink-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Financial advice section -->
+<div class="glass-card rounded-xl p-6 text-center mb-8">
+  <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-3">Expert Financial Advice</h3>
+  <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-3">
+    <p class="text-gray-800 dark:text-gray-200 italic font-medium">"Have you tried not being poor?"</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">- Financial Expert, probably</p>
+  </div>
+  <div class="bg-gray-100 dark:bg-gray-800 rounded-lg p-4">
+    <p class="text-gray-800 dark:text-gray-200 italic font-medium">"The trick is to buy high, sell low, then post about it on Reddit for karma."</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">- r/wallstreetbets wisdom</p>
+  </div>
+</div>
+
+<!-- Random motivational gif -->
+<div class="flex justify-center mb-8">
+  <div class="glass-card rounded-xl p-4 overflow-hidden">
+    <img src="https://media.giphy.com/media/JtBZm3Getg3dqxK0zP/giphy.gif" alt="Money burning" class="w-full max-w-md rounded-lg">
+  </div>
+</div>
+
+<div class="text-center">
+  <p class="text-gray-500 dark:text-gray-400 text-sm">Disclaimer: This wheel is as rigged as the markets you lost your money in.</p>
+</div>
+
+<style>
+  /* Wheel segment clip paths */
+  .clip-path-segment-1 {
+    clip-path: polygon(50% 50%, 50% 0%, 81.5% 10%);
+  }
+  .clip-path-segment-2 {
+    clip-path: polygon(50% 50%, 81.5% 10%, 97% 34.5%);
+  }
+  .clip-path-segment-3 {
+    clip-path: polygon(50% 50%, 97% 34.5%, 97% 65.5%);
+  }
+  .clip-path-segment-4 {
+    clip-path: polygon(50% 50%, 97% 65.5%, 81.5% 90%);
+  }
+  .clip-path-segment-5 {
+    clip-path: polygon(50% 50%, 81.5% 90%, 50% 100%);
+  }
+  .clip-path-segment-6 {
+    clip-path: polygon(50% 50%, 50% 100%, 18.5% 90%);
+  }
+  .clip-path-segment-7 {
+    clip-path: polygon(50% 50%, 18.5% 90%, 3% 65.5%);
+  }
+  .clip-path-segment-8 {
+    clip-path: polygon(50% 50%, 3% 65.5%, 3% 34.5%);
+  }
+  .clip-path-segment-9 {
+    clip-path: polygon(50% 50%, 3% 34.5%, 18.5% 10%);
+  }
+  .clip-path-segment-10 {
+    clip-path: polygon(50% 50%, 18.5% 10%, 50% 0%);
+  }
+
+  /* Additional animation for the wheel */
+  @keyframes shimmer {
+    0% {
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.5), 0 0 20px rgba(255, 204, 0, 0.3);
+    }
+    100% {
+      box-shadow: 0 0 20px rgba(255, 204, 0, 0.8), 0 0 40px rgba(255, 204, 0, 0.5);
+    }
+  }
+  
+  .wheel-container {
+    animation: shimmer 2s ease-in-out infinite alternate;
+  }
+
+  /* Center segment text properly */
+  .segment span {
+    font-size: 14px;
+    white-space: nowrap;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+  }
+  
+  @media (min-width: 768px) {
+    .segment span {
+      font-size: 16px;
+    }
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const wheel = document.querySelector('.wheel');
+  const spinButton = document.getElementById('spin-button');
+  const resultDisplay = document.getElementById('result-display');
+  const resultAmount = document.getElementById('result-amount');
+  const resultMessage = document.getElementById('result-message');
+  const spinningMessage = document.getElementById('spinning-message');
+  
+  // Wheel values - must match the order and values displayed on the wheel
+  const wheelValues = [
+    { value: 500, type: 'cash', message: 'Nice! Time to lose it all again!' },
+    { value: 10, type: 'cash', message: 'Better than nothing... barely.' },
+    { value: 1000, type: 'cash', message: 'JACKPOT! Your financial advisor just fainted.' },
+    { value: 5, type: 'cash', message: 'At least you can buy... nothing these days.' },
+    { value: 250, type: 'cash', message: 'A solid mid-tier bailout!' },
+    { value: 0, type: 'cash', message: 'Just like your investments: worthless!' },
+    { value: 100, type: 'cash', message: 'One hundred smackeroos! Not bad!' },
+    { value: 'BANKRUPT', type: 'special', message: 'Well, well, well... this seems familiar.' },
+    { value: 50, type: 'cash', message: 'Fifty bucks! That\'s like... 5 value meals!' },
+    { value: 25, type: 'cash', message: 'It\'s something... we guess.' }
+  ];
+  
+  let isSpinning = false;
+  
+  spinButton.addEventListener('click', function() {
+    if (isSpinning) return;
+    
+    isSpinning = true;
+    spinButton.disabled = true;
+    resultDisplay.classList.add('hidden');
+    spinningMessage.classList.remove('hidden');
+    
+    // Generate random spin (between 5-10 full rotations plus a random segment)
+    const segmentAngle = 360 / wheelValues.length;
+    const baseRotations = (Math.floor(Math.random() * 5) + 5) * 360; // 5-10 full rotations
+    const extraDegrees = Math.floor(Math.random() * wheelValues.length) * segmentAngle;
+    const totalDegrees = baseRotations + extraDegrees;
+    
+    // Calculate which segment will be selected
+    const selectedIndex = Math.floor(extraDegrees / segmentAngle);
+    const selectedValue = wheelValues[selectedIndex];
+    
+    // Animate the wheel
+    wheel.style.transition = 'transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+    wheel.style.transform = `rotate(${totalDegrees}deg)`;
+    
+    // Handle spin completion
+    setTimeout(() => {
+      // Update result display
+      if (selectedValue.type === 'cash') {
+        resultAmount.textContent = `$${selectedValue.value}`;
+        resultAmount.className = selectedValue.value > 100 ? 'text-green-500 dark:text-green-400' : 'text-yellow-500 dark:text-yellow-400';
+      } else {
+        resultAmount.textContent = selectedValue.value;
+        resultAmount.className = 'text-red-500 dark:text-red-400';
+      }
+      
+      resultMessage.textContent = selectedValue.message;
+      
+      // Show results
+      spinningMessage.classList.add('hidden');
+      resultDisplay.classList.remove('hidden');
+      
+      // Send result to backend
+      sendResultToBackend(selectedValue);
+      
+      // Reset button after a delay
+      setTimeout(() => {
+        isSpinning = false;
+        spinButton.disabled = false;
+      }, 1500);
+      
+    }, 5000); // Match this with the CSS transition time
+  });
+  
+  function sendResultToBackend(result) {
+    fetch('/api/rescue-wheel', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        result: result.value,
+        type: result.type
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Success:', data);
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
+  }
+});
+</script>
+{% endblock %}

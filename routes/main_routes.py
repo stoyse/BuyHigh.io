@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, g, request, flash, redirect, url_for
+from flask import Blueprint, render_template, g, request, flash, redirect, url_for, jsonify
 from utils import login_required
 import database.handler.postgres.postgres_db_handler as db_handler
 import logging  # Add logging import
@@ -449,3 +449,129 @@ def social():
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     print(f'[cynan] All profiles:', db_handler.get_all_profiles())
     return render_template('social.html', user=g.user, darkmode=dark_mode_active, users=db_handler.get_all_users(), profiles=db_handler.get_all_profiles())
+
+
+@main_bp.route('/iambrokepleashelpme', methods=['GET', 'POST'])
+@login_required
+def iambrokepleashelpme():
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "view_iambrokepleashelpme", "main_routes:iambrokepleashelpme")
+    logger.info(f"Seite 'iambrokepleashelpme' aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'}")
+    dark_mode_active = g.user and g.user.get('theme') == 'dark'
+    return render_template('iambrokepleashelpme.html', user=g.user, darkmode=dark_mode_active)
+
+@main_bp.route('/api/rescue-wheel', methods=['POST'])
+@login_required
+def api_rescue_wheel():
+    """Handle the result from the rescue wheel spin"""
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "api_rescue_wheel_spin", "main_routes:api_rescue_wheel")
+    
+    try:
+        data = request.get_json()
+        if not data:
+            logger.warning("No JSON data in rescue wheel request")
+            add_analytics(user_id_for_analytics, "api_rescue_wheel_no_data", "main_routes:api_rescue_wheel")
+            return jsonify({"success": False, "message": "No data provided"}), 400
+        
+        result_value = data.get('result')
+        result_type = data.get('type')
+        
+        logger.info(f"Rescue wheel result for user {g.user['id']}: {result_value} ({result_type})")
+        add_analytics(user_id_for_analytics, "api_rescue_wheel_result", f"main_routes:api_rescue_wheel:result={result_value},type={result_type}")
+        
+        # Handle the result based on type and value
+        if result_type == 'cash' and isinstance(result_value, (int, float)):
+            # Add money to user's balance
+            if result_value > 0:
+                import database.handler.postgres.postgre_transactions_handler as transactions_handler
+                
+                # Get previous balance
+                previous_balance = g.user['balance']
+                new_balance = previous_balance + result_value
+                
+                # Fix: Direct database update instead of using add_funds_to_user
+                success = False
+                try:
+                    # Using db_handler to execute direct SQL
+                    from database.handler.postgres.postgres_db_handler import get_db_connection
+                    conn = get_db_connection()
+                    cur = conn.cursor()
+                    
+                    # Update user balance
+                    cur.execute(
+                        "UPDATE users SET balance = balance + %s WHERE id = %s",
+                        (result_value, g.user['id'])
+                    )
+                    
+                    # Commit the transaction
+                    conn.commit()
+                    
+                    # Close cursor and connection
+                    cur.close()
+                    conn.close()
+                    
+                    success = True
+                    logger.info(f"Successfully updated balance for user {g.user['id']}: +${result_value}")
+                except Exception as db_error:
+                    logger.error(f"Database error updating user balance: {db_error}")
+                    success = False
+                
+                if success:
+                    # Log the transaction
+                    logger.info(f"User {g.user['id']} received ${result_value} from rescue wheel. Balance: ${previous_balance} → ${new_balance}")
+                    
+                    # Record this as a special transaction
+                    try:
+                        transactions_handler.record_special_transaction(
+                            user_id=g.user['id'],
+                            amount=result_value,
+                            transaction_type="rescue_wheel",
+                            description=f"Emergency bailout: ${result_value}"
+                        )
+                    except Exception as e:
+                        logger.error(f"Error recording rescue wheel transaction: {e}")
+                    
+                    # Add XP for using the wheel
+                    db_handler.manage_user_xp('rescue_wheel_spin', g.user['id'], 1)
+                    
+                    # Refresh user data to get updated balance
+                    updated_user = db_handler.get_user_by_id(g.user['id'])
+                    updated_balance = updated_user['balance'] if updated_user else new_balance
+                    
+                    return jsonify({
+                        "success": True,
+                        "message": f"Successfully added ${result_value} to your account!",
+                        "previous_balance": previous_balance,
+                        "new_balance": updated_balance,
+                        "amount": result_value
+                    })
+                else:
+                    logger.error(f"Failed to update balance for user {g.user['id']}")
+                    return jsonify({"success": False, "message": "Failed to update your balance"}), 500
+            
+            elif result_value == 0:
+                # Got $0, nothing to do
+                return jsonify({"success": True, "message": "You received $0. Better luck next time!"})
+        
+        elif result_type == 'special' and result_value == 'BANKRUPT':
+            # Special case: BANKRUPT (optional: could reset balance to minimum value)
+            logger.info(f"User {g.user['id']} got BANKRUPT on the rescue wheel")
+            return jsonify({
+                "success": True,
+                "message": "BANKRUPT! Fortunately, this is just for show. We wouldn't do that to you... or would we?",
+                "special_result": "BANKRUPT"
+            })
+        
+        # Default response for unhandled types
+        return jsonify({
+            "success": True, 
+            "message": f"Received result: {result_value}",
+            "result": result_value,
+            "type": result_type
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in rescue wheel API: {e}", exc_info=True)
+        add_analytics(user_id_for_analytics, "api_rescue_wheel_error", f"main_routes:api_rescue_wheel:error={str(e)}")
+        return jsonify({"success": False, "message": f"An error occurred: {str(e)}"}), 500

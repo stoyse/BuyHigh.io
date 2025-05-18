@@ -23,6 +23,7 @@ from routes.api_routes import api_bp  # Korrigiert von "api" zu "api_bp"
 from routes.chat_routes import chat_bp
 from routes.dev_routes import dev_bp
 from routes.roadmap_routes import roadmap_bp
+from routes.gambling_routes import gambling_bp
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')  # TODO: In Produktionsumgebung sicher verwalten!
@@ -226,6 +227,7 @@ app.register_blueprint(api_bp, url_prefix='/api')  # Korrigiert von "api" zu "ap
 app.register_blueprint(chat_bp, url_prefix='/chat')
 app.register_blueprint(dev_bp, url_prefix='/dev')
 app.register_blueprint(roadmap_bp, url_prefix='/roadmap')
+app.register_blueprint(gambling_bp, url_prefix='/gambling')
 logger.info("Blueprints registriert.")
 add_analytics(None, "blueprints_registered", "app:module_level")
 

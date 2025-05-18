@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}BuyHigh Casino - Lose Money Faster!{% endblock %}
+
+{% block content %}
+  <!-- Hero Section with Animated Elements -->
+  <div class="relative overflow-hidden py-8 mb-8 text-center">
+    <!-- Animated background elements -->
+    <div class="absolute inset-0 -z-10 overflow-hidden">
+      {% for i in range(20) %}
+        <div class="absolute animate-float" 
+             style="left: {{ range(0, 100) | random }}%; 
+                    top: {{ range(0, 100) | random }}%; 
+                    animation-delay: {{ range(0, 10) | random / 10 }}s;
+                    animation-duration: {{ range(3, 8) | random }}s;">
+          <span class="text-{{ ['pink', 'purple', 'yellow', 'green', 'blue', 'red'] | random }}-500 text-opacity-30 text-6xl">
+            {{ ['💰', '🎲', '🎰', '💎', '🃏', '🎯', '🍀', '💸'] | random }}
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+    
+    <h1 class="text-5xl font-bold mb-2 animate-pulse bg-clip-text text-transparent bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500">
+      BUY HIGH CASINO
+    </h1>
+    <p class="text-2xl italic mb-4 animate-bounce text-pink-500 dark:text-pink-400">Where financial degenerates come to play!</p>
+    <div class="animate-spin-slow inline-block mb-4">
+      <span class="text-6xl">🎰</span>
+    </div>
+    <p class="max-w-md mx-auto text-yellow-500 dark:text-yellow-400 bg-purple-900/30 p-3 rounded-lg glass-card animate-pulse border-2 border-yellow-500 dark:border-yellow-600">
+      Warning: These games are designed to separate you from your virtual money even faster than your terrible investment strategies!
+    </p>
+  </div>
+
+  <!-- Games Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+    
+    <!-- Coin Flip -->
+    <div class="game-card glass-card rounded-xl overflow-hidden border-2 border-yellow-500 hover:border-pink-500 transition-all duration-300 hover:scale-105 hover:rotate-1 hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] animate-blur-in bg-gradient-to-br from-yellow-500/20 to-orange-500/20 dark:from-yellow-600/30 dark:to-orange-600/30">
+      <a href="#" class="block h-full">
+        <div class="relative h-48 overflow-hidden flex justify-center items-center bg-black/20">
+          <div class="absolute inset-0 coin-flip-animation">
+            <div class="absolute inset-0 bg-yellow-500 rounded-full m-12 border-8 border-yellow-600 flex items-center justify-center text-4xl">
+              <span class="front">🪙</span>
+              <span class="back">💰</span>
+            </div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <h3 class="text-3xl font-extrabold text-white text-center">COIN FLIP</h3>
+          </div>
+        </div>
+        <div class="p-5 text-center">
+          <p class="mb-4 text-gray-700 dark:text-gray-300">Heads you lose, tails we win! 50% chance of doubling your money!</p>
+          <div class="neo-button text-yellow-400 bg-yellow-900/30 hover:bg-yellow-400 hover:text-black border border-yellow-400/50 p-2 rounded-lg font-bold">
+            FLIP TO WIN
+          </div>
+        </div>
+      </a>
+    </div>
+    
+    <!-- Roulette -->
+    <div class="game-card glass-card rounded-xl overflow-hidden border-2 border-red-500 hover:border-pink-500 transition-all duration-300 hover:scale-105 hover:-rotate-1 hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] animate-blur-in bg-gradient-to-br from-red-500/20 to-pink-500/20 dark:from-red-600/30 dark:to-pink-600/30" style="animation-delay: 0.1s;">
+      <a href="#" class="block h-full">
+        <div class="relative h-48 overflow-hidden flex justify-center items-center bg-black/20">
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="w-32 h-32 rounded-full border-4 border-red-500 animate-spin-slow relative">
+              <div class="absolute inset-0 rounded-full flex items-center justify-center">
+                <span class="text-5xl">🎯</span>
+              </div>
+            </div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <h3 class="text-3xl font-extrabold text-white text-center">ROULETTE</h3>
+          </div>
+        </div>
+        <div class="p-5 text-center">
+          <p class="mb-4 text-gray-700 dark:text-gray-300">Red, black, or green? Math says you'll lose eventually!</p>
+          <div class="neo-button text-red-400 bg-red-900/30 hover:bg-red-400 hover:text-black border border-red-400/50 p-2 rounded-lg font-bold">
+            SPIN THE WHEEL
+          </div>
+        </div>
+      </a>
+    </div>
+    
+    <!-- Slot Machine -->
+    <div class="game-card glass-card rounded-xl overflow-hidden border-2 border-purple-500 hover:border-pink-500 transition-all duration-300 hover:scale-105 hover:rotate-1 hover:shadow-[0_0_30px_rgba(168,85,247,0.5)] animate-blur-in bg-gradient-to-br from-purple-500/20 to-blue-500/20 dark:from-purple-600/30 dark:to-blue-600/30" style="animation-delay: 0.2s;">
+      <a href="#" class="block h-full">
+        <div class="relative h-48 overflow-hidden flex justify-center items-center bg-black/20">
+          <div class="flex space-x-2 transform scale-90">
+            <div class="w-16 h-24 bg-gray-800 border-2 border-purple-500 rounded-lg flex items-center justify-center overflow-hidden">
+              <div class="animate-slot text-4xl">🍒</div>
+            </div>
+            <div class="w-16 h-24 bg-gray-800 border-2 border-purple-500 rounded-lg flex items-center justify-center overflow-hidden">
+              <div class="animate-slot-2 text-4xl">💎</div>
+            </div>
+            <div class="w-16 h-24 bg-gray-800 border-2 border-purple-500 rounded-lg flex items-center justify-center overflow-hidden">
+              <div class="animate-slot-3 text-4xl">7️⃣</div>
+            </div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <h3 class="text-3xl font-extrabold text-white text-center">SLOTS</h3>
+          </div>
+        </div>
+        <div class="p-5 text-center">
+          <p class="mb-4 text-gray-700 dark:text-gray-300">Pull the lever! The house edge is only... a lot!</p>
+          <div class="neo-button text-purple-400 bg-purple-900/30 hover:bg-purple-400 hover:text-black border border-purple-400/50 p-2 rounded-lg font-bold">
+            SPIN TO WIN
+          </div>
+        </div>
+      </a>
+    </div>
+    
+    <!-- Dice Roll -->
+    <div class="game-card glass-card rounded-xl overflow-hidden border-2 border-green-500 hover:border-pink-500 transition-all duration-300 hover:scale-105 hover:-rotate-1 hover:shadow-[0_0_30px_rgba(34,197,94,0.5)] animate-blur-in bg-gradient-to-br from-green-500/20 to-teal-500/20 dark:from-green-600/30 dark:to-teal-600/30" style="animation-delay: 0.3s;">
+      <a href="#" class="block h-full">
+        <div class="relative h-48 overflow-hidden flex justify-center items-center bg-black/20">
+          <div class="animate-bounce-slow transform rotate-12">
+            <span class="text-7xl">🎲</span>
+          </div>
+          <div class="animate-bounce-slow-delay transform -rotate-12 absolute top-16 left-24">
+            <span class="text-5xl">🎲</span>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <h3 class="text-3xl font-extrabold text-white text-center">DICE ROLL</h3>
+          </div>
+        </div>
+        <div class="p-5 text-center">
+          <p class="mb-4 text-gray-700 dark:text-gray-300">Roll the dice and pray! Set your own odds!</p>
+          <div class="neo-button text-green-400 bg-green-900/30 hover:bg-green-400 hover:text-black border border-green-400/50 p-2 rounded-lg font-bold">
+            ROLL THE DICE
+          </div>
+        </div>
+      </a>
+    </div>
+    
+    <!-- Crash Game -->
+    <div class="game-card glass-card rounded-xl overflow-hidden border-2 border-blue-500 hover:border-pink-500 transition-all duration-300 hover:scale-105 hover:rotate-1 hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] animate-blur-in bg-gradient-to-br from-blue-500/20 to-indigo-500/20 dark:from-blue-600/30 dark:to-indigo-600/30" style="animation-delay: 0.4s;">
+      <a href="#" class="block h-full">
+        <div class="relative h-48 overflow-hidden flex justify-center items-center bg-black/20">
+          <div class="crash-animation">
+            <div class="text-6xl">🚀</div>
+            <div class="absolute text-7xl opacity-0 boom">💥</div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <h3 class="text-3xl font-extrabold text-white text-center">CRASH</h3>
+          </div>
+        </div>
+        <div class="p-5 text-center">
+          <p class="mb-4 text-gray-700 dark:text-gray-300">Cash out before it crashes! Greed is your enemy!</p>
+          <div class="neo-button text-blue-400 bg-blue-900/30 hover:bg-blue-400 hover:text-black border border-blue-400/50 p-2 rounded-lg font-bold">
+            TO THE MOON
+          </div>
+        </div>
+      </a>
+    </div>
+    
+    <!-- Blackjack -->
+    <div class="game-card glass-card rounded-xl overflow-hidden border-2 border-pink-500 hover:border-pink-500 transition-all duration-300 hover:scale-105 hover:-rotate-1 hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] animate-blur-in bg-gradient-to-br from-pink-500/20 to-rose-500/20 dark:from-pink-600/30 dark:to-rose-600/30" style="animation-delay: 0.5s;">
+      <a href="#" class="block h-full">
+        <div class="relative h-48 overflow-hidden flex justify-center items-center bg-black/20">
+          <div class="flex transform rotate-12 blackjack-animation">
+            <div class="w-16 h-20 bg-white rounded-lg shadow-lg ml-4 -mr-8 flex items-center justify-center text-4xl">
+              🂮
+            </div>
+            <div class="w-16 h-20 bg-white rounded-lg shadow-lg flex items-center justify-center text-4xl">
+              🂡
+            </div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <h3 class="text-3xl font-extrabold text-white text-center">BLACKJACK</h3>
+          </div>
+        </div>
+        <div class="p-5 text-center">
+          <p class="mb-4 text-gray-700 dark:text-gray-300">Hit me! The classics never get old!</p>
+          <div class="neo-button text-pink-400 bg-pink-900/30 hover:bg-pink-400 hover:text-black border border-pink-400/50 p-2 rounded-lg font-bold">
+            DEAL ME IN
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+  
+  <!-- Funny Disclaimer -->
+  <div class="max-w-2xl mx-auto p-6 glass-card rounded-xl bg-gray-900/50 dark:bg-black/50 text-center mb-10">
+    <h3 class="text-2xl font-bold mb-2 text-red-400 dark:text-red-500">DISCLAIMER</h3>
+    <p class="text-gray-300 dark:text-gray-400">These games are rigged just like real markets! At least here we're honest about it!</p>
+    <p class="mt-3 text-xs text-gray-500 dark:text-gray-600">Not responsible for addictive behavior, tears, broken keyboards, or empty virtual wallets. Play responsibly or don't - we still win! 😈</p>
+  </div>
+
+  <style>
+    @keyframes float {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      50% { transform: translate(10px, -10px) rotate(10deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+    
+    @keyframes slot {
+      0%, 100% { transform: translateY(0); }
+      20% { transform: translateY(-100px); }
+      40% { transform: translateY(-200px); }
+      60% { transform: translateY(-300px); }
+      80% { transform: translateY(-400px); }
+    }
+    
+    @keyframes slot-2 {
+      0%, 100% { transform: translateY(-100px); }
+      20% { transform: translateY(-200px); }
+      40% { transform: translateY(-300px); }
+      60% { transform: translateY(-400px); }
+      80% { transform: translateY(0); }
+    }
+    
+    @keyframes slot-3 {
+      0%, 100% { transform: translateY(-200px); }
+      20% { transform: translateY(-300px); }
+      40% { transform: translateY(-400px); }
+      60% { transform: translateY(0); }
+      80% { transform: translateY(-100px); }
+    }
+    
+    .animate-float {
+      animation: float 5s ease-in-out infinite;
+    }
+    
+    .animate-slot {
+      animation: slot 3s ease-in-out infinite;
+    }
+    
+    .animate-slot-2 {
+      animation: slot-2 4s ease-in-out infinite;
+    }
+    
+    .animate-slot-3 {
+      animation: slot-3 5s ease-in-out infinite;
+    }
+    
+    .animate-bounce-slow {
+      animation: bounce 2s infinite;
+    }
+    
+    .animate-bounce-slow-delay {
+      animation: bounce 2s infinite;
+      animation-delay: 0.5s;
+    }
+    
+    .animate-spin-slow {
+      animation: spin 4s linear infinite;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    .crash-animation:hover .boom {
+      animation: boom 2s forwards;
+    }
+    
+    @keyframes boom {
+      0% { transform: translateY(0); opacity: 0; }
+      10% { transform: translateY(0); opacity: 0; }
+      20% { transform: translateY(-20px); opacity: 1; }
+      100% { transform: translateY(-60px); opacity: 0; }
+    }
+    
+    .crash-animation:hover .text-6xl {
+      animation: rocket 2s forwards;
+    }
+    
+    @keyframes rocket {
+      0% { transform: translateY(0); }
+      60% { transform: translateY(-40px); }
+      80% { transform: translateY(10px); opacity: 0; }
+      100% { transform: translateY(10px); opacity: 0; }
+    }
+    
+    .coin-flip-animation:hover {
+      animation: flip 1s forwards;
+    }
+    
+    @keyframes flip {
+      0% { transform: rotateY(0); }
+      100% { transform: rotateY(180deg); }
+    }
+    
+    .blackjack-animation:hover {
+      animation: deal 0.5s forwards;
+    }
+    
+    @keyframes deal {
+      0% { transform: translateY(0) rotate(12deg); }
+      50% { transform: translateY(-20px) rotate(5deg); }
+      100% { transform: translateY(0) rotate(-2deg); }
+    }
+  </style>
+{% endblock %}
