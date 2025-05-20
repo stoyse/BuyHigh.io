@@ -81,6 +81,7 @@ def api_login():
         session.permanent = True
         
         logger.info(f"Login successful for user ID: {local_user['id']}")
+        logger.info(f"Session data set: user_id={session.get('user_id')}, firebase_uid={session.get('firebase_uid')}, logged_in={session.get('logged_in')}")
         
         # Update last login timestamp
         try:
@@ -103,6 +104,12 @@ def api_login():
 @login_required
 def api_stock_data():
     user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    logger.info(f"Accessing /stock-data. g.user: {g.user if hasattr(g, 'user') else 'g.user not set'}")
+    if hasattr(g, 'user') and g.user:
+        logger.info(f"User ID from g.user: {g.user.get('id')}")
+    else:
+        logger.warning("No user found in g.user for @login_required route /stock-data")
+
     symbol = request.args.get('symbol', 'AAPL')
     timeframe = request.args.get('timeframe', '3M')
     force_fresh = request.args.get('fresh', 'false').lower() == 'true'

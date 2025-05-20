@@ -28,7 +28,7 @@ const TestPage: React.FC = () => {
     transactions: { name: 'Transaktionen', data: null, loading: false, error: null },
     dailyQuiz: { name: 'Tägliches Quiz', data: null, loading: false, error: null },
     assets: { name: 'Vermögenswerte', data: null, loading: false, error: null },
-    stockData: { name: 'Aktiendaten', data: null, loading: false, error: null }
+    stockData: { name: 'Aktiendaten (AAPL)', data: null, loading: false, error: null }
   });
 
   // Login-Felder
@@ -36,6 +36,7 @@ const TestPage: React.FC = () => {
   const [password, setPassword] = useState<string>('');
   const [loginResult, setLoginResult] = useState<any>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
 
   // Aktien kaufen/verkaufen Felder
   const [symbol, setSymbol] = useState<string>('AAPL');
@@ -65,29 +66,38 @@ const TestPage: React.FC = () => {
     }
   };
 
-  // Beim Laden der Seite die GET-Anfragen ausführen
+  // Beim Laden der Seite die GET-Anfragen ausführen, die keine Benutzer-ID benötigen
   useEffect(() => {
-    // Test-Benutzer-ID
-    const userId = '1';
-    
     fetchApiData('funnyTips', () => fetchFunnyTips());
-    fetchApiData('userInfo', () => GetUserInfo(userId));
-    fetchApiData('portfolioData', () => GetPortfolioData(userId));
-    fetchApiData('transactions', () => GetRecentTransactions(userId));
     fetchApiData('dailyQuiz', () => GetDailyQuiz());
     fetchApiData('assets', () => GetAssets());
     fetchApiData('stockData', () => GetStockData('AAPL', '1d'));
   }, []);
+
+  // Benutzer-spezifische Daten abrufen, wenn loggedInUserId verfügbar ist
+  useEffect(() => {
+    if (loggedInUserId) {
+      fetchApiData('userInfo', () => GetUserInfo(loggedInUserId));
+      fetchApiData('portfolioData', () => GetPortfolioData(loggedInUserId));
+      fetchApiData('transactions', () => GetRecentTransactions(loggedInUserId));
+    }
+  }, [loggedInUserId]);
 
   // Login-Funktion
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginResult(null);
     setLoginError(null);
+    setLoggedInUserId(null); // Reset user ID on new login attempt
     
     try {
       const result = await loginUser(email, password);
       setLoginResult(result);
+      if (result && result.success && result.userId) {
+        setLoggedInUserId(result.userId.toString()); // Store user ID from login response
+      } else if (result && !result.success) {
+        setLoginError(result.message || 'Login fehlgeschlagen');
+      }
     } catch (err: any) {
       setLoginError(err.message || 'Login fehlgeschlagen');
     }
