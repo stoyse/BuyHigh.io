@@ -8,8 +8,8 @@ NC='\033[0m' # No Color
 
 # API-Konfiguration
 API_MODULE="buy_high_backend.main:app"
-HOST="0.0.0.0"  # 0.0.0.0 erlaubt Zugriff von allen Netzwerkschnittstellen
-PORT="9876"
+HOST="127.0.0.1"  # 0.0.0.0 erlaubt Zugriff von allen Netzwerkschnittstellen
+PORT="9877"
 WORKERS=2       # Anzahl der Worker-Prozesse (üblicherweise (2*CPU)+1)
 RELOAD="--reload"  # Automatisches Neuladen bei Codeänderungen (für Entwicklung)
 
