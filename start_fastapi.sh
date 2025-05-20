@@ -15,10 +15,30 @@ RELOAD="--reload"  # Automatisches Neuladen bei Codeänderungen (für Entwicklun
 
 echo -e "${GREEN}=== BuyHigh.io API Server ===${NC}"
 
+# Prüfen, ob Python und pip installiert sind
+if ! command -v python3 &> /dev/null; then
+    echo -e "${RED}Fehler: Python3 ist nicht installiert.${NC}"
+    exit 1
+fi
+
+if ! command -v pip &> /dev/null; then
+    echo -e "${RED}Fehler: pip ist nicht installiert.${NC}"
+    exit 1
+fi
+
 # Prüfen, ob uvicorn installiert ist
 if ! command -v uvicorn &> /dev/null; then
     echo -e "${RED}Fehler: uvicorn ist nicht installiert.${NC}"
     echo -e "${YELLOW}Installiere mit: pip install uvicorn${NC}"
+    pip install uvicorn
+fi
+
+# Installiere Python-Abhängigkeiten aus requirements.txt
+if [ -f "requirements.txt" ]; then
+    echo -e "${YELLOW}Installiere Abhängigkeiten aus requirements.txt...${NC}"
+    pip install -r requirements.txt
+else
+    echo -e "${RED}Fehler: requirements.txt nicht gefunden.${NC}"
     exit 1
 fi
 

@@ -5,7 +5,7 @@ Router für verschiedene kleinere Funktionen.
 from fastapi import APIRouter, Depends
 from datetime import datetime
 import logging
-import stock_data_api as stock_data
+import utils.stock_data_api as stock_data
 from database.handler.postgres.postgres_db_handler import add_analytics
 from ..auth_utils import get_current_user, AuthenticatedUser
 from ..pydantic_models import FunnyTip, FunnyTipsResponse, StatusResponse

@@ -14,7 +14,7 @@ load_dotenv()  # Load environment variables from .env file
 
 import database.handler.postgres.postgres_db_handler as db_handler
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
-import auth as auth_module  # Import our updated auth module
+import utils.auth as auth_module  # Import our updated auth module
 from database.handler.postgres.postgres_db_handler import add_analytics  # Import add_analytics
 
 # Import Blueprints

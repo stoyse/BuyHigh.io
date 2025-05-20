@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, g, request, flash, redirect, url_for, jsonify
-from utils import process_easter_egg, login_required
+from utils.utils import process_easter_egg, login_required
 import database.handler.postgres.postgres_db_handler as db_handler
 import logging  # Add logging import
-import stock_news
+import utils.stock_news as stock_news
 from rich import print
 import database.handler.postgres.postgre_education_handler as edu_handler
 import datetime
@@ -266,7 +266,7 @@ def settings():
     add_analytics(user_id_for_analytics, f"view_settings_method_{request.method}", "main_routes:settings")
     logger.info(f"Einstellungsseite aufgerufen von Benutzer: {g.user.get('username') if g.user else 'Unbekannt'} (Methode: {request.method})")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
-    import auth as auth_module
+    import utils.auth as auth_module
 
     if request.method == 'POST':
         form_type = request.form.get('form_type')

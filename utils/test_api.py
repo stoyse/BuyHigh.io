@@ -7,18 +7,14 @@ Kompatibel mit der modularen Router-Struktur.
 import os
 import time
 import json
-import subprocess
 import requests
 import sys
-import signal
 from dotenv import load_dotenv
 from typing import Dict, Any, Optional, List, Tuple
 
 # Konstanten
-APP_MODULE = "buy_high_backend.main:app"
-HOST = "127.0.0.1"
-PORT = 8000
-BASE_URL = f"http://{HOST}:{PORT}"
+#BASE_URL = "https://stoyse.hackclub.app/"  # Remote API-URL
+BASE_URL = "http://localhost:9876/"
 
 # Farben für die Ausgabe
 GREEN = "\033[92m"
@@ -45,46 +41,6 @@ def load_env_vars() -> Dict[str, str]:
         "Username": os.getenv("Username"),
         "Password": os.getenv("Password")
     }
-
-def start_server() -> subprocess.Popen:
-    """Startet den Uvicorn-Server in einem separaten Prozess."""
-    print_color(f"Starte FastAPI-Anwendung auf {BASE_URL}...", BLUE)
-    
-    # Setze Umgebungsvariable für den Fall dass DEBUG-Logging aktiviert werden soll
-    env = os.environ.copy()
-    env["PYTHONPATH"] = os.getcwd()
-    
-    server = subprocess.Popen([
-        sys.executable, "-m", "uvicorn", APP_MODULE, 
-        "--host", HOST, "--port", str(PORT), "--reload"
-    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
-    
-    # Warte, bis der Server gestartet ist
-    print_color("Warte auf Serverstart...", BLUE)
-    
-    # Ping the server until it's ready
-    ready = False
-    for _ in range(10):  # Try for 10 seconds
-        time.sleep(1)
-        try:
-            # Try to access the health endpoint to check if server is running
-            response = requests.get(f"{BASE_URL}/api/health", timeout=1)
-            if response.status_code == 200:
-                print_color("Server ist gestartet und antwortet auf Anfragen.", GREEN)
-                ready = True
-                break
-        except requests.exceptions.RequestException:
-            print_color("Server noch nicht bereit, warte weiter...", YELLOW)
-    
-    if not ready:
-        print_color("Server konnte nicht innerhalb der Zeitbegrenzung gestartet werden.", RED)
-        # Optional: Show stderr to help diagnose startup issues
-        stderr_output = server.stderr.read().decode('utf-8') if server.stderr else "No stderr output"
-        print_color(f"Server stderr output:\n{stderr_output}", RED)
-        server.terminate()
-        sys.exit(1)
-    
-    return server
 
 def test_route(method: str, route: str, expected_status: int, data: Optional[Dict] = None, 
                token: Optional[str] = None, detailed: bool = True) -> Dict:
@@ -158,89 +114,64 @@ def run_tests() -> List[Tuple[str, bool]]:
     if not env_vars["Username"] or not env_vars["Password"]:
         print_color("Warnung: Username oder Password fehlen in der .env-Datei.", YELLOW)
     
-    # Starte den Server
-    server = start_server()
     id_token = None
     
-    try:
-        # --- Basistests ---
-        print_section("Basis-Tests")
+    # --- Basistests ---
+    print_section("Basis-Tests")
+    
+    # Test der Root-Route
+    root_response = test_route("GET", "/", 200)
+    test_results.append(("Root Route", "status" in root_response))
+    
+    # Test des Gesundheitschecks
+    health_response = test_route("GET", "/api/health", 200)
+    test_results.append(("Health Check", "status" in health_response))
+    
+    # --- Login-Test ---
+    print_section("Login-Test")
+    
+    # Test mit gültigen Anmeldedaten
+    print_color(f"Versuche Login mit Anmeldedaten aus .env: {env_vars['Username']}", BLUE)
+    login_data = {
+        "email": env_vars["Username"],
+        "password": env_vars["Password"]
+    }
+    login_response = test_route("POST", "/api/login", 200, login_data)
+    login_success = login_response.get("success", False)
+    test_results.append(("Login", login_success))
+    
+    # Extrahiere Token aus der Login-Antwort
+    if login_success:
+        for token_field in ['id_token', 'firebase_token', 'access_token']:
+            if token_field in login_response:
+                id_token = login_response[token_field]
+                break
+    
+    # --- Tests für geschützte Routen ---
+    print_section("Tests für geschützte Routen")
+    
+    if id_token:
+        stock_data_response = test_route("GET", "/api/stock-data?symbol=AAPL&timeframe=3M", 200, token=id_token)
+        test_results.append(("Stock Data", isinstance(stock_data_response, list)))
         
-        # Test der Root-Route
-        root_response = test_route("GET", "/", 200)
-        test_results.append(("Root Route", "status" in root_response))
-        
-        # Test des Gesundheitschecks
-        health_response = test_route("GET", "/api/health", 200)
-        test_results.append(("Health Check", "status" in health_response))
-        
-        # --- Login-Test ---
-        print_section("Login-Test")
-        
-        # Test mit gültigen Anmeldedaten
-        print_color(f"Versuche Login mit Anmeldedaten aus .env: {env_vars['Username']}", BLUE)
-        login_data = {
-            "email": env_vars["Username"],
-            "password": env_vars["Password"]
-        }
-        login_response = test_route("POST", "/api/login", 200, login_data)
-        login_success = login_response.get("success", False)
-        test_results.append(("Login", login_success))
-        
-        # Extrahiere Token aus der Login-Antwort
-        if login_success:
-            print_color("Verfügbare Felder in der Login-Antwort:", BLUE)
-            print_color(json.dumps(list(login_response.keys()), indent=2), RESET)
-            
-            # Versuche verschiedene Felder für das Token
-            for token_field in ['id_token', 'firebase_token', 'access_token']:
-                if token_field in login_response:
-                    id_token = login_response[token_field]
-                    print_color(f"🔑 Token aus Feld '{token_field}' extrahiert: {id_token[:15]}... (gekürzt)", GREEN)
-                    break
-        
-        # --- Tests für geschützte Routen ---
-        print_section("Tests für geschützte Routen")
-        
-        if id_token:
-            print_color("Teste geschützte Routen mit Token...", BLUE)
-            
-            # Teste Stock Data
-            stock_data_response = test_route("GET", "/api/stock-data?symbol=AAPL&timeframe=3M", 200, token=id_token)
-            test_results.append(("Stock Data", isinstance(stock_data_response, list)))
-            
-            # Teste Funny Tips
-            funny_tips_response = test_route("GET", "/api/funny-tips", 200, token=id_token)
-            funny_tips_success = isinstance(funny_tips_response, dict) and funny_tips_response.get("success", False)
-            test_results.append(("Funny Tips", funny_tips_success))
-        else:
-            print_color("⚠️ Kein Token extrahiert, überspringe Tests für geschützte Routen.", YELLOW)
-            test_results.append(("Stock Data", None))
-            test_results.append(("Funny Tips", None))
-        
-        # --- Test für fehlschlagenden Login ---
-        print_section("Test für fehlschlagenden Login")
-        
-        invalid_login_data = {
-            "email": "ungueltig@example.com", 
-            "password": "falschespasswort123"
-        }
-        invalid_login_response = test_route("POST", "/api/login", 401, invalid_login_data)
-        invalid_login_expected = "success" not in invalid_login_response or not invalid_login_response["success"]
-        test_results.append(("Invalid Login", invalid_login_expected))
-        
-    finally:
-        # Beende den Server
-        print_color("\nBeende den Server...", BLUE)
-        try:
-            # Send SIGTERM for graceful shutdown
-            server.send_signal(signal.SIGTERM)
-            server.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            # If server doesn't terminate gracefully, force kill
-            server.kill()
-            server.wait()
-        print_color("Server gestoppt.", GREEN)
+        funny_tips_response = test_route("GET", "/api/funny-tips", 200, token=id_token)
+        funny_tips_success = isinstance(funny_tips_response, dict) and funny_tips_response.get("success", False)
+        test_results.append(("Funny Tips", funny_tips_success))
+    else:
+        print_color("⚠️ Kein Token extrahiert, überspringe Tests für geschützte Routen.", YELLOW)
+        test_results.append(("Stock Data", None))
+        test_results.append(("Funny Tips", None))
+    
+    # --- Test für fehlschlagenden Login ---
+    print_section("Test für fehlschlagenden Login")
+    
+    invalid_login_data = {
+        "email": "ungueltig@example.com", 
+        "password": "falschespasswort123"
+    }
+    invalid_login_response = test_route("POST", "/api/login", 401, invalid_login_data)
+    invalid_login_expected = "success" not in invalid_login_response or not invalid_login_response["success"]
+    test_results.append(("Invalid Login", invalid_login_expected))
     
     return test_results
 

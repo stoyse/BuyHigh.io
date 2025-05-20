@@ -4,14 +4,14 @@
 
 from flask import Blueprint, request, jsonify, g, send_file, url_for, session, current_app
 from datetime import datetime, timedelta
-from utils import login_required
+from utils.utils import login_required
 import os
-import stock_data_api as stock_data
+import utils.stock_data_api as stock_data
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
 from database.handler.postgres.postgres_db_handler import add_analytics
 import pandas as pd
 import logging
-import auth as auth_module  # Fix the import path to match the correct module name
+import utils.auth as auth_module  # Fix the import path to match the correct module name
 import database.handler.postgres.postgres_db_handler as db_handler
 import database.handler.postgres.postgre_education_handler as education_handler
 logger = logging.getLogger(__name__)

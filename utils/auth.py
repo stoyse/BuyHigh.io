@@ -46,7 +46,7 @@ def initialize_firebase_admin_sdk(): # Renamed to avoid conflict if called direc
             logger.error(f"Error initializing Firebase Admin SDK: {e}")
             add_analytics(None, "initialize_firebase_admin_sdk_error", f"auth:initialize_firebase_admin_sdk:error={e}")
     else:
-        logger.warning(f"Firebase service account key not found at {cred_path}. Firebase Admin SDK not initialized.")
+        logger.error(f"Firebase service account key not found at {cred_path}. Please ensure the file exists and the path is correct.")
         add_analytics(None, "initialize_firebase_admin_sdk_key_not_found", f"auth:initialize_firebase_admin_sdk:path={cred_path}")
 
 # Call initialize_firebase_admin_sdk at module level if not already initialized by app.py

@@ -2,7 +2,7 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
-import stock_data_api as stock_data  # Import des stock_data Moduls für aktuelle Kurse # Changed from stock_data to stock_data_api
+import utils.stock_data_api as stock_data  # Import des stock_data Moduls für aktuelle Kurse # Changed from stock_data to stock_data_api
 import database.handler.postgres.postgres_db_handler as db_handler  # Import des PostgreSQL DB Handlers
 from database.handler.postgres.postgres_db_handler import add_analytics  # Direkter Import
 from rich import print

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, g, request, flash, redirect, url_for, jsonify, session
 from flask_socketio import emit, join_room, leave_room
-from utils import login_required
+from utils.utils import login_required
 import logging
 from datetime import datetime
 import dotenv

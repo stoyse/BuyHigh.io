@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, g, current_app
 import database.handler.postgres.postgres_db_handler as db_handler
-import auth as auth_module # Alias to avoid conflict with blueprint name
-from utils import login_required # Import login_required
+import utils.auth as auth_module # Alias to avoid conflict with blueprint name
+from utils.utils import login_required # Import login_required
 import logging # Hinzugefügt
 from database.handler.postgres.postgres_db_handler import add_analytics # Import add_analytics
 

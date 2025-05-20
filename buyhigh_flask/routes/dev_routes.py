@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, g, request, flash, redirect, url_for
-from utils import dev_required, login_required
+from utils.utils import dev_required, login_required
 import logging
 import database.handler.postgres.postgre_dev_handler as dev_handler
 import database.handler.postgres.postgre_education_handler as edu_handler

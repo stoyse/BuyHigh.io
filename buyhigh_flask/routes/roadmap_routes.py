@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, g, request, flash, redirect, url_for, jsonify, current_app, render_template_string
-from utils import login_required
+from utils.utils import login_required
 import database.handler.postgres.postgres_db_handler as db_handler
 import logging
 from rich import print

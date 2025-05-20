@@ -1,10 +1,41 @@
+import os
+import logging
+
+# Setze die Umgebungsvariable für Firebase-Credentials so früh wie möglich.
+# Dies muss geschehen, bevor Module importiert werden, die Firebase initialisieren (z.B. utils.auth).
+
+# Temporären Logger für die Setup-Phase erstellen, um unmittelbares Feedback zu geben
+_setup_logger = logging.getLogger("buyhigh_setup")
+if not _setup_logger.hasHandlers(): # Handler nur einmal hinzufügen
+    _ch = logging.StreamHandler() # Loggt auf die Konsole
+    _formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    _ch.setFormatter(_formatter)
+    _setup_logger.addHandler(_ch)
+    _setup_logger.setLevel(logging.INFO)
+
+# Korrekter Pfad zur Firebase-Konfigurationsdatei
+# Annahme: main.py ist in buy_high_backend, utils-Ordner ist auf gleicher Ebene wie buy_high_backend
+project_root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # BuyHigh.io Verzeichnis
+firebase_config_path = os.path.join(project_root_dir, "utils", "buyhighio-firebase-adminsdk-fbsvc-df9d657bec.json")
+
+_setup_logger.info(f"MAIN.PY: Versuchter Pfad für Firebase-Konfig: {firebase_config_path}")
+
+if os.path.exists(firebase_config_path):
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = firebase_config_path
+    _setup_logger.info(f"MAIN.PY: GOOGLE_APPLICATION_CREDENTIALS gesetzt auf: {firebase_config_path}")
+else:
+    _setup_logger.error(f"MAIN.PY: Firebase-Konfigurationsdatei NICHT gefunden unter: {firebase_config_path}")
+    # Optional: Programm hier beenden oder mit einer Warnung fortfahren, wenn Firebase nicht kritisch ist
+    # raise FileNotFoundError(f"Firebase config file not found at {firebase_config_path}")
+
+# Importiere FastAPI und andere Module erst NACHDEM die Umgebungsvariable gesetzt wurde.
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-import os
 
-# Importiere den kombinierten Router aus dem router-Paket
-from .router import router as api_router
+# Importiere den kombinierten Router und die Middleware aus dem router-Paket.
+# Das debug_logger Objekt wird jetzt direkt aus dem router-Modul importiert.
+from .router import router as api_router, RequestLoggingMiddleware, debug_logger as router_debug_logger
 
 # FastAPI-Anwendung mit Metadaten initialisieren
 app = FastAPI(
@@ -14,6 +45,9 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Füge die Request-Logging-Middleware hinzu
+app.add_middleware(RequestLoggingMiddleware)
 
 # CORS-Middleware hinzufügen, um Cross-Origin-Anfragen zu ermöglichen
 app.add_middleware(
@@ -36,6 +70,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 @app.get("/")
 async def root():
     """Einfache Root-Route für API-Statusprüfung"""
+    router_debug_logger.debug("Root endpoint accessed")
     return {
         "message": "Willkommen bei der BuyHigh.io API",
         "status": "online",

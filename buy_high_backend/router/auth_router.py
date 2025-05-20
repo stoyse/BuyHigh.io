@@ -4,7 +4,7 @@ Router für Authentifizierungsfunktionen.
 
 from fastapi import APIRouter, HTTPException, status
 import logging
-import auth as auth_module
+import utils.auth as auth_module
 import database.handler.postgres.postgres_db_handler as db_handler
 from ..pydantic_models import LoginRequest
 
