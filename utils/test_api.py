@@ -13,8 +13,8 @@ from dotenv import load_dotenv
 from typing import Dict, Any, Optional, List, Tuple
 
 # Konstanten
-#BASE_URL = "https://stoyse.hackclub.app/"  # Remote API-URL
-BASE_URL = "http://localhost:9876/"
+BASE_URL = "https://api.stoyse.hackclub.app/"  # Remote API-URL
+#BASE_URL = "http://localhost:9876/"
 
 # Farben für die Ausgabe
 GREEN = "\033[92m"

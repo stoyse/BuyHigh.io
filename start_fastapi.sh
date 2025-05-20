@@ -15,6 +15,8 @@ RELOAD="--reload"  # Automatisches Neuladen bei Codeänderungen (für Entwicklun
 
 echo -e "${GREEN}=== BuyHigh.io API Server ===${NC}"
 
+source venv/bin/activate
+
 # Prüfen, ob Python und pip installiert sind
 if ! command -v python3 &> /dev/null; then
     echo -e "${RED}Fehler: Python3 ist nicht installiert.${NC}"

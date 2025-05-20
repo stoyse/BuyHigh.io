@@ -61,5 +61,5 @@ psycopg2
 flask_login
 pydantic[email]
 fastapi
-guvicorn
 python-multipart
+uvicorn
