@@ -124,12 +124,16 @@ def process_easter_egg(code):
 
 def load_user_from_session():
     """Lädt den Benutzer aus der Session in g.user, falls vorhanden."""
+    # Log the entire session dictionary at the beginning of the function
+    logger.debug(f"load_user_from_session: Current session state for path {request.path}: {dict(session)}")
+
     if hasattr(g, 'user') and g.user is not None:
         logger.debug(f"User already loaded in g for request {request.path}. User ID: {g.user.get('id')}")
         return
 
     user_id_from_session = session.get('user_id')
-    logger.debug(f"load_user_from_session: Attempting to load user. session.get('user_id') = {user_id_from_session}")
+    # Aktualisierte Log-Zeile, um den Pfad einzuschließen
+    logger.debug(f"load_user_from_session: Attempting to load user. session.get('user_id') = {user_id_from_session} for path {request.path}")
 
     if user_id_from_session:
         try:
