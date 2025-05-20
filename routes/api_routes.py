@@ -241,6 +241,25 @@ def api_stock_data():
         add_analytics(user_id_for_analytics, "api_get_stock_data_exception", f"api_routes:api_stock_data:symbol={symbol},error={e}")
         return jsonify({'error': str(e), 'currency': 'USD'}), 500
 
+# Neue Route für Funny Tips
+@api_bp.route('/funny-tips', methods=['GET'])
+@login_required # Annahme: Tipps erfordern Anmeldung
+def api_get_funny_tips():
+    """API-Endpunkt zum Abrufen von lustigen Tipps."""
+    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
+    add_analytics(user_id_for_analytics, "api_get_funny_tips", "api_routes:api_get_funny_tips")
+    
+    # Hier würden Sie normalerweise Tipps aus einer Datenbank oder einem Service laden
+    # Für dieses Beispiel geben wir Dummy-Daten zurück
+    tips = [
+        {"id": 1, "tip": "Buy high, sell low. The secret to eternal brokerage fees."},
+        {"id": 2, "tip": "If you don't know what you're doing, do it with conviction."},
+        {"id": 3, "tip": "The market is like a box of chocolates... you never know what you're gonna get, but it's probably nuts."},
+        {"id": 4, "tip": "Always diversify your portfolio: buy stocks in different shades of red."}
+    ]
+    return jsonify({"success": True, "tips": tips})
+
+
 # Neue Hilfsfunktion zum Aktualisieren der Asset-Preise in der Datenbank
 def update_asset_price(symbol, price):
     """Aktualisiert den letzten bekannten Preis eines Assets in der Datenbank"""

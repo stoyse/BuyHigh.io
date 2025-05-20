@@ -1,26 +1,52 @@
 import functools
-from flask import g, flash, redirect, url_for, request, session
+from flask import g, flash, redirect, url_for, request, session, jsonify, current_app
 from rich import print
-from database.handler.postgres.postgres_db_handler import get_db_connection, add_analytics
+from database.handler.postgres.postgres_db_handler import get_db_connection, add_analytics, get_user_by_id
 import random
 import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Decorator for routes that require login
 def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
+        # Attempt to load user from session if not already loaded
+        if not hasattr(g, 'user') or g.user is None:
+            user_id = session.get('user_id')
+            if user_id:
+                try:
+                    user = get_user_by_id(user_id)
+                    if user:
+                        g.user = user
+                        logger.debug(f"User {user_id} loaded into g.user from session.")
+                    else:
+                        logger.warning(f"User ID {user_id} from session not found in DB.")
+                        session.clear()
+                        g.user = None
+                except Exception as e:
+                    logger.error(f"Error loading user {user_id} from DB in login_required: {e}")
+                    g.user = None
+            else:
+                g.user = None
+
         # Add analytics for the check itself
         user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
         add_analytics(user_id_for_analytics, "login_required_check", f"utils:login_required:{view.__name__}")
 
         if g.user is None:
-            # load_logged_in_user (in app.py @before_request) is responsible for populating g.user
-            # If g.user is None here, it means the user is not logged in or session is invalid.
+            # If the request is for an API endpoint, return JSON response
+            if request.blueprint == 'api' or (hasattr(request, 'accept_mimetypes') and request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html):
+                logger.warning(f"Unauthorized API access attempt to {request.path}. g.user is None.")
+                return jsonify({"success": False, "message": "Authentication required. Please log in."}), 401
+            # Otherwise, redirect to login page
             add_analytics(None, "login_required_redirect", f"utils:login_required:{view.__name__}")
             flash("You need to be logged in to view this page.", "warning")
-            return redirect(url_for('auth.login', next=request.path))
+            return redirect(url_for('auth.login', next=request.url))
         
         add_analytics(user_id_for_analytics, "login_required_success", f"utils:login_required:{view.__name__}")
+        logger.debug(f"Accessing {request.path}. User in g: {g.user.get('id') if g.user else 'None'}")
         return view(**kwargs)
     return wrapped_view
 
@@ -91,8 +117,6 @@ def process_easter_egg(code):
     
     try:
         # Check if this code has already been redeemed by this user
-        from database.handler.postgres.postgres_db_handler import get_db_connection, add_analytics
-        
         conn = get_db_connection()
         cur = conn.cursor()
         
@@ -116,3 +140,34 @@ def process_easter_egg(code):
         return True, code_data["message"]
     except Exception as e:
         return False, f"Error processing easter egg: {str(e)}"
+
+def load_user_from_session():
+    """Lädt den Benutzer aus der Session in g.user, falls vorhanden."""
+    if hasattr(g, 'user') and g.user is not None:
+        return # Benutzer bereits geladen
+
+    user_id = session.get('user_id')
+    if user_id:
+        try:
+            user = get_user_by_id(user_id)
+            if user:
+                g.user = user
+                logger.debug(f"User {user_id} loaded into g.user via load_user_from_session.")
+            else:
+                g.user = None
+                session.clear() # Ungültige Session löschen
+                logger.warning(f"User ID {user_id} from session not found in DB (load_user_from_session).")
+        except Exception as e:
+            logger.error(f"Error loading user {user_id} from DB in load_user_from_session: {e}")
+            g.user = None
+    else:
+        g.user = None
+
+def setup_before_request(app):
+    """Registriert die `load_user_from_session` Funktion, um vor jeder Anfrage ausgeführt zu werden."""
+    @app.before_request
+    def before_request_callback():
+        load_user_from_session()
+        # Log session data for debugging
+        # logger.debug(f"Session at start of request to {request.path}: {dict(session)}")
+        # logger.debug(f"g.user at start of request to {request.path}: {g.user.get('id') if hasattr(g, 'user') and g.user else 'None'}")
