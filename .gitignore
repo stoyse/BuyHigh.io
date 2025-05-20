@@ -38,3 +38,6 @@ mac_start_server.sh
 .api_key_status.json
 
 user_data/
+
+start_and_test.sh
+SECRE_CODES.md

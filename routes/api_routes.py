@@ -1,3 +1,7 @@
+# HINWEIS: Diese Flask-Routen werden zu FastAPI migriert.
+# Der neue FastAPI-Router befindet sich in buy_high_backend/api_router.py.
+# Dieser Code dient als Referenz und wird schrittweise ersetzt.
+
 from flask import Blueprint, request, jsonify, g, send_file, url_for, session, current_app
 from datetime import datetime, timedelta
 from utils import login_required
