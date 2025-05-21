@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { frontendLogger } from '../../frontendLogger';
 import './LoginPage.css';
 
 const LoginPage: React.FC = () => {
@@ -17,21 +18,26 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+    frontendLogger.info('Login-Versuch', { email });
+
     if (!email || !password) {
       setError('Please enter both email and password');
+      frontendLogger.warn('Login fehlgeschlagen: Felder leer', { email });
       return;
     }
     
     try {
       const success = await login(email, password);
       if (success) {
+        frontendLogger.info('Login erfolgreich', { email });
         navigate(from, { replace: true });
       } else {
         setError('Invalid email or password');
+        frontendLogger.warn('Login fehlgeschlagen: Falsche Daten', { email });
       }
     } catch (err) {
       setError('An error occurred during login. Please try again.');
+      frontendLogger.error('Login Fehler', { email, error: err instanceof Error ? err.message : String(err) });
       console.error('Login error:', err);
     }
   };

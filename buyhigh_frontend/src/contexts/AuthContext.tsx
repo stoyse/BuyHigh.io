@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { loginUser } from '../apiService';
+import { loginUser, logoutUser } from '../apiService';
+import axios from 'axios';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -20,8 +21,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuthStatus = () => {
       const storedUser = localStorage.getItem('user');
-      if (storedUser) {
+      const storedToken = localStorage.getItem('authToken');
+      if (storedUser && storedToken) {
         setUser(JSON.parse(storedUser));
+        axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         setIsAuthenticated(true);
       }
       setLoading(false);
@@ -35,11 +38,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       const response = await loginUser(email, password);
       
-      if (response.success) {
-        // Store user information in local storage
-        const userData = { email, id: response.userId || 1 }; // Use actual user ID from response if available
+      if (response.success && response.token) {
+        const userData = { email, id: response.userId || JSON.parse(atob(response.token.split('.')[1])).uid };
         localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('authToken', response.token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${response.token}`;
         
+        setUser(userData);
+        setIsAuthenticated(true);
+        return true;
+      }
+      if (response.success) {
+        console.warn("Login successful but no token received.");
+        const userData = { email, id: response.userId };
+        localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
         setIsAuthenticated(true);
         return true;
@@ -47,16 +59,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     } catch (error) {
       console.error('Login failed:', error);
+      localStorage.removeItem('user');
+      localStorage.removeItem('authToken');
+      delete axios.defaults.headers.common['Authorization'];
+      setIsAuthenticated(false);
+      setUser(null);
       return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('user');
-    setUser(null);
-    setIsAuthenticated(false);
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch (error) {
+      console.error("API logout failed, proceeding with client-side cleanup:", error);
+    } finally {
+      localStorage.removeItem('user');
+      localStorage.removeItem('authToken');
+      delete axios.defaults.headers.common['Authorization'];
+      setUser(null);
+      setIsAuthenticated(false);
+    }
   };
 
   return (

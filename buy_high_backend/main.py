@@ -24,9 +24,11 @@ else:
     _setup_logger.error(f"MAIN.PY: Firebase-Konfigurationsdatei NICHT gefunden unter: {firebase_config_path}")
 
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 # Importiere den kombinierten Router und die Middleware aus dem router-Paket.
 # Das debug_logger Objekt wird jetzt direkt aus dem router-Modul importiert.
@@ -72,6 +74,24 @@ app.include_router(api_router, prefix="")
 static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
 os.makedirs(static_dir, exist_ok=True)  # Verzeichnis erstellen, falls es nicht existiert
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# Logging-Ordner und Datei für Frontend-Logs
+frontend_log_dir = os.path.join(project_root_dir, "frontend_logs")
+os.makedirs(frontend_log_dir, exist_ok=True)
+frontend_log_file = os.path.join(frontend_log_dir, "frontend.log")
+
+class FrontendLogEntry(BaseModel):
+    level: str
+    message: str
+    context: dict = {}
+
+@app.post("/frontend-log")
+async def frontend_log(entry: FrontendLogEntry, request: Request):
+    client_ip = request.client.host
+    log_line = f"{entry.level.upper()} | {client_ip} | {entry.message} | {entry.context}\n"
+    with open(frontend_log_file, "a", encoding="utf-8") as f:
+        f.write(log_line)
+    return JSONResponse({"status": "ok"})
 
 # Root-Route für Gesundheitscheck
 @app.get("/")

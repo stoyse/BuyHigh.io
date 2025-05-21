@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import { AuthProvider } from './contexts/AuthContext';
@@ -9,9 +9,17 @@ import TestPage from './pages/TestPage/TestPage';
 import Home from './pages/Home/Home';
 import Casino from './pages/Casino';
 import Trade from './pages/Trade/Trade';
+import { frontendLogger } from './frontendLogger';
 // Import other pages as needed
 
 function App() {
+  useEffect(() => {
+    frontendLogger.info('Frontend-App gestartet', {
+      time: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+    });
+  }, []);
+
   return (
     <AuthProvider>
       <Router>
