@@ -24,7 +24,7 @@ else:
     _setup_logger.error(f"MAIN.PY: Firebase-Konfigurationsdatei NICHT gefunden unter: {firebase_config_path}")
 
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -102,5 +102,9 @@ async def root():
         "version": "1.0.0"
     }
 
+
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(rest_of_path: str):
+    return Response(status_code=200)
 # Um die App mit uvicorn zu starten:
 # uvicorn buy_high_backend.main:app --reload
