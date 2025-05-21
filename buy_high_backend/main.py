@@ -1,10 +1,7 @@
 import os
 import logging
 
-# Setze die Umgebungsvariable für Firebase-Credentials so früh wie möglich.
-# Dies muss geschehen, bevor Module importiert werden, die Firebase initialisieren (z.B. utils.auth).
 
-# Temporären Logger für die Setup-Phase erstellen, um unmittelbares Feedback zu geben
 _setup_logger = logging.getLogger("buyhigh_setup")
 if not _setup_logger.hasHandlers(): # Handler nur einmal hinzufügen
     _ch = logging.StreamHandler() # Loggt auf die Konsole
@@ -25,10 +22,8 @@ if os.path.exists(firebase_config_path):
     _setup_logger.info(f"MAIN.PY: GOOGLE_APPLICATION_CREDENTIALS gesetzt auf: {firebase_config_path}")
 else:
     _setup_logger.error(f"MAIN.PY: Firebase-Konfigurationsdatei NICHT gefunden unter: {firebase_config_path}")
-    # Optional: Programm hier beenden oder mit einer Warnung fortfahren, wenn Firebase nicht kritisch ist
-    # raise FileNotFoundError(f"Firebase config file not found at {firebase_config_path}")
 
-# Importiere FastAPI und andere Module erst NACHDEM die Umgebungsvariable gesetzt wurde.
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -52,7 +47,7 @@ app.add_middleware(RequestLoggingMiddleware)
 # CORS-Middleware hinzufügen, um Cross-Origin-Anfragen zu ermöglichen
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In Produktion sollten spezifische Domains verwendet werden
+    allow_origins=["https://buy-high-io.vercel.app/"],  # In Produktion sollten spezifische Domains verwendet werden
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
