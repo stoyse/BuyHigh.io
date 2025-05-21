@@ -427,8 +427,10 @@ def add_analytics(user_id: int = None, event_type: str = None, details: dict = N
 
     Args:
         user_id: The ID of the user associated with the event. Can be None for system events.
-        event_type: The type of event (e.g., "login", "view_page").
-        details: Optional dictionary for additional event details (will be stored as JSONB).
+        event_type: The type of event (e.g., "login", "view_page"). This will be stored in the 'action' column.
+        details: Optional dictionary for additional event details.
+                 If it contains a 'source' key, its value will be stored in 'source_details'.
+                 The (remaining) dictionary will be stored as JSONB in the 'details' column.
         called_from_get_user: Internal flag to prevent recursion with get_user_by_firebase_uid.
     """
     if event_type is None:
@@ -439,16 +441,20 @@ def add_analytics(user_id: int = None, event_type: str = None, details: dict = N
     cur = None
     actual_user_id = user_id
 
+    # Prepare details for DB insertion
+    db_details_payload = details.copy() if details else {}
+    source_details_val = db_details_payload.pop('source', None) if db_details_payload else None
+
     try:
         conn = get_db_connection()
         cur = conn.cursor()
 
-        if not called_from_get_user and user_id is not None:
-            pass
-
+        # The 'event_type' parameter is used for the 'action' column.
+        # 'source_details_val' is extracted from 'details' dict's 'source' key.
+        # The remaining 'db_details_payload' is stored in the 'details' JSONB column.
         cur.execute(
-            "INSERT INTO analytics (user_id, event_type, details) VALUES (%s, %s, %s)",
-            (actual_user_id, event_type, psycopg2.extras.Json(details) if details else None)
+            "INSERT INTO analytics (user_id, action, source_details, details) VALUES (%s, %s, %s, %s)",
+            (actual_user_id, event_type, source_details_val, psycopg2.extras.Json(db_details_payload) if db_details_payload else None)
         )
         conn.commit()
         logger.info(f"Analytics event added: {event_type} for user_id {actual_user_id or 'System'}")
@@ -456,6 +462,7 @@ def add_analytics(user_id: int = None, event_type: str = None, details: dict = N
     except psycopg2.Error as e:
         if conn:
             conn.rollback()
+        # Log still refers to event_type as it's the input parameter name
         logger.error(f"DB error adding analytics event (user_id: {actual_user_id}, event: {event_type}): {e}", exc_info=True)
     except Exception as e:
         if conn:

@@ -345,9 +345,14 @@ CREATE TABLE IF NOT EXISTS user_roadmap_progress (
 
 CREATE TABLE IF NOT EXISTS analytics (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NULL, 
-    action TEXT NOT NULL, -- Die Aktion des Benutzers (z. B. 'login', 'trade', 'view_asset')
-    source_details TEXT, -- Details zur Quelle der Aktion (z. B. 'web', 'mobile')
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Zeitstempel der Aktion
-    details JSONB -- Zusätzliche Details zur Aktion (z. B. Asset-Symbol, Preis)
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    action TEXT,
+    source_details TEXT,
+    details JSONB,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Optional: Indizes für häufig abgefragte Spalten hinzufügen
+CREATE INDEX IF NOT EXISTS idx_analytics_user_id ON analytics(user_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_action ON analytics(action);
+CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics(timestamp);
