@@ -62,7 +62,7 @@ app.add_middleware(
 )
 
 # API-Routen unter dem Präfix /api einbinden
-app.include_router(api_router, prefix="/api")
+app.include_router(api_router, prefix="/")
 
 # Statische Dateien für Profilbilder usw.
 static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")

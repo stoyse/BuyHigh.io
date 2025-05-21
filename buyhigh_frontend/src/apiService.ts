@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const rawApiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:9876/api'; // Fallback für den Fall, dass die Umgebungsvariable fehlt
+const rawApiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:9876'; // Fallback für den Fall, dass die Umgebungsvariable fehlt
 const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, ""); // Entfernt einen abschließenden Schrägstrich, falls vorhanden
 const DEBUG = true; // Debug-Modus aktivieren/deaktivieren
 
