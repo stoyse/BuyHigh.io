@@ -65,8 +65,8 @@ app.add_middleware(
 # Füge die Request-Logging-Middleware hinzu
 app.add_middleware(RequestLoggingMiddleware)
 
-# API-Routen ohne das Präfix /api einbinden, um mit der Frontend-Änderung übereinzustimmen
-app.include_router(api_router, prefix="/")
+# API-Routen ohne Präfix einbinden (leerer String statt "")
+app.include_router(api_router, prefix="")
 
 # Statische Dateien für Profilbilder usw.
 static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
