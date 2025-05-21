@@ -429,7 +429,7 @@ const Dashboard: React.FC = () => {
                         <div className="flex gap-1 mt-1 w-full">
                           {assetAllocation && assetAllocation.length > 0 ? (
                             assetAllocation.map((asset) => {
-                              const percentage = Math.round(asset.percentage * 10) / 10;
+                              const percentage = Math.round((asset.percentage || 0) * 10) / 10;
                               return percentage >= 3 ? (
                                 <div 
                                   key={`label-${asset.symbol || 'unknown'}`} 
@@ -454,11 +454,11 @@ const Dashboard: React.FC = () => {
                           <div key={`portfolio-${index}`} className="glass-card hover:shadow-neo transition-all duration-300 rounded-xl p-3 flex justify-between items-center">
                             <div className="flex items-center">
                               <div className="bg-neo-blue/10 dark:bg-neo-blue/20 p-2 rounded-lg mr-3">
-                                <span className="font-medium text-neo-blue">{item.symbol[0] || 'X'}</span>
+                                <span className="font-medium text-neo-blue">{(item.symbol && item.symbol[0]) || 'X'}</span>
                               </div>
                               <div>
-                                <h4 className="font-medium text-sm text-gray-800 dark:text-gray-200">{item.symbol}</h4>
-                                <p className="text-xs text-gray-500">{item.type}</p>
+                                <h4 className="font-medium text-sm text-gray-800 dark:text-gray-200">{item.symbol || 'Unbekannt'}</h4>
+                                <p className="text-xs text-gray-500">{item.type || 'Asset'}</p>
                               </div>
                             </div>
                             <div className="text-right">
