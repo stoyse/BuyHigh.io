@@ -50,20 +50,20 @@ allowed_origins = [
 
 # CORS-Middleware hinzufügen, um Cross-Origin-Anfragen zu ermöglichen
 # Diese sollte vor anderen Middlewares stehen, die Antworten modifizieren oder generieren könnten.
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-    "https://buy-high-io.vercel.app",
-    "https://buy-high-io.vercel.app/",], 
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["Authorization", "Content-Disposition"],
-    max_age=600,  # Cache die CORS-Antwort für 10 Minuten
-)
+#app.add_middleware(
+#    CORSMiddleware,
+#    allow_origins=[
+#    "https://buy-high-io.vercel.app",
+#    "https://buy-high-io.vercel.app/",], 
+#    allow_credentials=True,
+#    allow_methods=["*"],
+#    allow_headers=["*"],
+#    expose_headers=["Authorization", "Content-Disposition"],
+#    max_age=600,  # Cache die CORS-Antwort für 10 Minuten
+#)
 
 # Füge die Request-Logging-Middleware hinzu
-app.add_middleware(RequestLoggingMiddleware)
+#app.add_middleware(RequestLoggingMiddleware)
 
 # API-Routen ohne Präfix einbinden (leerer String statt "")
 app.include_router(api_router, prefix="")
