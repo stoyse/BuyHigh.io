@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './BaseLayout.css';
-import { GetUserInfo } from '../../apiService';
+import { GetUserInfo, logoutUser } from '../../apiService';
 
 interface BaseLayoutProps {
   children: React.ReactNode;
@@ -16,6 +16,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
   });
   const [user, setUser] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const navigate = useNavigate();
   
   const location = useLocation();
 
@@ -52,7 +53,6 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
   const [userData, setUserData] = React.useState<any>(null);
   const [error, setError] = React.useState<string | null>(null);
 
-
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -80,6 +80,21 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
 
     fetchUserData();
   }, []);
+
+  // Logout function
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      setUser(null);
+      // Redirect to login page after successful logout
+      navigate('/login');
+    } catch (err) {
+      console.error('Error during logout:', err);
+      // Still clear the user state even if the API call fails
+      setUser(null);
+      navigate('/login');
+    }
+  };
 
   return (
     <div className="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200 neo-grid transition-colors duration-300 min-h-screen flex flex-col">
@@ -212,7 +227,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
                         </div>
                         
                         <div className="p-2 border-t border-gray-200/10 dark:border-gray-700/20">
-                          <a href="#" className="dropdown-item flex items-center space-x-3 p-2 rounded-lg text-sm font-medium text-neo-red hover:bg-neo-red/5" onClick={() => setUser(null)}>
+                          <a href="#" className="dropdown-item flex items-center space-x-3 p-2 rounded-lg text-sm font-medium text-neo-red hover:bg-neo-red/5" onClick={handleLogout}>
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                             </svg>
@@ -224,7 +239,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
                   </div>
                   
                   <button 
-                    onClick={() => setUser(null)} 
+                    onClick={handleLogout} 
                     className="neo-button rounded-lg px-4 py-2 text-sm font-medium bg-neo-red/10 text-neo-red border border-neo-red/20 hover:bg-neo-red hover:text-white transition-all duration-300 flex items-center"
                   >
                     <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

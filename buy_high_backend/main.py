@@ -62,7 +62,7 @@ app.add_middleware(
 # Füge die Request-Logging-Middleware hinzu
 app.add_middleware(RequestLoggingMiddleware)
 
-# API-Routen unter dem Präfix /api einbinden
+# API-Routen ohne das Präfix /api einbinden, um mit der Frontend-Änderung übereinzustimmen
 app.include_router(api_router, prefix="/")
 
 # Statische Dateien für Profilbilder usw.

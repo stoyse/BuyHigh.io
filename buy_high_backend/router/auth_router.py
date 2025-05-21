@@ -63,3 +63,24 @@ async def api_login(login_data: LoginRequest):
     except Exception as e:
         logger.error(f"Error during API login: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error occurred during login.")
+
+@router.post("/logout")
+async def api_logout():
+    """API-Route für die Benutzerabmeldung"""
+    logger.info("Logout request received")
+    try:
+        # In einer vollständigen Implementierung könnten hier folgende Aktionen durchgeführt werden:
+        # 1. Löschen von Session-Cookies
+        # 2. Invalidieren von Token auf Serverseite (falls nötig)
+        # 3. Aktualisieren des letzten Logout-Zeitpunkts in der Datenbank
+        
+        # Da die meisten Firebase-bezogenen Logout-Vorgänge clientseitig erfolgen,
+        # geben wir eine Erfolgsmeldung zurück
+        return {
+            "success": True,
+            "message": "Logout successful"
+        }
+    except Exception as e:
+        logger.error(f"Error during logout: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                           detail="An error occurred during logout.")

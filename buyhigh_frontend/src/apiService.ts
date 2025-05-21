@@ -41,6 +41,53 @@ export const loginUser = async (email: string, password: string) => {
   }
 };
 
+export const logoutUser = async () => {
+  logApiCall('POST', '/logout');
+  try {
+    // Serveranfrage für Logout
+    const response = await axios.post(`${API_BASE_URL}/logout`, {}, {
+      withCredentials: true, // Sends cookies for authentication
+    });
+    
+    // Client-Session bereinigen
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    sessionStorage.clear(); // Alle Session-Storage-Daten löschen
+    
+    // Optional: Setzen Sie einen Cookie mit abgelaufenem Datum, um ihn zu löschen
+    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    
+    // Axios-Standardheader zurücksetzen
+    if (axios.defaults.headers.common['Authorization']) {
+      delete axios.defaults.headers.common['Authorization'];
+    }
+    
+    logDebug('Logout Response:', response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error during logout:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error during logout:', error);
+    }
+    
+    // Trotz Fehlers Client-Session bereinigen
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    sessionStorage.clear();
+    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    
+    if (axios.defaults.headers.common['Authorization']) {
+      delete axios.defaults.headers.common['Authorization'];
+    }
+    
+    // Auch bei Fehler erfolgreichen Status zurückgeben
+    return { success: true, message: "Client session cleared" };
+  }
+};
+
 export const fetchFunnyTips = async () => {
   logApiCall('GET', '/funny-tips');
   try {
