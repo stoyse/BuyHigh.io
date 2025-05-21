@@ -38,18 +38,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       const response = await loginUser(email, password);
       
-      if (response.success && response.token) {
-        const userData = { email, id: response.userId || JSON.parse(atob(response.token.split('.')[1])).uid };
+      if (response.success && response.id_token) {
+        const userData = { email, id: response.userId || JSON.parse(atob(response.id_token.split('.')[1])).uid };
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('authToken', response.token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${response.token}`;
+        localStorage.setItem('authToken', response.id_token);
+        axios.defaults.headers.common['Authorization'] = `Bearer ${response.id_token}`;
         
         setUser(userData);
         setIsAuthenticated(true);
         return true;
       }
       if (response.success) {
-        console.warn("Login successful but no token received.");
+        console.warn("Login successful but no id_token received.");
         const userData = { email, id: response.userId };
         localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
