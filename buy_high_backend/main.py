@@ -44,6 +44,7 @@ app = FastAPI(
 # Definiere die erlaubten Ursprünge
 allowed_origins = [
     "https://buy-high-io.vercel.app",  # Deine Vercel-Produktionsdomain
+    "https://buyhigh-io.vercel.app",   # Alternative Vercel-Domain falls verwendet
     "http://localhost:3000",          # Typischer React-Entwicklungsport
     "http://localhost:3001",          # Ein weiterer möglicher Entwicklungsport
     # Füge hier weitere Domains hinzu, falls nötig
@@ -57,6 +58,8 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Type", "X-Token"],
+    max_age=600,  # Cache die CORS-Antwort für 10 Minuten
 )
 
 # Füge die Request-Logging-Middleware hinzu
