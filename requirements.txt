@@ -63,3 +63,4 @@ pydantic[email]
 fastapi
 python-multipart
 uvicorn
+httpx

@@ -4,6 +4,10 @@ import psycopg2.extras
 import logging
 from datetime import datetime
 from rich import print
+from dotenv import load_dotenv
+
+# Lade Umgebungsvariablen aus .env-Datei
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 

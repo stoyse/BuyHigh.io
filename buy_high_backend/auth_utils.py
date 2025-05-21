@@ -11,48 +11,46 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login") # Adjusted to new login path
 
-# Benutzerdefinierte AuthenticatedUser-Klasse, die von User erbt
-class AuthenticatedUser(User): # Extends the User Pydantic model
-    """
-    Diese Klasse erweitert das User-Pydantic-Modell und wird für authentifizierte Anfragen verwendet.
-    Das id-Attribut bezieht sich auf die user_id aus der Datenbanktabelle, nicht auf die Firebase-ID.
-    """
-    pass
-
 # Placeholder for current_user. In a real app, this would decode a JWT token.
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> AuthenticatedUser:
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     """
     Placeholder for JWT token validation and user retrieval.
-    Für Firebase-Logins wird die Firebase-ID verwendet, um den Benutzer zu authentifizieren.
-    Aber für alle anderen Anfragen wird die Benutzer-ID aus der Datenbank verwendet.
-    
-    1. Dekodieren und Verifizieren des JWT-Tokens.
-    2. Extrahieren der Benutzeridentifikation (z.B. firebase_uid) aus dem Token.
-    3. Abrufen des Benutzers aus der Datenbank mit der Benutzer-ID.
-    4. HTTPException werfen, wenn das Token ungültig ist oder der Benutzer nicht gefunden wird.
+    For now, it simulates fetching a user based on a dummy token logic.
+    A real implementation would:
+    1. Decode and verify the JWT token.
+    2. Extract user identifier (e.g., user_id or firebase_uid) from token.
+    3. Fetch user from database.
+    4. Raise HTTPException if token is invalid or user not found.
     """
-    # In einer realen App würden Token-Validierung und Benutzerabruf erfolgen
-    # Für Demo-Zwecke nehmen wir an, dass das Token die Firebase-UID ist
+    # This is a very basic placeholder.
+    # In a real app, you'd validate the token and fetch user details.
+    # For demonstration, let's assume the token IS the firebase_uid for simplicity here.
+    # Or, if login returns a custom token, this function would validate that.
+    # For now, we'll try to fetch a user if a token "user_id_X" is passed.
     
-    if token.startswith("firebase_uid_"): # Token ist Firebase-UID
+    # This is highly insecure and for demonstration only.
+    # A real system would involve JWT decoding and verification.
+    if token.startswith("firebase_uid_"): # Simulate token being firebase_uid
         firebase_uid = token.split("firebase_uid_")[1]
         user_data = db_handler.get_user_by_firebase_uid(firebase_uid)
         if user_data:
-            # Konvertieren des Dict in das AuthenticatedUser-Pydantic-Modell
-            # Die ID ist hier die Benutzer-ID aus der Datenbank
-            return AuthenticatedUser(**user_data)
+            # Convert dict to User Pydantic model
+            return User(**user_data) # Ensure User model matches db_handler output
     
-    # Fallback für generische "fake_user_id" (nur für Tests)
-    # In einem Produktionssystem würde dieser Teil entfernt werden
-    user_data = db_handler.get_user_by_id(1)
+    # Fallback for a generic "fake_user_id" if the above fails or for testing
+    # This part would be removed in a production system
+    user_data = db_handler.get_user_by_id(1) # Example: fetch user with ID 1
     if not user_data:
-        # Wenn Benutzer 1 nicht existiert, erstellen wir ein Dummy-Benutzerobjekt
-        return AuthenticatedUser(id=1, email="user@example.com", firebase_uid="dummy_firebase_uid", username="dummy_user")
+        # If user 1 doesn't exist, create a dummy user object
+        # This is purely for making the dependency work without a real auth flow initially
+        return User(id=1, email="user@example.com", firebase_uid="dummy_firebase_uid", username="dummy_user")
 
-    return AuthenticatedUser(**user_data)
+    return User(**user_data) # Ensure User model matches db_handler output
 
 # Placeholder for a user object that might be available globally in Flask's `g`
 # In FastAPI, you get this via Depends(get_current_user)
+class AuthenticatedUser(User): # Extends the User Pydantic model
+    pass
 
 # Example of how you might structure a more complete get_current_user
 # from jose import JWTError, jwt
@@ -72,4 +70,4 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Authenticated
 #     user = db_handler.get_user_by_firebase_uid(firebase_uid)
 #     if user is None:
 #         raise credentials_exception
-#     return AuthenticatedUser(**user) # Benutze AuthenticatedUser statt User
+#     return User(**user)
