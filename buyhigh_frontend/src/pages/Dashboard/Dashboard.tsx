@@ -253,7 +253,7 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="ml-11">
                 <div className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-end space-x-1">
-                  <span className="counter">${user?.balance.toFixed(2) || '0.00'}</span>
+                  <span className="counter">${(user?.balance ?? 0).toFixed(2)}</span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Available for trading
@@ -289,7 +289,7 @@ const Dashboard: React.FC = () => {
               </div>
               <div className="ml-11">
                 <div className={`text-2xl font-bold ${user && user.profit_loss >= 0 ? 'text-neo-emerald' : 'text-neo-red'} flex items-end space-x-1`}>
-                  <span className="counter">€{user?.profit_loss.toFixed(2) || '0.00'}</span>
+                  <span className="counter">€{(user?.profit_loss ?? 0).toFixed(2)}</span>
                   <span className="text-sm">
                     {user && typeof user.profit_loss_percentage === 'number' ? (
                       user.profit_loss >= 0 
@@ -462,7 +462,7 @@ const Dashboard: React.FC = () => {
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="font-semibold text-gray-800 dark:text-gray-200">{item.quantity.toFixed(2)} units</p>
+                              <p className="font-semibold text-gray-800 dark:text-gray-200">{(item.quantity ?? 0).toFixed(2)} units</p>
                               <p className={`text-xs ${(item.performance || 0) > 0 ? 'text-neo-emerald' : 'text-neo-red'}`}>
                                 {(item.performance || 0) > 0 ? '+' : ''}{(item.performance || 0).toFixed(2)}%
                               </p>
