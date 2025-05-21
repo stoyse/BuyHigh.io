@@ -38,7 +38,6 @@ PG_PASSWORD = os.getenv('POSTGRES_PASSWORD', '')
 def get_db_connection():
     """Stellt eine Verbindung zur PostgreSQL-Datenbank her."""
     print('[bold blue]Connection to DB from Main Handler[/bold blue]')
-    add_analytics(None, "get_db_connection", "postgres_db_handler:get_db_connection")
     try:
         conn = psycopg2.connect(
             host=PG_HOST,
@@ -51,7 +50,6 @@ def get_db_connection():
         return conn
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Öffnen der PostgreSQL-Verbindung: {e}", exc_info=True)
-        add_analytics(None, "get_db_connection_error", f"postgres_db_handler:get_db_connection:error={e}")
         raise
 
 def _parse_user_timestamps(user_row):
@@ -107,8 +105,9 @@ def add_user(username, email, firebase_uid, provider='password'):
         cur.close()
         conn.close()
 
-def get_user_by_firebase_uid(firebase_uid):
-    add_analytics(None, "get_user_by_firebase_uid", f"postgres_db_handler:get_user_by_firebase_uid:uid={firebase_uid}")
+def get_user_by_firebase_uid(firebase_uid, log_analytics=True):
+    if log_analytics:
+        add_analytics(None, "get_user_by_firebase_uid", f"postgres_db_handler:get_user_by_firebase_uid:uid={firebase_uid}")
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     try:
@@ -119,7 +118,8 @@ def get_user_by_firebase_uid(firebase_uid):
         return None
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Suchen nach Firebase UID '{firebase_uid}': {e}", exc_info=True)
-        add_analytics(None, "get_user_by_firebase_uid_error", f"postgres_db_handler:get_user_by_firebase_uid:uid={firebase_uid},error={e}")
+        if log_analytics:
+            add_analytics(None, "get_user_by_firebase_uid_error", f"postgres_db_handler:get_user_by_firebase_uid:uid={firebase_uid},error={e}")
         return None
     finally:
         cur.close()
@@ -449,30 +449,41 @@ def check_user_level(user_id, current_xp):
         cur.close()
         conn.close()
 
-def add_analytics(user_id, action, source_details):
+def add_analytics(user_id_param, action, source_details):
     """
     Protokolliert eine Analyse-Metrik in der Datenbank.
     """
-    if action == "get_db_connection" and "add_analytics" in source_details:
-         print(f"Analytics (skipped to prevent recursion): user_id={user_id}, action='{action}', source='{source_details}'")
-         return
-
     conn = None
+    actual_user_id_for_db = None  # Wird in der DB gespeichert, kann None sein
+
     try:
-        conn = psycopg2.connect(
-            host=PG_HOST, port=PG_PORT, dbname=PG_DB, user=PG_USER, password=PG_PASSWORD
+        # Versuche user_id_param aufzulösen, wenn es eine Firebase UID (String) ist
+        if isinstance(user_id_param, str) and '@' not in user_id_param and '.' not in user_id_param and len(user_id_param) > 10:  # Heuristik für Firebase UID
+            db_user = get_user_by_firebase_uid(user_id_param, log_analytics=False)  # Verhindert Rekursion in get_user_by_firebase_uid
+            if db_user and 'id' in db_user:
+                actual_user_id_for_db = db_user['id']
+        elif isinstance(user_id_param, int):
+            actual_user_id_for_db = user_id_param
+
+        conn = get_db_connection()  # Dieser Aufruf ist jetzt sicher vor direkter Rekursion
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO analytics (user_id, action, source_details, timestamp) VALUES (%s, %s, %s, %s)",
+            (actual_user_id_for_db, action, source_details, datetime.now())
         )
-        conn.autocommit = True
-        user_id = get_user_by_firebase_uid(user_id)
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO analytics (user_id, action, source_details) VALUES (%s, %s, %s)",
-                (user_id, action, source_details)
-            )
+        conn.commit()
     except psycopg2.Error as e:
-        print(f"DB-Fehler in add_analytics: {e}")
+        detailed_error_message = f"DB-Fehler beim Protokollieren der Analyse (Action: {action}, UserParam: {user_id_param}, Source: {source_details}): {e}"
+        if 'logger' in globals() and logger:
+            logger.error(detailed_error_message)
+        else:
+            print(detailed_error_message)  # Fallback, falls logger nicht konfiguriert ist
     except Exception as e:
-        print(f"Allgemeiner Fehler in add_analytics: {e}")
+        detailed_error_message = f"Allgemeiner Fehler beim Protokollieren der Analyse (Action: {action}, UserParam: {user_id_param}, Source: {source_details}): {e}"
+        if 'logger' in globals() and logger:
+            logger.error(detailed_error_message, exc_info=True)
+        else:
+            print(detailed_error_message)  # Fallback
     finally:
         if conn:
             conn.close()
