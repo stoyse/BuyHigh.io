@@ -432,11 +432,11 @@ const Dashboard: React.FC = () => {
                               const percentage = Math.round(asset.percentage * 10) / 10;
                               return percentage >= 3 ? (
                                 <div 
-                                  key={`label-${asset.symbol}`}
+                                  key={`label-${asset.symbol || 'unknown'}`} 
                                   className="text-xxs text-center overflow-hidden text-ellipsis" 
                                   style={{width: `${percentage}%`}}
                                 >
-                                  {asset.symbol}
+                                  {asset.symbol || ''} 
                                 </div>
                               ) : null;
                             })
