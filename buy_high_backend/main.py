@@ -60,7 +60,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["Content-Type", "X-Token"],
+    expose_headers=["Content-Type", "X-Token", "Authorization"],
     max_age=600,  # Cache die CORS-Antwort für 10 Minuten
 )
 
