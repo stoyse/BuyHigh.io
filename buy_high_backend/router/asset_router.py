@@ -8,12 +8,12 @@ import logging
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
 from database.handler.postgres.postgres_db_handler import add_analytics
 from ..auth_utils import get_current_user, AuthenticatedUser
-from ..pydantic_models import AssetResponse
+from ..pydantic_models import AssetResponse, AssetsListResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-@router.get("/assets", response_model=AssetResponse)
+@router.get("/assets", response_model=AssetsListResponse)
 async def api_get_assets(
     type: Optional[str] = None,
     active_only: bool = True,
@@ -29,7 +29,7 @@ async def api_get_assets(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve assets data.")
     
     if result.get('success', False):
-        return result  # FastAPI wird die Antwort gegen AssetResponse validieren
+        return result  # FastAPI wird die Antwort gegen AssetsListResponse validieren
     else:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=result.get("message", "Failed to retrieve assets."))
 
