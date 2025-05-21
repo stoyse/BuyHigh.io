@@ -410,14 +410,14 @@ const Dashboard: React.FC = () => {
                           {assetAllocation && assetAllocation.length > 0 ? (
                             assetAllocation.map((asset, index) => {
                               const colors = ['bg-neo-blue', 'bg-neo-purple', 'bg-neo-emerald', 'bg-neo-amber', 'bg-neo-pink'];
-                              const percentage = Math.round(asset.percentage * 10) / 10;
+                              const percentage = Math.round((asset.percentage || 0) * 10) / 10;
                               return percentage >= 3 ? (
                                 <div 
-                                  key={asset.symbol} 
+                                  key={asset.symbol || `asset-key-${index}`}
                                   className={`h-2 rounded-full ${colors[index % colors.length]}`} 
                                   style={{width: `${percentage}%`}}
-                                  title={`${asset.name}: ${percentage}%`}
-                                  data-symbol={asset.symbol}
+                                  title={`${asset.name || 'Unknown Asset'}: ${percentage}%`}
+                                  data-symbol={asset.symbol || 'unknown'}
                                 ></div>
                               ) : null;
                             })
