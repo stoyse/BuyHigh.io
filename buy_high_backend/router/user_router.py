@@ -89,16 +89,20 @@ async def api_get_user_data(user_id_param: int, current_user: AuthenticatedUser 
 
 @router.get("/user/transactions/{user_id_param}", response_model=TransactionsListResponse)
 async def api_get_user_last_transactions(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
+    # Verwendung der Datenbank-User-ID für Analytics
     user_id_for_analytics = current_user.id
     add_analytics(user_id_for_analytics, "api_get_user_last_transactions_attempt", f"api_routes:api_get_user_last_transactions:user_id={user_id_param}")
 
-    transactions = transactions_handler.get_recent_transactions(user_id=user_id_param)
-    if transactions is not None:
+    result = transactions_handler.get_recent_transactions(user_id=user_id_param)
+    # Extrahiere die Liste der Transaktionen aus dem Ergebnis
+    if result and result.get("success"):
+        transactions_list = result.get("transactions", [])
         add_analytics(user_id_for_analytics, "api_get_user_last_transactions_success", f"api_routes:api_get_user_last_transactions:user_id={user_id_param}")
-        return TransactionsListResponse(success=True, transactions=transactions)
+        return TransactionsListResponse(success=True, transactions=transactions_list)
     else:
-        add_analytics(user_id_for_analytics, "api_get_user_last_transactions_fail", f"api_routes:api_get_user_last_transactions:user_id={user_id_param}")
-        return TransactionsListResponse(success=False, message="No transactions found or error retrieving them.", transactions=[])
+        message = result.get("message", "No transactions found or error retrieving them.") if result else "Error retrieving transactions."
+        add_analytics(user_id_for_analytics, "api_get_user_last_transactions_fail", f"api_routes:api_get_user_last_transactions:user_id={user_id_param},message={message}")
+        return TransactionsListResponse(success=False, message=message, transactions=[])
 
 @router.get("/user/portfolio/{user_id_param}", response_model=PortfolioResponse)
 async def api_get_portfolio(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
