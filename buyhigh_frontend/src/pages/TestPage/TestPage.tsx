@@ -17,6 +17,7 @@ interface ApiTestResult {
   data: any;
   loading: boolean;
   error: string | null;
+  url?: string;
 }
 
 const TestPage: React.FC = () => {
@@ -46,10 +47,10 @@ const TestPage: React.FC = () => {
   const [tradeError, setTradeError] = useState<string | null>(null);
 
   // API-Abfrage-Funktion
-  const fetchApiData = async (key: string, fetchFunction: () => Promise<any>) => {
+  const fetchApiData = async (key: string, fetchFunction: () => Promise<any>, url: string) => {
     setApiResults(prev => ({
       ...prev,
-      [key]: { ...prev[key], loading: true, error: null }
+      [key]: { ...prev[key], loading: true, error: null, url } // Speichere die URL
     }));
 
     try {
@@ -68,18 +69,18 @@ const TestPage: React.FC = () => {
 
   // Beim Laden der Seite die GET-Anfragen ausführen, die keine Benutzer-ID benötigen
   useEffect(() => {
-    fetchApiData('funnyTips', () => fetchFunnyTips());
-    fetchApiData('dailyQuiz', () => GetDailyQuiz());
-    fetchApiData('assets', () => GetAssets());
-    fetchApiData('stockData', () => GetStockData('AAPL', '1d'));
+    fetchApiData('funnyTips', () => fetchFunnyTips(), 'https://api.stoyse.hackclub.app/funny-tips');
+    fetchApiData('dailyQuiz', () => GetDailyQuiz(), 'https://api.stoyse.hackclub.app/daily-quiz');
+    fetchApiData('assets', () => GetAssets(), 'https://api.stoyse.hackclub.app/assets');
+    fetchApiData('stockData', () => GetStockData('AAPL', '1d'), 'https://api.stoyse.hackclub.app/stock-data?symbol=AAPL&range=1d');
   }, []);
 
   // Benutzer-spezifische Daten abrufen, wenn loggedInUserId verfügbar ist
   useEffect(() => {
     if (loggedInUserId) {
-      fetchApiData('userInfo', () => GetUserInfo(loggedInUserId));
-      fetchApiData('portfolioData', () => GetPortfolioData(loggedInUserId));
-      fetchApiData('transactions', () => GetRecentTransactions(loggedInUserId));
+      fetchApiData('userInfo', () => GetUserInfo(loggedInUserId), `https://api.stoyse.hackclub.app/user/${loggedInUserId}`);
+      fetchApiData('portfolioData', () => GetPortfolioData(loggedInUserId), `https://api.stoyse.hackclub.app/user/portfolio/${loggedInUserId}`);
+      fetchApiData('transactions', () => GetRecentTransactions(loggedInUserId), `https://api.stoyse.hackclub.app/user/transactions/${loggedInUserId}`);
     }
   }, [loggedInUserId]);
 
@@ -135,6 +136,7 @@ const TestPage: React.FC = () => {
   const renderApiResult = (key: string, result: ApiTestResult) => (
     <div key={key} className="api-result">
       <h3>{result.name}</h3>
+      {result.url && <p><strong>URL:</strong> {result.url}</p>} {/* Zeige die URL an */}
       {result.loading ? (
         <p>Lädt...</p>
       ) : result.error ? (
