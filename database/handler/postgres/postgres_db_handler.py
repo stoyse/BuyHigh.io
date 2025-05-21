@@ -463,7 +463,6 @@ def add_analytics(user_id, action, source_details):
             host=PG_HOST, port=PG_PORT, dbname=PG_DB, user=PG_USER, password=PG_PASSWORD
         )
         conn.autocommit = True
-        user_id = get_user_by_firebase_uid(user_id)
         with conn.cursor() as cur:
             cur.execute(
                 "INSERT INTO analytics (user_id, action, source_details) VALUES (%s, %s, %s)",

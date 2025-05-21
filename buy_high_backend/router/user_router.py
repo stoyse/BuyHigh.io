@@ -90,7 +90,7 @@ async def api_get_user_data(user_id_param: int, current_user: AuthenticatedUser 
 @router.get("/user/transactions/{user_id_param}", response_model=TransactionsListResponse)
 async def api_get_user_last_transactions(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
     # Verwendung der Datenbank-User-ID für Analytics
-    
+
     user_id_for_analytics = current_user.id
     add_analytics(user_id_for_analytics, "api_get_user_last_transactions_attempt", f"api_routes:api_get_user_last_transactions:user_id={user_id_param}")
 
@@ -108,7 +108,8 @@ async def api_get_user_last_transactions(user_id_param: int, current_user: Authe
 @router.get("/user/portfolio/{user_id_param}", response_model=PortfolioResponse)
 async def api_get_portfolio(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
     user_id_for_analytics = current_user.id
-    add_analytics(user_id_for_analytics, "api_get_portfolio", f"api_routes:api_get_portfolio:user_id={user_id_param}")
+    
+    (user_id_for_analytics, "api_get_portfolio", f"api_routes:api_get_portfolio:user_id={user_id_param}")
 
     portfolio_data = transactions_handler.show_user_portfolio(user_id_param)
     if portfolio_data and portfolio_data.get("success"):
