@@ -45,22 +45,20 @@ app = FastAPI(
 
 # Definiere die erlaubten Ursprünge
 allowed_origins = [
-    "https://buy-high-io.vercel.app",  # Deine Vercel-Produktionsdomain
-    "https://buyhigh-io.vercel.app",   # Alternative Vercel-Domain falls verwendet
-    "http://localhost:3000",          # Typischer React-Entwicklungsport
-    "http://localhost:3001",          # Ein weiterer möglicher Entwicklungsport
-    # Füge hier weitere Domains hinzu, falls nötig
+    "https://buy-high-io.vercel.app/"
 ]
 
 # CORS-Middleware hinzufügen, um Cross-Origin-Anfragen zu ermöglichen
 # Diese sollte vor anderen Middlewares stehen, die Antworten modifizieren oder generieren könnten.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins, 
+    allow_origins=[
+    "https://buy-high-io.vercel.app",
+    "https://buy-high-io.vercel.app/",], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["*"],
+    expose_headers=["Authorization", "Content-Disposition"],
     max_age=600,  # Cache die CORS-Antwort für 10 Minuten
 )
 
