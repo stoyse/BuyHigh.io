@@ -23,6 +23,7 @@ async def api_upload_profile_picture(
     file: UploadFile = File(...), 
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
+    # Verwendung der Datenbank-User-ID anstelle der Firebase-ID
     user_id_for_analytics = current_user.id
     add_analytics(user_id_for_analytics, "api_upload_profile_picture_attempt", "api_routes:api_upload_profile_picture")
 
@@ -36,6 +37,7 @@ async def api_upload_profile_picture(
 
     try:
         upload_folder = os.path.join(PROJECT_ROOT, 'static', 'user_data')
+        # Verwendung der Datenbank-User-ID für den Ordnerpfad
         user_folder = os.path.join(upload_folder, str(current_user.id))
         os.makedirs(user_folder, exist_ok=True)
         
@@ -64,6 +66,7 @@ async def api_upload_profile_picture(
 
 @router.get("/get/profile-picture/{user_id_param}")
 async def api_get_profile_picture(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
+    # Verwendung der Datenbank-User-ID für Analytics
     user_id_for_analytics = current_user.id
     add_analytics(user_id_for_analytics, "api_get_profile_picture_attempt", f"api_routes:api_get_profile_picture:user_id={user_id_param}")
     
@@ -78,6 +81,7 @@ async def api_get_profile_picture(user_id_param: int, current_user: Authenticate
 
 @router.get("/user/{user_id_param}", response_model=UserDataResponse)
 async def api_get_user_data(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
+    # Verwendung der Datenbank-User-ID für Analytics
     user_id_for_analytics = current_user.id
     add_analytics(user_id_for_analytics, "api_get_user_data_attempt", f"api_routes:api_get_user_data:user_id={user_id_param}")
     
@@ -89,6 +93,7 @@ async def api_get_user_data(user_id_param: int, current_user: AuthenticatedUser 
 
 @router.get("/user/transactions/{user_id_param}", response_model=TransactionsListResponse)
 async def api_get_user_last_transactions(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
+    # Verwendung der Datenbank-User-ID für Analytics
     user_id_for_analytics = current_user.id
     add_analytics(user_id_for_analytics, "api_get_user_last_transactions_attempt", f"api_routes:api_get_user_last_transactions:user_id={user_id_param}")
 
@@ -102,6 +107,7 @@ async def api_get_user_last_transactions(user_id_param: int, current_user: Authe
 
 @router.get("/user/portfolio/{user_id_param}", response_model=PortfolioResponse)
 async def api_get_portfolio(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
+    # Verwendung der Datenbank-User-ID für Analytics
     user_id_for_analytics = current_user.id
     add_analytics(user_id_for_analytics, "api_get_portfolio", f"api_routes:api_get_portfolio:user_id={user_id_param}")
 

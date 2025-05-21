@@ -124,7 +124,7 @@ def run_tests() -> List[Tuple[str, bool]]:
     test_results.append(("Root Route", "status" in root_response))
     
     # Test des Gesundheitschecks
-    health_response = test_route("GET", "/api/health", 200)
+    health_response = test_route("GET", "/health", 200)
     test_results.append(("Health Check", "status" in health_response))
     
     # --- Login-Test ---
@@ -136,7 +136,7 @@ def run_tests() -> List[Tuple[str, bool]]:
         "email": env_vars["Username"],
         "password": env_vars["Password"]
     }
-    login_response = test_route("POST", "/api/login", 200, login_data)
+    login_response = test_route("POST", "/login", 200, login_data)
     login_success = login_response.get("success", False)
     test_results.append(("Login", login_success))
     
@@ -151,10 +151,10 @@ def run_tests() -> List[Tuple[str, bool]]:
     print_section("Tests für geschützte Routen")
     
     if id_token:
-        stock_data_response = test_route("GET", "/api/stock-data?symbol=AAPL&timeframe=3M", 200, token=id_token)
+        stock_data_response = test_route("GET", "/stock-data?symbol=AAPL&timeframe=3M", 200, token=id_token)
         test_results.append(("Stock Data", isinstance(stock_data_response, list)))
         
-        funny_tips_response = test_route("GET", "/api/funny-tips", 200, token=id_token)
+        funny_tips_response = test_route("GET", "/funny-tips", 200, token=id_token)
         funny_tips_success = isinstance(funny_tips_response, dict) and funny_tips_response.get("success", False)
         test_results.append(("Funny Tips", funny_tips_success))
     else:
@@ -169,7 +169,7 @@ def run_tests() -> List[Tuple[str, bool]]:
         "email": "ungueltig@example.com", 
         "password": "falschespasswort123"
     }
-    invalid_login_response = test_route("POST", "/api/login", 401, invalid_login_data)
+    invalid_login_response = test_route("POST", "/login", 401, invalid_login_data)
     invalid_login_expected = "success" not in invalid_login_response or not invalid_login_response["success"]
     test_results.append(("Invalid Login", invalid_login_expected))
     
