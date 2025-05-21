@@ -41,10 +41,6 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Füge die Request-Logging-Middleware hinzu
-app.add_middleware(RequestLoggingMiddleware)
-
-# CORS-Middleware hinzufügen, um Cross-Origin-Anfragen zu ermöglichen
 # Definiere die erlaubten Ursprünge
 allowed_origins = [
     "https://buy-high-io.vercel.app",  # Deine Vercel-Produktionsdomain
@@ -53,6 +49,8 @@ allowed_origins = [
     # Füge hier weitere Domains hinzu, falls nötig
 ]
 
+# CORS-Middleware hinzufügen, um Cross-Origin-Anfragen zu ermöglichen
+# Diese sollte vor anderen Middlewares stehen, die Antworten modifizieren oder generieren könnten.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins, 
@@ -60,6 +58,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Füge die Request-Logging-Middleware hinzu
+app.add_middleware(RequestLoggingMiddleware)
 
 # API-Routen unter dem Präfix /api einbinden
 app.include_router(api_router, prefix="/")
