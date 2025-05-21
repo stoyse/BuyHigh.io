@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import BaseLayout from '../../components/Layout/BaseLayout';
 import { GetUserInfo, GetPortfolioData, GetRecentTransactions, GetDailyQuiz } from '../../apiService';
 import './Dashboard.css';
+import { useAuth } from '../../contexts/AuthContext'; // Import useAuth
 
 // Define TypeScript interfaces for our data structures
 interface User {
@@ -80,13 +81,24 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { user: authUser, loading: authLoading } = useAuth(); // Get user from AuthContext
+
   useEffect(() => {
     const fetchAllData = async () => {
+      if (!authUser || !authUser.id) { // Check if authUser and its id exist
+        setLoading(false); // Stop loading if no authenticated user
+        // Optional: redirect to login if not authLoading, or show a message
+        if (!authLoading) {
+          setError("Benutzer nicht authentifiziert.");
+        }
+        return;
+      }
+
       try {
         setLoading(true);
+        setError(null);
         
-        // Verwende eine User-ID für API-Aufrufe (Platzhalter "1")
-        const userId = "1"; // In einer echten App käme das vom Auth-Context
+        const userId = authUser.id.toString(); // Use userId from AuthContext
 
         // Use authentication context to fetch current user data
         const userData = await GetUserInfo(userId);
@@ -144,8 +156,10 @@ const Dashboard: React.FC = () => {
       }
     };
     
-    fetchAllData();
-  }, []);
+    if (!authLoading) { // Fetch data only when auth state is resolved
+      fetchAllData();
+    }
+  }, [authUser, authLoading, levels]); // Add authUser and authLoading to dependencies
 
   const handleQuizSubmit = async (quizId: string, answer: string) => {
     try {
