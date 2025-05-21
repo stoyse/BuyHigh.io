@@ -57,13 +57,11 @@ async def api_redeem_code(
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
     user_id = current_user.id
-    add_analytics(user_id, "api_redeem_code_attempt", f"api_routes:api_redeem_code:code={payload.code}")
     
     code = payload.code.upper()
 
     user_data = db_handler.get_user_by_id(user_id)
     if not user_data:
-        add_analytics(user_id, "api_redeem_code_user_not_found", f"api_routes:api_redeem_code:code={code}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Benutzer nicht gefunden")
     
     current_balance = user_data.get('balance', 0.0)
@@ -88,7 +86,6 @@ async def api_redeem_code(
     elif code == "1337":
         reward = 1337; message = "Retro-Gaming-Modus aktiviert! +1337 Credits"; reload_page = True
     else:
-        add_analytics(user_id, "api_redeem_code_invalid", f"api_routes:api_redeem_code:code={code}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ungültiger Code")
         
     new_balance = current_balance + reward
@@ -96,10 +93,8 @@ async def api_redeem_code(
     update_success = db_handler.update_user_balance(user_id, new_balance)
     if not update_success:
         logger.error(f"Failed to update balance for user {user_id} after redeeming code {code}")
-        add_analytics(user_id, "api_redeem_code_balance_update_fail", f"api_routes:api_redeem_code:code={code}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Fehler beim Aktualisieren des Guthabens.")
 
-    add_analytics(user_id, "api_redeem_code_success", f"api_routes:api_redeem_code:code={code},reward={reward}")
     return RedeemCodeResponse(
         success=True, message=message, reload=reload_page, reward=reward, new_balance=new_balance
     )

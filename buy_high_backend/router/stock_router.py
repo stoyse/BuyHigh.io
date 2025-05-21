@@ -20,12 +20,10 @@ def update_asset_price_in_db(symbol: str, price: float, user_id_for_analytics: O
     """Aktualisiert den letzten bekannten Preis eines Assets in der Datenbank"""
     import database.handler.postgres.postgre_transactions_handler as transactions_handler
     
-    add_analytics(user_id_for_analytics, "update_asset_price_start", f"api_routes:symbol={symbol}")
     try:
         with transactions_handler.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT id FROM assets WHERE symbol = %s", (symbol,))
-                add_analytics(user_id_for_analytics, "update_asset_price_select_asset", f"api_routes:symbol={symbol}")
                 asset_row = cur.fetchone()
                 
                 if not asset_row:
@@ -36,12 +34,9 @@ def update_asset_price_in_db(symbol: str, price: float, user_id_for_analytics: O
                     UPDATE assets SET last_price = %s, last_price_updated = CURRENT_TIMESTAMP
                     WHERE symbol = %s
                 """, (price, symbol))
-                add_analytics(user_id_for_analytics, "update_asset_price_update_asset", f"api_routes:symbol={symbol}")
                 conn.commit()
-                add_analytics(user_id_for_analytics, "update_asset_price_commit", f"api_routes:symbol={symbol}")
                 return True
     except Exception as e:
-        add_analytics(user_id_for_analytics, "update_asset_price_error", f"api_routes:symbol={symbol},error={str(e)}")
         logger.error(f"Error updating asset price in database: {e}", exc_info=True)
         return False
 
@@ -54,7 +49,6 @@ async def api_stock_data(
 ):
     user_id_for_analytics = current_user.id if current_user else None
     logger.info(f"Accessing /stock-data for user: {user_id_for_analytics}. Symbol: {symbol}, Timeframe: {timeframe}, Fresh: {fresh}")
-    add_analytics(user_id_for_analytics, "api_get_stock_data", f"api_routes:api_stock_data:symbol={symbol},tf={timeframe},fresh={fresh}")
 
     end_date_dt = datetime.now()
     start_date_dt = None
@@ -101,7 +95,6 @@ async def api_stock_data(
             
             if df is None or df.empty:
                 logger.error(f"No data (including fallback demo) found for {symbol}. Returning empty list.")
-                add_analytics(user_id_for_analytics, "api_get_stock_data_no_data", f"api_routes:api_stock_data:symbol={symbol}")
                 return JSONResponse(
                     status_code=status.HTTP_404_NOT_FOUND,
                     content={'data': [], 'is_demo': True, 'currency': 'USD', 'demo_reason': 'API key missing' if not stock_data.TWELVE_DATA_API_KEY else 'API request failed or empty data'}
@@ -112,7 +105,6 @@ async def api_stock_data(
             required_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
             if not all(col in df.columns for col in required_columns):
                 logger.error(f"Data for {symbol} is missing one or more required columns. Available: {list(df.columns)}")
-                add_analytics(user_id_for_analytics, "api_get_stock_data_missing_cols", f"api_routes:api_stock_data:symbol={symbol}")
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f'Data processing error: Missing columns for {symbol}')
 
             for index, row in df.iterrows():
@@ -143,11 +135,9 @@ async def api_stock_data(
             except Exception as e:
                 logger.error(f"Error updating asset price in database: {e}")
         
-        add_analytics(user_id_for_analytics, "api_get_stock_data_success", f"api_routes:api_stock_data:symbol={symbol},count={len(data)}")
         return data
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in /api/stock-data for {symbol} timeframe {timeframe}: {e}", exc_info=True)
-        add_analytics(user_id_for_analytics, "api_get_stock_data_exception", f"api_routes:api_stock_data:symbol={symbol},error={e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

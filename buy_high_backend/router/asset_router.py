@@ -19,9 +19,6 @@ async def api_get_assets(
     active_only: bool = True,
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
-    user_id_for_analytics = current_user.id
-    add_analytics(user_id_for_analytics, "api_get_all_assets", f"api_routes:api_get_assets:type={type},active_only={active_only}")
-    
     result = transactions_handler.get_all_assets(active_only, type)
     
     if result is None:
@@ -35,8 +32,6 @@ async def api_get_assets(
 
 @router.get("/assets/{symbol}", response_model=AssetResponse)
 async def api_get_asset(symbol: str, current_user: AuthenticatedUser = Depends(get_current_user)):
-    user_id_for_analytics = current_user.id
-    add_analytics(user_id_for_analytics, "api_get_asset_by_symbol", f"api_routes:api_get_asset:symbol={symbol}")
     result = transactions_handler.get_asset_by_symbol(symbol)
     
     if result and result.get('success') and 'asset' in result and result['asset']:

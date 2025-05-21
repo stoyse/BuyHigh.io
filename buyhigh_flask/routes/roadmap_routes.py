@@ -92,7 +92,6 @@ def roadmap(roadmap_id=1):  # Default to roadmap ID 1 if none provided
 @roadmap_bp.route('/step/<int:roadmap_id>/<step_id>')
 @login_required
 def roadmap_step(roadmap_id, step_id): # step_id is a string from URL
-    add_analytics(g.user.get('id') if hasattr(g, 'user') and g.user else None, "roadmap_step_view", f"roadmap_routes:roadmap_id={roadmap_id},step_id={step_id}")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     
     all_steps_for_roadmap = roadmap_handler.get_roadmap_steps(roadmap_id)
@@ -201,8 +200,6 @@ def roadmap_step(roadmap_id, step_id): # step_id is a string from URL
 @roadmap_bp.route('/submit_quiz', methods=['POST'])
 @login_required
 def submit_quiz():
-    add_analytics(g.user.get('id') if hasattr(g, 'user') and g.user else None, "submit_quiz_attempt", "roadmap_routes")
-    # Log all form data for debugging - hilfreich, um zu sehen, was ankommt
     logger.debug(f"submit_quiz called. Form data: {request.form.to_dict()}")
 
     if request.method == 'POST':
@@ -212,20 +209,12 @@ def submit_quiz():
         submitted_answer_value = request.form.get('quiz_answer') # Dies ist 'possible_answer_1', etc.
         user_id = g.user.get('id')
 
-        # Bestimme die Weiterleitungs-URL für Fehler oder Erfolg
-        # request.referrer könnte None sein oder auf eine andere Seite zeigen, wenn etwas schiefgeht.
-        # Sicherer ist es, explizit zur aktuellen Step-Seite zurückzukehren.
-        # Dafür brauchen wir roadmap_id und step_id so früh wie möglich.
-        
         redirect_url = url_for('roadmap.roadmap') # Fallback, falls IDs fehlen
         if roadmap_id_str and step_id_str:
             try:
-                # Versuche, die IDs für die Redirect-URL zu validieren/konvertieren
-                # Dies ist nur für die Redirect-URL im Fehlerfall, die eigentliche Logik verwendet actual_step_id etc.
                 redirect_url = url_for('roadmap.roadmap_step', roadmap_id=int(roadmap_id_str), step_id=int(step_id_str))
             except ValueError:
                 logger.warning(f"Konnte roadmap_id '{roadmap_id_str}' oder step_id '{step_id_str}' nicht für Redirect-URL konvertieren.")
-                # Fallback auf die Roadmap-Sammlung oder eine generische Roadmap-Seite, wenn IDs ungültig sind
                 redirect_url = url_for('roadmap.roadmap_collection')
 
 
@@ -245,7 +234,6 @@ def submit_quiz():
             flash(message, "error")
             return redirect(redirect_url) # Nutze die zuvor bestimmte redirect_url
 
-        # Die Ziel-URL für Erfolg oder spezifische Fehler nach ID-Validierung
         target_step_redirect_url = url_for('roadmap.roadmap_step', roadmap_id=current_roadmap_id, step_id=actual_step_id)
 
         quiz = roadmap_handler.get_quiz_by_id(quiz_id)
@@ -327,14 +315,12 @@ def submit_quiz():
 
         return redirect(target_step_redirect_url)
     
-    # Fallback für Nicht-POST-Methoden
     flash("Invalid request method.", "error")
     return redirect(url_for('roadmap.roadmap'))
 
 @roadmap_bp.route('/roadmap-collection')
 @login_required
 def roadmap_collection():
-    add_analytics(g.user.get('id') if hasattr(g, 'user') and g.user else None, "roadmap_collection_view", "roadmap_routes")
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     user_id = g.user.get('id')
     
@@ -363,7 +349,6 @@ def roadmap_collection():
             
             processed_roadmaps.append(r_map)
     else:
-        # Wenn kein Benutzer angemeldet ist, fügen wir keine Fortschrittsinformationen hinzu
         for r_map in all_roadmaps_raw:
             r_map['progress_percentage'] = 0
             r_map['is_completed'] = False
@@ -379,7 +364,6 @@ def roadmap_collection():
 def create_roadmap():
     user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
     if request.method == 'POST':
-        add_analytics(user_id_for_analytics, "create_roadmap_post_start", "roadmap_routes")
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
         roadmap_title = request.form.get('roadmap_title')
@@ -400,7 +384,6 @@ def create_roadmap():
                 "INSERT INTO roadmap (title, description) VALUES (%s, %s) RETURNING id",
                 (roadmap_title, roadmap_description)
             )
-            add_analytics(user_id_for_analytics, "create_roadmap_insert_roadmap", "roadmap_routes")
             roadmap_id = cursor.fetchone()[0]
             
             step_titles = request.form.getlist('step_title[]')
@@ -439,7 +422,6 @@ def create_roadmap():
                     """,
                     (roadmap_id, step_number, step_title, step_description, layout_array, step_explain)
                 )
-                add_analytics(user_id_for_analytics, "create_roadmap_insert_step", f"roadmap_routes:roadmap_id={roadmap_id}")
                 step_id = cursor.fetchone()[0]
                 step_ids.append(step_id)
             
@@ -466,10 +448,8 @@ def create_roadmap():
                             """,
                             (roadmap_id, step_id, question, answer1, answer2, answer3, correct_answer)
                         )
-                        add_analytics(user_id_for_analytics, "create_roadmap_insert_quiz", f"roadmap_routes:roadmap_id={roadmap_id},step_id={step_id}")
             
             conn.commit()
-            add_analytics(user_id_for_analytics, "create_roadmap_commit", f"roadmap_routes:roadmap_id={roadmap_id}")
             
             if is_ajax:
                 return jsonify({
@@ -486,7 +466,6 @@ def create_roadmap():
         except Exception as e:
             if conn:
                 conn.rollback()
-            add_analytics(user_id_for_analytics, "create_roadmap_error_rollback", f"roadmap_routes:{str(e)}")
             logger.error(f"Error creating roadmap: {e}", exc_info=True)
             
             if is_ajax:
@@ -499,14 +478,13 @@ def create_roadmap():
             if conn:
                 conn.close()
     
-    add_analytics(user_id_for_analytics, "create_roadmap_get_view", "roadmap_routes")
     return render_template('roadmap/create_roadmap.html',
                           user = g.user,
                           darkmode = g.user.get('theme') == 'dark',
                           roadmap_collection = roadmap_handler.get_roadmap_collection())
 
 @roadmap_bp.route('/moonwalking-bull')
-@login_required  # Annahme, dass diese Seite auch einen Login erfordert
+@login_required
 def moonwalking_bull_page():
     dark_mode_active = g.user and g.user.get('theme') == 'dark'
     return render_template('roadmap/moonwalking_bull.html',
@@ -527,7 +505,6 @@ def toggle_meme_mode():
         conn = roadmap_handler.get_db_connection()
         cursor = conn.cursor()
         
-        # Aktuellen Meme-Modus-Status abrufen
         cursor.execute("SELECT is_meme_mode FROM users WHERE id = %s", (user_id,))
         result = cursor.fetchone()
         
@@ -536,13 +513,11 @@ def toggle_meme_mode():
             return redirect(url_for('roadmap.roadmap'))
         
         current_meme_mode = result[0]
-        new_meme_mode = not current_meme_mode  # Wert umkehren
+        new_meme_mode = not current_meme_mode
         
-        # Meme-Modus des Benutzers in der Datenbank aktualisieren
         cursor.execute("UPDATE users SET is_meme_mode = %s WHERE id = %s", (new_meme_mode, user_id))
         conn.commit()
         
-        # Benutzersitzungsdaten aktualisieren
         if 'user' in g and g.user:
             g.user['is_meme_mode'] = new_meme_mode
         

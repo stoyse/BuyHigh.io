@@ -67,18 +67,18 @@ def _parse_user_timestamps(user_row):
 
 def init_db():
     """Initialisiert den DB-Verbindungspool."""
-    add_analytics(event_type="init_db", details={"source": "postgres_db_handler:init_db"})
+    # add_analytics(event_type="init_db", details={"source": "postgres_db_handler:init_db"})
     conn = get_db_connection()
     try:
         logger.info("PostgreSQL: Verbindung erfolgreich hergestellt.")
     except psycopg2.Error as e:
         logger.error(f"Fehler während der DB-Initialisierung: {e}", exc_info=True)
-        add_analytics(event_type="init_db_error", details={"source": "postgres_db_handler:init_db", "error": str(e)})
+        # add_analytics(event_type="init_db_error", details={"source": "postgres_db_handler:init_db", "error": str(e)})
     finally:
         conn.close()
 
 def add_user(username, email, firebase_uid, provider='password'):
-    add_analytics(event_type="add_user_attempt", details={"email": email, "uid": firebase_uid, "source": "postgres_db_handler:add_user"})
+    # add_analytics(event_type="add_user_attempt", details={"email": email, "uid": firebase_uid, "source": "postgres_db_handler:add_user"})
     conn = get_db_connection()
     cur = conn.cursor()
     user_id_val = None
@@ -90,17 +90,17 @@ def add_user(username, email, firebase_uid, provider='password'):
         user_id_val = cur.fetchone()[0]
         conn.commit()
         logger.info(f"Benutzer '{username}' erfolgreich mit ID {user_id_val} hinzugefügt.")
-        add_analytics(user_id=user_id_val, event_type="add_user_success", details={"email": email, "uid": firebase_uid, "user_id": user_id_val, "source": "postgres_db_handler:add_user"})
+        # add_analytics(user_id=user_id_val, event_type="add_user_success", details={"email": email, "uid": firebase_uid, "user_id": user_id_val, "source": "postgres_db_handler:add_user"})
         return True
     except psycopg2.IntegrityError as e:
         conn.rollback()
         logger.error(f"Fehler beim Hinzufügen des Benutzers '{username}': {e}", exc_info=True)
-        add_analytics(event_type="add_user_integrity_error", details={"email": email, "error": str(e), "source": "postgres_db_handler:add_user"})
+        # add_analytics(event_type="add_user_integrity_error", details={"email": email, "error": str(e), "source": "postgres_db_handler:add_user"})
         return False
     except psycopg2.Error as e:
         conn.rollback()
         logger.error(f"DB-Fehler beim Hinzufügen des Benutzers '{username}': {e}", exc_info=True)
-        add_analytics(event_type="add_user_db_error", details={"email": email, "error": str(e), "source": "postgres_db_handler:add_user"})
+        # add_analytics(event_type="add_user_db_error", details={"email": email, "error": str(e), "source": "postgres_db_handler:add_user"})
         return False
     finally:
         cur.close()
@@ -128,7 +128,8 @@ def get_user_by_firebase_uid(firebase_uid, log_analytics_event=True):
             if log_analytics_event:
                 try:
                     # Call add_analytics with the primary user ID, event type, and details
-                    add_analytics(user_id=user['id'], event_type="get_user_by_firebase_uid", details={"firebase_uid": firebase_uid}, called_from_get_user=True)
+                    # add_analytics(user_id=user['id'], event_type="get_user_by_firebase_uid", details={"firebase_uid": firebase_uid}, called_from_get_user=True)
+                    pass # Analytics entfernt
                 except Exception as e:
                     logger.error(f"Failed to log analytics event for get_user_by_firebase_uid (uid: {firebase_uid}): {e}")
         return user
@@ -143,7 +144,7 @@ def get_user_by_firebase_uid(firebase_uid, log_analytics_event=True):
             conn.close()
 
 def get_user_by_id(user_id_param):
-    add_analytics(user_id=user_id_param, event_type="get_user_by_id_call", details={"source_user_id": user_id_param, "source": "postgres_db_handler:get_user_by_id"})
+    # add_analytics(user_id=user_id_param, event_type="get_user_by_id_call", details={"source_user_id": user_id_param, "source": "postgres_db_handler:get_user_by_id"})
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     try:
@@ -154,106 +155,106 @@ def get_user_by_id(user_id_param):
         return None
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Suchen nach Benutzer-ID '{user_id_param}': {e}", exc_info=True)
-        add_analytics(user_id=user_id_param, event_type="get_user_by_id_error", details={"source_user_id": user_id_param, "error": str(e), "source": "postgres_db_handler:get_user_by_id"})
+        # add_analytics(user_id=user_id_param, event_type="get_user_by_id_error", details={"source_user_id": user_id_param, "error": str(e), "source": "postgres_db_handler:get_user_by_id"})
         return None
     finally:
         cur.close()
         conn.close()
 
 def get_user_by_username(username):
-    add_analytics(event_type="get_user_by_username_call", details={"username": username, "source": "postgres_db_handler:get_user_by_username"})
+    # add_analytics(event_type="get_user_by_username_call", details={"username": username, "source": "postgres_db_handler:get_user_by_username"})
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     try:
         cur.execute("SELECT * FROM users WHERE username = %s", (username,))
         user = cur.fetchone()
         if user:
-            add_analytics(user_id=user['id'], event_type="get_user_by_username_success", details={"username": username, "user_id": user['id'], "source": "postgres_db_handler:get_user_by_username"})
+            # add_analytics(user_id=user['id'], event_type="get_user_by_username_success", details={"username": username, "user_id": user['id'], "source": "postgres_db_handler:get_user_by_username"})
             return _parse_user_timestamps(user)
         else:
-            add_analytics(event_type="get_user_by_username_not_found", details={"username": username, "source": "postgres_db_handler:get_user_by_username"})
+            # add_analytics(event_type="get_user_by_username_not_found", details={"username": username, "source": "postgres_db_handler:get_user_by_username"})
             return None
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Suchen nach Benutzername '{username}': {e}", exc_info=True)
-        add_analytics(event_type="get_user_by_username_error", details={"username": username, "error": str(e), "source": "postgres_db_handler:get_user_by_username"})
+        # add_analytics(event_type="get_user_by_username_error", details={"username": username, "error": str(e), "source": "postgres_db_handler:get_user_by_username"})
         return None
     finally:
         cur.close()
         conn.close()
 
 def update_last_login(user_id_param):
-    add_analytics(user_id=user_id_param, event_type="update_last_login_call", details={"user_id_to_update": user_id_param, "source": "postgres_db_handler:update_last_login"})
+    # add_analytics(user_id=user_id_param, event_type="update_last_login_call", details={"user_id_to_update": user_id_param, "source": "postgres_db_handler:update_last_login"})
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         cur.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = %s", (user_id_param,))
         conn.commit()
         if cur.rowcount > 0:
-            add_analytics(user_id=user_id_param, event_type="update_last_login_success", details={"user_id_updated": user_id_param, "source": "postgres_db_handler:update_last_login"})
+            # add_analytics(user_id=user_id_param, event_type="update_last_login_success", details={"user_id_updated": user_id_param, "source": "postgres_db_handler:update_last_login"})
             return True
         else:
-            add_analytics(user_id=user_id_param, event_type="update_last_login_failed_no_row", details={"user_id_to_update": user_id_param, "source": "postgres_db_handler:update_last_login"})
+            # add_analytics(user_id=user_id_param, event_type="update_last_login_failed_no_row", details={"user_id_to_update": user_id_param, "source": "postgres_db_handler:update_last_login"})
             return False
     except psycopg2.Error as e:
         conn.rollback()
         logger.error(f"Fehler beim Aktualisieren der letzten Login-Zeit für Benutzer ID {user_id_param}: {e}", exc_info=True)
-        add_analytics(user_id=user_id_param, event_type="update_last_login_error", details={"user_id_to_update": user_id_param, "error": str(e), "source": "postgres_db_handler:update_last_login"})
+        # add_analytics(user_id=user_id_param, event_type="update_last_login_error", details={"user_id_to_update": user_id_param, "error": str(e), "source": "postgres_db_handler:update_last_login"})
         return False
     finally:
         cur.close()
         conn.close()
 
 def delete_user(user_id_to_delete):
-    add_analytics(user_id=user_id_to_delete, event_type="delete_user_request", details={"user_id_to_delete": user_id_to_delete, "source": "postgres_db_handler:delete_user"})
+    # add_analytics(user_id=user_id_to_delete, event_type="delete_user_request", details={"user_id_to_delete": user_id_to_delete, "source": "postgres_db_handler:delete_user"})
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         cur.execute("DELETE FROM users WHERE id = %s", (user_id_to_delete,))
         conn.commit()
         if cur.rowcount > 0:
-            add_analytics(user_id=user_id_to_delete, event_type="delete_user_success", details={"user_id_deleted": user_id_to_delete, "source": "postgres_db_handler:delete_user"})
+            # add_analytics(user_id=user_id_to_delete, event_type="delete_user_success", details={"user_id_deleted": user_id_to_delete, "source": "postgres_db_handler:delete_user"})
             return True
         else:
-            add_analytics(user_id=user_id_to_delete, event_type="delete_user_failed_not_found", details={"user_id_to_delete": user_id_to_delete, "source": "postgres_db_handler:delete_user"})
+            # add_analytics(user_id=user_id_to_delete, event_type="delete_user_failed_not_found", details={"user_id_to_delete": user_id_to_delete, "source": "postgres_db_handler:delete_user"})
             return False
     except psycopg2.Error as e:
         conn.rollback()
         logger.error(f"Fehler beim Löschen des Benutzers mit ID {user_id_to_delete}: {e}", exc_info=True)
-        add_analytics(user_id=user_id_to_delete, event_type="delete_user_error", details={"user_id_to_delete": user_id_to_delete, "error": str(e), "source": "postgres_db_handler:delete_user"})
+        # add_analytics(user_id=user_id_to_delete, event_type="delete_user_error", details={"user_id_to_delete": user_id_to_delete, "error": str(e), "source": "postgres_db_handler:delete_user"})
         return False
     finally:
         cur.close()
         conn.close()
 
 def get_all_users():
-    add_analytics(event_type="get_all_users_call", details={"source": "postgres_db_handler:get_all_users"})
+    # add_analytics(event_type="get_all_users_call", details={"source": "postgres_db_handler:get_all_users"})
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     try:
         cur.execute("SELECT id, username, email FROM users ORDER BY username")
         users = [dict(row) for row in cur.fetchall()]
-        add_analytics(event_type="get_all_users_success", details={"count": len(users), "source": "postgres_db_handler:get_all_users"})
+        # add_analytics(event_type="get_all_users_success", details={"count": len(users), "source": "postgres_db_handler:get_all_users"})
         return users
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Abrufen aller Benutzer: {e}", exc_info=True)
-        add_analytics(event_type="get_all_users_error", details={"error": str(e), "source": "postgres_db_handler:get_all_users"})
+        # add_analytics(event_type="get_all_users_error", details={"error": str(e), "source": "postgres_db_handler:get_all_users"})
         return []
     finally:
         cur.close()
         conn.close()
 
 def get_all_profiles():
-    add_analytics(event_type="get_all_profiles_call", details={"source": "postgres_db_handler:get_all_profiles"})
+    # add_analytics(event_type="get_all_profiles_call", details={"source": "postgres_db_handler:get_all_profiles"})
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     try:
         cur.execute("SELECT * FROM users ORDER BY id")
         profiles = [dict(row) for row in cur.fetchall()]
-        add_analytics(event_type="get_all_profiles_success", details={"count": len(profiles), "source": "postgres_db_handler:get_all_profiles"})
+        # add_analytics(event_type="get_all_profiles_success", details={"count": len(profiles), "source": "postgres_db_handler:get_all_profiles"})
         return profiles
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Abrufen aller Profile: {e}", exc_info=True)
-        add_analytics(event_type="get_all_profiles_error", details={"error": str(e), "source": "postgres_db_handler:get_all_profiles"})
+        # add_analytics(event_type="get_all_profiles_error", details={"error": str(e), "source": "postgres_db_handler:get_all_profiles"})
         return []
     finally:
         cur.close()
@@ -264,7 +265,7 @@ def create_asset(symbol, name, asset_type, exchange=None, currency="USD",
     """
     Erstellt ein neues Asset in der Datenbank.
     """
-    add_analytics(event_type="create_asset_attempt", details={"symbol": symbol, "type": asset_type, "source": "postgres_db_handler:create_asset"})
+    # add_analytics(event_type="create_asset_attempt", details={"symbol": symbol, "type": asset_type, "source": "postgres_db_handler:create_asset"})
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -274,99 +275,99 @@ def create_asset(symbol, name, asset_type, exchange=None, currency="USD",
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (symbol, name, asset_type, exchange, currency, sector, industry, logo_url, description, default_price))
                 conn.commit()
-                add_analytics(event_type="create_asset_success", details={"symbol": symbol, "source": "postgres_db_handler:create_asset"})
+                # add_analytics(event_type="create_asset_success", details={"symbol": symbol, "source": "postgres_db_handler:create_asset"})
                 return True
     except Exception as e:
         logger.error(f"Fehler beim Erstellen eines Assets: {e}")
-        add_analytics(event_type="create_asset_error", details={"symbol": symbol, "error": str(e), "source": "postgres_db_handler:create_asset"})
+        # add_analytics(event_type="create_asset_error", details={"symbol": symbol, "error": str(e), "source": "postgres_db_handler:create_asset"})
         return False
 
 def get_user_level(user_id_param):
-    add_analytics(user_id=user_id_param, event_type="get_user_level_call", details={"user_id_query": user_id_param, "source": "postgres_db_handler:get_user_level"})
+    # add_analytics(user_id=user_id_param, event_type="get_user_level_call", details={"user_id_query": user_id_param, "source": "postgres_db_handler:get_user_level"})
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         cur.execute("SELECT level FROM users WHERE id = %s", (user_id_param,))
         level = cur.fetchone()
         if level:
-            add_analytics(user_id=user_id_param, event_type="get_user_level_success", details={"user_id_found": user_id_param, "level": level[0], "source": "postgres_db_handler:get_user_level"})
+            # add_analytics(user_id=user_id_param, event_type="get_user_level_success", details={"user_id_found": user_id_param, "level": level[0], "source": "postgres_db_handler:get_user_level"})
             return level[0]
-        add_analytics(user_id=user_id_param, event_type="get_user_level_not_found", details={"user_id_query": user_id_param, "source": "postgres_db_handler:get_user_level"})
+        # add_analytics(user_id=user_id_param, event_type="get_user_level_not_found", details={"user_id_query": user_id_param, "source": "postgres_db_handler:get_user_level"})
         return None
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Abrufen des Levels für Benutzer ID {user_id_param}: {e}", exc_info=True)
-        add_analytics(user_id=user_id_param, event_type="get_user_level_error", details={"user_id_query": user_id_param, "error": str(e), "source": "postgres_db_handler:get_user_level"})
+        # add_analytics(user_id=user_id_param, event_type="get_user_level_error", details={"user_id_query": user_id_param, "error": str(e), "source": "postgres_db_handler:get_user_level"})
         return None
     finally:
         cur.close()
         conn.close()
 
 def get_xp_levels():
-    add_analytics(event_type="get_xp_levels_call", details={"source": "postgres_db_handler:get_xp_levels"})
+    # add_analytics(event_type="get_xp_levels_call", details={"source": "postgres_db_handler:get_xp_levels"})
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         cur.execute("SELECT * FROM xp_levels ORDER BY level")
         levels = cur.fetchall()
-        add_analytics(event_type="get_xp_levels_success", details={"count": len(levels), "source": "postgres_db_handler:get_xp_levels"})
+        # add_analytics(event_type="get_xp_levels_success", details={"count": len(levels), "source": "postgres_db_handler:get_xp_levels"})
         return levels
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Abrufen der XP-Levels: {e}", exc_info=True)
-        add_analytics(event_type="get_xp_levels_error", details={"error": str(e), "source": "postgres_db_handler:get_xp_levels"})
+        # add_analytics(event_type="get_xp_levels_error", details={"error": str(e), "source": "postgres_db_handler:get_xp_levels"})
         return []
     finally:
         cur.close()
         conn.close()
 
 def get_xp_gains(action):
-    add_analytics(event_type="get_xp_gains_call", details={"action": action, "source": "postgres_db_handler:get_xp_gains"})
+    # add_analytics(event_type="get_xp_gains_call", details={"action": action, "source": "postgres_db_handler:get_xp_gains"})
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         cur.execute("SELECT xp_amount FROM xp_gains WHERE action = %s", (action,))
         xp_gain = cur.fetchone()
         if xp_gain:
-            add_analytics(event_type="get_xp_gains_success", details={"action": action, "xp_amount": xp_gain[0], "source": "postgres_db_handler:get_xp_gains"})
+            # add_analytics(event_type="get_xp_gains_success", details={"action": action, "xp_amount": xp_gain[0], "source": "postgres_db_handler:get_xp_gains"})
             return xp_gain[0]
-        add_analytics(event_type="get_xp_gains_not_found", details={"action": action, "source": "postgres_db_handler:get_xp_gains"})
+        # add_analytics(event_type="get_xp_gains_not_found", details={"action": action, "source": "postgres_db_handler:get_xp_gains"})
         return None
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Abrufen von XP-Gewinnen für Aktion '{action}': {e}", exc_info=True)
-        add_analytics(event_type="get_xp_gains_error", details={"action": action, "error": str(e), "source": "postgres_db_handler:get_xp_gains"})
+        # add_analytics(event_type="get_xp_gains_error", details={"action": action, "error": str(e), "source": "postgres_db_handler:get_xp_gains"})
         return None
     finally:
         cur.close()
         conn.close()
 
 def manage_user_xp(action, user_id_param, quantity):
-    add_analytics(user_id=user_id_param, event_type="manage_user_xp_start", details={"action": action, "user_id_target": user_id_param, "quantity": quantity, "source": "postgres_db_handler:manage_user_xp"})
+    # add_analytics(user_id=user_id_param, event_type="manage_user_xp_start", details={"action": action, "user_id_target": user_id_param, "quantity": quantity, "source": "postgres_db_handler:manage_user_xp"})
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         xp_to_add = get_xp_gains(action)
         if xp_to_add is None:
             logger.warning(f"Keine XP-Definition für Aktion '{action}' gefunden.")
-            add_analytics(user_id=user_id_param, event_type="manage_user_xp_no_xp_def", details={"action": action, "source": "postgres_db_handler:manage_user_xp"})
+            # add_analytics(user_id=user_id_param, event_type="manage_user_xp_no_xp_def", details={"action": action, "source": "postgres_db_handler:manage_user_xp"})
             return False
 
         cur.execute("UPDATE users SET xp = xp + %s WHERE id = %s", (xp_to_add, user_id_param))
         conn.commit()
         logger.info(f"{xp_to_add} XP für Aktion '{action}' zu Benutzer {user_id_param} hinzugefügt.")
-        add_analytics(user_id=user_id_param, event_type="manage_user_xp_success", details={"action": action, "xp_added": xp_to_add, "source": "postgres_db_handler:manage_user_xp"})
+        # add_analytics(user_id=user_id_param, event_type="manage_user_xp_success", details={"action": action, "xp_added": xp_to_add, "source": "postgres_db_handler:manage_user_xp"})
         
         check_user_level(user_id_param, get_user_xp(user_id_param))
         return True
     except psycopg2.Error as e:
         conn.rollback()
         logger.error(f"Fehler beim Verwalten von XP für Benutzer {user_id_param}, Aktion '{action}': {e}", exc_info=True)
-        add_analytics(user_id=user_id_param, event_type="manage_user_xp_error", details={"action": action, "error": str(e), "source": "postgres_db_handler:manage_user_xp"})
+        # add_analytics(user_id=user_id_param, event_type="manage_user_xp_error", details={"action": action, "error": str(e), "source": "postgres_db_handler:manage_user_xp"})
         return False
     finally:
         cur.close()
         conn.close()
 
 def get_user_xp(user_id):
-    add_analytics(user_id=user_id, event_type="get_user_xp", details={"source": "postgres_db_handler:get_user_xp", "user_id": user_id})
+    # add_analytics(user_id=user_id, event_type="get_user_xp", details={"source": "postgres_db_handler:get_user_xp", "user_id": user_id})
     conn = get_db_connection()
     cur = conn.cursor()
     try:
@@ -377,14 +378,14 @@ def get_user_xp(user_id):
         return 0
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Abrufen von XP für Benutzer ID {user_id}: {e}", exc_info=True)
-        add_analytics(user_id=user_id, event_type="get_user_xp_error", details={"source": "postgres_db_handler:get_user_xp", "user_id": user_id, "error": str(e)})
+        # add_analytics(user_id=user_id, event_type="get_user_xp_error", details={"source": "postgres_db_handler:get_user_xp", "user_id": user_id, "error": str(e)})
         return 0
     finally:
         cur.close()
         conn.close()
 
 def check_user_level(user_id, current_xp):
-    add_analytics(user_id=user_id, event_type="check_user_level_start", details={"source": "postgres_db_handler:check_user_level", "user_id": user_id, "current_xp": current_xp})
+    # add_analytics(user_id=user_id, event_type="check_user_level_start", details={"source": "postgres_db_handler:check_user_level", "user_id": user_id, "current_xp": current_xp})
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     try:
@@ -409,70 +410,71 @@ def check_user_level(user_id, current_xp):
             cur.execute("UPDATE users SET level = %s WHERE id = %s", (new_level, user_id))
             conn.commit()
             logger.info(f"Benutzer {user_id} Level aktualisiert von {user_current_level} auf {new_level}.")
-            add_analytics(user_id=user_id, event_type="user_level_up", details={"source": "postgres_db_handler:check_user_level", "old_level": user_current_level, "new_level": new_level})
+            # add_analytics(user_id=user_id, event_type="user_level_up", details={"source": "postgres_db_handler:check_user_level", "old_level": user_current_level, "new_level": new_level})
         else:
-            add_analytics(user_id=user_id, event_type="user_level_no_change", details={"source": "postgres_db_handler:check_user_level", "level": user_current_level})
+            # add_analytics(user_id=user_id, event_type="user_level_no_change", details={"source": "postgres_db_handler:check_user_level", "level": user_current_level})
+            pass # Analytics entfernt
 
     except psycopg2.Error as e:
         conn.rollback()
         logger.error(f"Fehler beim Überprüfen/Aktualisieren des Benutzerlevels für ID {user_id}: {e}", exc_info=True)
-        add_analytics(user_id=user_id, event_type="check_user_level_error", details={"source": "postgres_db_handler:check_user_level", "error": str(e)})
+        # add_analytics(user_id=user_id, event_type="check_user_level_error", details={"source": "postgres_db_handler:check_user_level", "error": str(e)})
     finally:
         cur.close()
         conn.close()
 
-def add_analytics(user_id: int = None, event_type: str = None, details: dict = None, called_from_get_user: bool = False):
-    """
-    Adds an analytics event to the database.
-
-    Args:
-        user_id: The ID of the user associated with the event. Can be None for system events.
-        event_type: The type of event (e.g., "login", "view_page"). This will be stored in the 'action' column.
-        details: Optional dictionary for additional event details.
-                 If it contains a 'source' key, its value will be stored in 'source_details'.
-                 The (remaining) dictionary will be stored as JSONB in the 'details' column.
-        called_from_get_user: Internal flag to prevent recursion with get_user_by_firebase_uid.
-    """
-    if event_type is None:
-        logger.warning("add_analytics called with no event_type. Skipping.")
-        return
-
-    conn = None
-    cur = None
-    actual_user_id = user_id
-
-    # Prepare details for DB insertion
-    db_details_payload = details.copy() if details else {}
-    source_details_val = db_details_payload.pop('source', None) if db_details_payload else None
-
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-
-        # The 'event_type' parameter is used for the 'action' column.
-        # 'source_details_val' is extracted from 'details' dict's 'source' key.
-        # The remaining 'db_details_payload' is stored in the 'details' JSONB column.
-        cur.execute(
-            "INSERT INTO analytics (user_id, action, source_details, details) VALUES (%s, %s, %s, %s)",
-            (actual_user_id, event_type, source_details_val, psycopg2.extras.Json(db_details_payload) if db_details_payload else None)
-        )
-        conn.commit()
-        logger.info(f"Analytics event added: {event_type} for user_id {actual_user_id or 'System'}")
-
-    except psycopg2.Error as e:
-        if conn:
-            conn.rollback()
-        # Log still refers to event_type as it's the input parameter name
-        logger.error(f"DB error adding analytics event (user_id: {actual_user_id}, event: {event_type}): {e}", exc_info=True)
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        logger.error(f"Non-DB error adding analytics event (user_id: {actual_user_id}, event: {event_type}): {e}", exc_info=True)
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+# def add_analytics(user_id: int = None, event_type: str = None, details: dict = None, called_from_get_user: bool = False):
+#     """
+#     Adds an analytics event to the database.
+#
+#     Args:
+#         user_id: The ID of the user associated with the event. Can be None for system events.
+#         event_type: The type of event (e.g., "login", "view_page"). This will be stored in the 'action' column.
+#         details: Optional dictionary for additional event details.
+#                  If it contains a 'source' key, its value will be stored in 'source_details'.
+#                  The (remaining) dictionary will be stored as JSONB in the 'details' column.
+#         called_from_get_user: Internal flag to prevent recursion with get_user_by_firebase_uid.
+#     """
+#     if event_type is None:
+#         logger.warning("add_analytics called with no event_type. Skipping.")
+#         return
+#
+#     conn = None
+#     cur = None
+#     actual_user_id = user_id
+#
+#     # Prepare details for DB insertion
+#     db_details_payload = details.copy() if details else {}
+#     source_details_val = db_details_payload.pop('source', None) if db_details_payload else None
+#
+#     try:
+#         conn = get_db_connection()
+#         cur = conn.cursor()
+#
+#         # The 'event_type' parameter is used for the 'action' column.
+#         # 'source_details_val' is extracted from 'details' dict's 'source' key.
+#         # The remaining 'db_details_payload' is stored in the 'details' JSONB column.
+#         cur.execute(
+#             "INSERT INTO analytics (user_id, action, source_details, details) VALUES (%s, %s, %s, %s)",
+#             (actual_user_id, event_type, source_details_val, psycopg2.extras.Json(db_details_payload) if db_details_payload else None)
+#         )
+#         conn.commit()
+#         logger.info(f"Analytics event added: {event_type} for user_id {actual_user_id or 'System'}")
+#
+#     except psycopg2.Error as e:
+#         if conn:
+#             conn.rollback()
+#         # Log still refers to event_type as it's the input parameter name
+#         logger.error(f"DB error adding analytics event (user_id: {actual_user_id}, event: {event_type}): {e}", exc_info=True)
+#     except Exception as e:
+#         if conn:
+#             conn.rollback()
+#         logger.error(f"Non-DB error adding analytics event (user_id: {actual_user_id}, event: {event_type}): {e}", exc_info=True)
+#     finally:
+#         if cur:
+#             cur.close()
+#         if conn:
+#             conn.close()
 
 def update_user_balance(user_id, new_balance):
     """
@@ -485,7 +487,7 @@ def update_user_balance(user_id, new_balance):
     Returns:
         bool: True, wenn Update erfolgreich, False sonst
     """
-    add_analytics(user_id=user_id, event_type="update_user_balance", details={"user_id": user_id, "new_balance": new_balance, "source": "postgres_db_handler:update_user_balance"})
+    # add_analytics(user_id=user_id, event_type="update_user_balance", details={"user_id": user_id, "new_balance": new_balance, "source": "postgres_db_handler:update_user_balance"})
     conn = get_db_connection()
     cur = conn.cursor()
     try:
@@ -498,7 +500,7 @@ def update_user_balance(user_id, new_balance):
     except psycopg2.Error as e:
         conn.rollback()
         logger.error(f"Fehler beim Aktualisieren der Balance für Benutzer ID {user_id}: {e}", exc_info=True)
-        add_analytics(user_id=user_id, event_type="update_user_balance_error", details={"user_id": user_id, "error": str(e), "source": "postgres_db_handler:update_user_balance"})
+        # add_analytics(user_id=user_id, event_type="update_user_balance_error", details={"user_id": user_id, "error": str(e), "source": "postgres_db_handler:update_user_balance"})
         return False
     finally:
         cur.close()

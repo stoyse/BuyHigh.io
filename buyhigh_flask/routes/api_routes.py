@@ -14,6 +14,9 @@ import logging
 import utils.auth as auth_module  # Fix the import path to match the correct module name
 import database.handler.postgres.postgres_db_handler as db_handler
 import database.handler.postgres.postgre_education_handler as education_handler
+from utils.models import db, EasterEggRedemption  # db und EasterEggRedemption importieren
+from buy_high_backend.pydantic_models import User  # User importieren
+
 logger = logging.getLogger(__name__)
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
@@ -117,7 +120,6 @@ def api_stock_data():
     symbol = request.args.get('symbol', 'AAPL')
     timeframe = request.args.get('timeframe', '3M')
     force_fresh = request.args.get('fresh', 'false').lower() == 'true'
-    add_analytics(user_id_for_analytics, "api_get_stock_data", f"api_routes:api_stock_data:symbol={symbol},tf={timeframe},fresh={force_fresh}")
     
     end_date_dt = datetime.now()
     start_date_dt = None 
@@ -185,7 +187,6 @@ def api_stock_data():
             
             if df is None or df.empty: 
                 logger.error(f"No data (including fallback demo) found for {symbol}. Returning empty list.")
-                add_analytics(user_id_for_analytics, "api_get_stock_data_no_data", f"api_routes:api_stock_data:symbol={symbol}")
                 return jsonify({'data': [], 'is_demo': True, 'currency': 'USD', 'demo_reason': 'API key missing' if not stock_data.TWELVE_DATA_API_KEY else 'API request failed or empty data'})
 
 
@@ -195,7 +196,6 @@ def api_stock_data():
             required_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
             if not all(col in df.columns for col in required_columns):
                 print(f"Data for {symbol} is missing one or more required columns: {required_columns}. Available: {list(df.columns)}")
-                add_analytics(user_id_for_analytics, "api_get_stock_data_missing_cols", f"api_routes:api_stock_data:symbol={symbol}")
                 return jsonify({'error': f'Data processing error: Missing columns for {symbol}', 'currency': 'USD'}), 500
 
             for index, row in df.iterrows():
@@ -237,12 +237,10 @@ def api_stock_data():
                 # Nur loggen, nicht abbrechen wenn Update fehlschlägt
                 logger.error(f"Error updating asset price in database: {e}")
         
-        add_analytics(user_id_for_analytics, "api_get_stock_data_success", f"api_routes:api_stock_data:symbol={symbol},count={len(data)}")
         # Änderung: Direkt das Array zurückgeben, nicht in einem Objekt verpacken
         return jsonify(data)
     except Exception as e:
         print(f"Error in /api/stock-data for {symbol} timeframe {timeframe}: {e}") # Log error
-        add_analytics(user_id_for_analytics, "api_get_stock_data_exception", f"api_routes:api_stock_data:symbol={symbol},error={e}")
         return jsonify({'error': str(e), 'currency': 'USD'}), 500
 
 # Neue Route für Funny Tips
@@ -250,9 +248,6 @@ def api_stock_data():
 @login_required # Annahme: Tipps erfordern Anmeldung
 def api_get_funny_tips():
     """API-Endpunkt zum Abrufen von lustigen Tipps."""
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_get_funny_tips", "api_routes:api_get_funny_tips")
-    
     # Hier würden Sie normalerweise Tipps aus einer Datenbank oder einem Service laden
     # Für dieses Beispiel geben wir Dummy-Daten zurück
     tips = [
@@ -267,14 +262,11 @@ def api_get_funny_tips():
 # Neue Hilfsfunktion zum Aktualisieren der Asset-Preise in der Datenbank
 def update_asset_price(symbol, price):
     """Aktualisiert den letzten bekannten Preis eines Assets in der Datenbank"""
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "update_asset_price_start", f"api_routes:symbol={symbol}")
     try:
         with transactions_handler.get_connection() as conn:
             with conn.cursor() as cur:
                 # Prüfen, ob das Asset existiert
                 cur.execute("SELECT id FROM assets WHERE symbol = %s", (symbol,))
-                add_analytics(user_id_for_analytics, "update_asset_price_select_asset", f"api_routes:symbol={symbol}")
                 asset_row = cur.fetchone()
                 
                 if not asset_row:
@@ -287,27 +279,21 @@ def update_asset_price(symbol, price):
                     UPDATE assets SET last_price = %s, last_price_updated = CURRENT_TIMESTAMP
                     WHERE symbol = %s
                 """, (price, symbol))
-                add_analytics(user_id_for_analytics, "update_asset_price_update_asset", f"api_routes:symbol={symbol}")
                 conn.commit()
-                add_analytics(user_id_for_analytics, "update_asset_price_commit", f"api_routes:symbol={symbol}")
                 return True
     except Exception as e:
-        add_analytics(user_id_for_analytics, "update_asset_price_error", f"api_routes:symbol={symbol},error={str(e)}")
         logger.error(f"Error updating asset price in database: {e}", exc_info=True)
         return False
 
 @api_bp.route('/trade/buy', methods=['POST'])
 @login_required
 def api_buy_stock():
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
     data = request.get_json()
     symbol = data.get('symbol')
     quantity = data.get('quantity')
     price = data.get('price')
-    add_analytics(user_id_for_analytics, "api_trade_buy_attempt", f"api_routes:api_buy_stock:symbol={symbol},qty={quantity},price={price}")
 
     if not all([symbol, quantity, price]):
-        add_analytics(user_id_for_analytics, "api_trade_buy_fail_missing_data", f"api_routes:api_buy_stock:symbol={symbol}")
         return jsonify({"success": False, "message": "Missing data for transaction."}), 400
 
     try:
@@ -316,29 +302,21 @@ def api_buy_stock():
         if quantity <= 0 or price <= 0:
             raise ValueError("Quantity and price must be positive.")
     except ValueError as e:
-        add_analytics(user_id_for_analytics, "api_trade_buy_fail_invalid_input", f"api_routes:api_buy_stock:symbol={symbol},error={e}")
         return jsonify({"success": False, "message": f"Invalid input: {e}"}), 400
 
     user_id = g.user['id']
-    result = transactions_handler.buy_stock(user_id, symbol, quantity, price) # Analytics inside buy_stock
-    if result.get("success"):
-        add_analytics(user_id_for_analytics, "api_trade_buy_success", f"api_routes:api_buy_stock:symbol={symbol}")
-    else:
-        add_analytics(user_id_for_analytics, "api_trade_buy_fail_handler", f"api_routes:api_buy_stock:symbol={symbol},msg={result.get('message')}")
+    result = transactions_handler.buy_stock(user_id, symbol, quantity, price)
     return jsonify(result)
 
 @api_bp.route('/trade/sell', methods=['POST'])
 @login_required
 def api_sell_stock():
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
     data = request.get_json()
     symbol = data.get('symbol')
     quantity = data.get('quantity')
     price = data.get('price')
-    add_analytics(user_id_for_analytics, "api_trade_sell_attempt", f"api_routes:api_sell_stock:symbol={symbol},qty={quantity},price={price}")
 
     if not all([symbol, quantity, price]):
-        add_analytics(user_id_for_analytics, "api_trade_sell_fail_missing_data", f"api_routes:api_sell_stock:symbol={symbol}")
         return jsonify({"success": False, "message": "Missing data for transaction."}), 400
 
     try:
@@ -347,15 +325,10 @@ def api_sell_stock():
         if quantity <= 0 or price <= 0:
             raise ValueError("Quantity and price must be positive.")
     except ValueError as e:
-        add_analytics(user_id_for_analytics, "api_trade_sell_fail_invalid_input", f"api_routes:api_sell_stock:symbol={symbol},error={e}")
         return jsonify({"success": False, "message": f"Invalid input: {e}"}), 400
         
     user_id = g.user['id']
-    result = transactions_handler.sell_stock(user_id, symbol, quantity, price) # Analytics inside sell_stock
-    if result.get("success"):
-        add_analytics(user_id_for_analytics, "api_trade_sell_success", f"api_routes:api_sell_stock:symbol={symbol}")
-    else:
-        add_analytics(user_id_for_analytics, "api_trade_sell_fail_handler", f"api_routes:api_sell_stock:symbol={symbol},msg={result.get('message')}")
+    result = transactions_handler.sell_stock(user_id, symbol, quantity, price)
     return jsonify(result)
 
 
@@ -363,12 +336,10 @@ def api_sell_stock():
 @login_required
 def api_get_assets():
     """API-Endpunkt zum Abrufen aller Assets oder nach Asset-Typ gefiltert"""
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
     asset_type = request.args.get('type', None)
     active_only = request.args.get('active_only', 'true').lower() == 'true'
-    add_analytics(user_id_for_analytics, "api_get_all_assets", f"api_routes:api_get_assets:type={asset_type},active_only={active_only}")
     
-    result = transactions_handler.get_all_assets(active_only, asset_type) # Analytics inside get_all_assets
+    result = transactions_handler.get_all_assets(active_only, asset_type)
     
     # Überprüfe, ob das Ergebnis None ist
     if result is None:
@@ -388,9 +359,7 @@ def api_get_assets():
 @login_required
 def api_get_asset(symbol):
     """API-Endpunkt zum Abrufen eines bestimmten Assets anhand seines Symbols"""
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_get_asset_by_symbol", f"api_routes:api_get_asset:symbol={symbol}")
-    result = transactions_handler.get_asset_by_symbol(symbol) # Analytics inside get_asset_by_symbol
+    result = transactions_handler.get_asset_by_symbol(symbol)
     
     # Stellen Sie sicher, dass last_price nicht zurückgegeben wird, sondern nur default_price
     if result['success'] and 'asset' in result and result['asset']:
@@ -413,8 +382,6 @@ def api_get_asset(symbol):
 @login_required
 def api_status():
     """API-Endpunkt, um den Status der API-Keys zu prüfen"""
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_get_status", "api_routes:api_status")
     return jsonify({
         'api_key_configured': bool(stock_data.TWELVE_DATA_API_KEY),
         'timestamp': datetime.now().isoformat()
@@ -424,8 +391,6 @@ def api_status():
 @api_bp.route('/trade/<symbol>/')
 @login_required
 def api_stock_data_symbol(symbol):
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_get_stock_data_symbol_dummy", f"api_routes:api_stock_data_symbol:symbol={symbol}")
     return jsonify({"message": f"Data for symbol {symbol} not yet implemented."}), 404
 
 
@@ -433,15 +398,11 @@ def api_stock_data_symbol(symbol):
 @login_required
 def api_upload_profile_picture():
     """API-Endpunkt zum Hochladen eines Profilbildes"""
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_upload_profile_picture_attempt", "api_routes:api_upload_profile_picture")
     if 'file' not in request.files:
-        add_analytics(user_id_for_analytics, "api_upload_profile_picture_fail_no_file_part", "api_routes:api_upload_profile_picture")
         return jsonify({"success": False, "message": "No file part in the request."}), 400
 
     file = request.files['file']
     if file.filename == '':
-        add_analytics(user_id_for_analytics, "api_upload_profile_picture_fail_no_selected_file", "api_routes:api_upload_profile_picture")
         return jsonify({"success": False, "message": "No selected file."}), 400
 
     try:
@@ -467,21 +428,17 @@ def api_upload_profile_picture():
         # For now, just logging
         logger.info(f"User {g.user['id']} profile picture path to be saved in DB: {profile_pic_url}")
         
-        add_analytics(user_id_for_analytics, "api_upload_profile_picture_success", f"api_routes:api_upload_profile_picture,url={profile_pic_url}")
         logger.info(f"Profile picture uploaded successfully for user {g.user['id']}")
         return jsonify({"success": True, "message": "File uploaded successfully.", "url": url_for('static', filename=profile_pic_url)}) # Return full URL
     
     except Exception as e:
         logger.error(f"Error uploading profile picture: {str(e)}", exc_info=True)
-        add_analytics(user_id_for_analytics, "api_upload_profile_picture_exception", f"api_routes:api_upload_profile_picture,error={e}")
         return jsonify({"success": False, "message": f"Error uploading file: {str(e)}"}), 500
 
 @api_bp.route('/get/profile-picture/<user_id>', methods=['GET'])
 @login_required
 def api_get_profile_picture(user_id):
     """API-Endpunkt zum Abrufen des Profilbildes"""
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_get_profile_picture_attempt", f"api_routes:api_get_profile_picture:user_id={user_id}")
     # Hier wird angenommen, dass der Pfad zum Profilbild in der Datenbank gespeichert ist
     # Zum Beispiel: db_handler.get_user_profile_picture(g.user['id'])
     
@@ -493,10 +450,8 @@ def api_get_profile_picture(user_id):
     profile_pic_url = os.path.abspath(profile_pic_url)
     
     if os.path.exists(profile_pic_url):
-        add_analytics(user_id_for_analytics, "api_get_profile_picture_success", f"api_routes:api_get_profile_picture:user_id={user_id}")
         return send_file(profile_pic_url)
     else:
-        add_analytics(user_id_for_analytics, "api_get_profile_picture_fail_not_found", f"api_routes:api_get_profile_picture:user_id={user_id}")
         return jsonify({"success": False, "message": "Profile picture not found."}), 404
     
 
@@ -504,8 +459,6 @@ def api_get_profile_picture(user_id):
 @login_required
 def api_get_daily_quiz():
     """API-Endpunkt zum Abrufen des täglichen Quiz"""
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_get_daily_quiz", "api_routes:api_get_daily_quiz")
     today = datetime.today().strftime('%Y-%m-%d')
     return jsonify(education_handler.get_daily_quiz(date=today))  # Keine Weiterleitungen, direkte Antwort
 
@@ -514,32 +467,22 @@ def api_get_daily_quiz():
 @login_required
 def api_get_user_data(user_id):
     """API-Endpunkt zum Abrufen der Benutzerdaten"""
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_get_user_data_attempt", f"api_routes:api_get_user_data:user_id={user_id}")
-
     return jsonify(db_handler.get_user_by_id(user_id=user_id))  # Keine Weiterleitungen, direkte Antwort
 
 @api_bp.route('/user/transactions/<user_id>', methods=['GET'])
 @login_required
 def api_get_user_last_transactions(user_id):
     """API-Endpunkt zum Abrufen der letzten Transaktionen eines Benutzers"""
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_get_user_last_transactions_attempt", f"api_routes:api_get_user_last_transactions:user_id={user_id}")
-
     transactions = transactions_handler.get_recent_transactions(user_id=user_id)
     if transactions:
-        add_analytics(user_id_for_analytics, "api_get_user_last_transactions_success", f"api_routes:api_get_user_last_transactions:user_id={user_id}")
         return jsonify(transactions)
     else:
-        add_analytics(user_id_for_analytics, "api_get_user_last_transactions_fail", f"api_routes:api_get_user_last_transactions:user_id={user_id}")
         return jsonify({"success": False, "message": "No transactions found."}), 404
 
 @api_bp.route('/user/portfolio/<user_id>', methods=['GET'])
 @login_required
 def api_get_portfolio(user_id):
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_get_portfolio", "api_routes:api_get_portfolio")
-    portfolio_data = transactions_handler.show_user_portfolio(user_id) # Analytics inside show_user_portfolio
+    portfolio_data = transactions_handler.show_user_portfolio(user_id)
     return jsonify(portfolio_data)
 
 
@@ -681,8 +624,6 @@ def redeem_easter_egg():
                 redeemed_codes.append(code)
                 session[f"user_{user_id}_redeemed_codes"] = redeemed_codes
                 
-                # Analytics erfassen
-                add_analytics(user_id, "easter_egg_redeemed", f"code={code},reward={reward},old_balance={current_balance},new_balance={new_balance}")
                 logger.info(f"Database updated for user {user_id}")
                 
             except Exception as e:
@@ -727,12 +668,8 @@ def api_redeem_code():
     API-Endpunkt zum Einlösen von Promo- und Easter-Egg-Codes
     Benutzer muss authentifiziert sein (login_required)
     """
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, "api_redeem_code_attempt", "api_routes:api_redeem_code")
-    
     data = request.get_json()
     if not data or 'code' not in data:
-        add_analytics(user_id_for_analytics, "api_redeem_code_missing_data", "api_routes:api_redeem_code")
         return jsonify({"success": False, "message": "Bitte gib einen Code ein"}), 400
     
     code = data['code'].upper()
@@ -742,7 +679,6 @@ def api_redeem_code():
     try:
         user = User.query.get(user_id)
         if not user:
-            add_analytics(user_id_for_analytics, "api_redeem_code_user_not_found", f"api_routes:api_redeem_code:code={code}")
             return jsonify({"success": False, "message": "Benutzer nicht gefunden"}), 404
             
         # Prüfen, ob der Benutzer diesen Code bereits eingelöst hat
@@ -751,7 +687,6 @@ def api_redeem_code():
         ).first()
         
         if existing_redemption:
-            add_analytics(user_id_for_analytics, "api_redeem_code_already_redeemed", f"api_routes:api_redeem_code:code={code}")
             return jsonify({
                 "success": False, 
                 "message": "Du hast diesen Code bereits eingelöst"
@@ -785,7 +720,6 @@ def api_redeem_code():
             message = "Retro-Gaming-Modus aktiviert! +1337 Credits"
             reload = True  # Seite neu laden für den Retro-Modus
         else:
-            add_analytics(user_id_for_analytics, "api_redeem_code_invalid", f"api_routes:api_redeem_code:code={code}")
             return jsonify({
                 "success": False, 
                 "message": "Ungültiger Code"
@@ -807,7 +741,6 @@ def api_redeem_code():
         # Änderungen speichern
         db.session.commit()
         
-        add_analytics(user_id_for_analytics, "api_redeem_code_success", f"api_routes:api_redeem_code:code={code},reward={reward}")
         return jsonify({
             "success": True,
             "message": message,
@@ -823,7 +756,6 @@ def api_redeem_code():
             pass
         
         logger.error(f"Fehler beim Einlösen des Codes: {str(e)}")
-        add_analytics(user_id_for_analytics, "api_redeem_code_error", f"api_routes:api_redeem_code:code={code},error={str(e)}")
         
         return jsonify({
             "success": False,

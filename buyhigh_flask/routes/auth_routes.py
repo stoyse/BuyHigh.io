@@ -3,18 +3,14 @@ import database.handler.postgres.postgres_db_handler as db_handler
 import utils.auth as auth_module # Alias to avoid conflict with blueprint name
 from utils.utils import login_required # Import login_required
 import logging # Hinzugefügt
-from database.handler.postgres.postgres_db_handler import add_analytics # Import add_analytics
 
 logger = logging.getLogger(__name__) # Hinzugefügt
 
 auth_bp = Blueprint('auth', __name__)
 logger.info("Auth Blueprint 'auth_bp' erstellt.")
-add_analytics(None, "auth_blueprint_created", "auth_routes:module_level")
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, f"view_register_method_{request.method}", "auth_routes:register")
     logger.info(f"Registrierungsseite aufgerufen. Methode: {request.method}")
     if g.user:
         logger.info(f"Benutzer {g.user.get('username')} ist bereits angemeldet. Umleitung zum Index.")
@@ -24,7 +20,6 @@ def register():
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '') # Passwort nicht loggen!
-        add_analytics(None, "register_attempt", f"auth_routes:register:email={email},username={username}")
         logger.info(f"Registrierungsversuch für Benutzername: {username}, E-Mail: {email}")
         
         error = None
@@ -50,47 +45,37 @@ def register():
                 firebase_uid = auth_module.create_firebase_user(email, password, username)
                 
                 if firebase_uid:
-                    add_analytics(None, "register_firebase_success", f"auth_routes:register:email={email},uid={firebase_uid}")
                     logger.info(f"Firebase-Benutzer erfolgreich erstellt mit UID: {firebase_uid} für E-Mail: {email}.")
                     logger.debug(f"Füge Benutzer {username} (Firebase UID: {firebase_uid}) zur lokalen Datenbank hinzu.")
                     if db_handler.add_user(username, email, firebase_uid):
                         flash('Registrierung erfolgreich! Bitte melden Sie sich an.', 'success')
                         logger.info(f"Benutzer {username} (E-Mail: {email}, Firebase UID: {firebase_uid}) erfolgreich in lokaler DB registriert.")
-                        add_analytics(None, "register_local_db_success", f"auth_routes:register:email={email},uid={firebase_uid}")
                         return redirect(url_for('auth.login'))
                     else:
                         logger.error(f"Fehler beim Hinzufügen des Benutzers {username} (Firebase UID: {firebase_uid}) zur lokalen DB nach Firebase-Erstellung. Versuche Firebase-Benutzer zu löschen.")
                         auth_module.delete_firebase_user(firebase_uid) # Log inside delete_firebase_user
                         logger.info(f"Firebase-Benutzer {firebase_uid} nach lokalem DB-Fehler gelöscht.")
                         error = "Registrierung fehlgeschlagen aufgrund eines lokalen Datenbankfehlers nach Firebase-Benutzererstellung."
-                        add_analytics(None, "register_local_db_fail_after_firebase", f"auth_routes:register:email={email},uid={firebase_uid}")
                 else:
-                    # Sollte nicht passieren, wenn create_firebase_user Fehler wirft oder UID zurückgibt
                     error = "Registrierung fehlgeschlagen: Keine Firebase UID zurückgegeben."
                     logger.error(f"Registrierung für E-Mail {email} fehlgeschlagen: create_firebase_user gab keine UID zurück und keinen Fehler.")
-                    add_analytics(None, "register_firebase_fail_no_uid", f"auth_routes:register:email={email}")
 
             except ValueError as e:
                 error = str(e)
                 logger.error(f"ValueError während der Registrierung für E-Mail {email}: {e}", exc_info=True)
-                add_analytics(None, "register_value_error", f"auth_routes:register:email={email},error={e}")
             except Exception as e:
                 error = f"Ein unerwarteter Fehler ist während der Registrierung aufgetreten: {e}"
                 logger.error(f"Unerwarteter Fehler während der Registrierung für E-Mail {email}: {e}", exc_info=True)
-                add_analytics(None, "register_exception", f"auth_routes:register:email={email},error={e}")
         
         if error:
             flash(error, 'danger')
             logger.warning(f"Registrierung für E-Mail {email} endgültig fehlgeschlagen mit Fehler: {error}")
-            add_analytics(None, "register_final_fail", f"auth_routes:register:email={email},error={error}")
 
     dark_mode_active = request.args.get('darkmode', 'False').lower() == 'true'
     return render_template('register.html', darkmode=dark_mode_active)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    user_id_for_analytics = g.user.get('id') if hasattr(g, 'user') and g.user else None
-    add_analytics(user_id_for_analytics, f"view_login_method_{request.method}", "auth_routes:login")
     logger.info(f"Login-Seite aufgerufen. Methode: {request.method}")
     if g.user: # Prüfen, ob Benutzer bereits angemeldet ist
         logger.info(f"Benutzer {g.user.get('username')} ist bereits angemeldet. Umleitung zum Dashboard.")
@@ -99,7 +84,6 @@ def login():
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '') # Passwort nicht loggen!
-        add_analytics(None, "login_attempt", f"auth_routes:login:email={email}")
         logger.info(f"Login-Versuch für E-Mail: {email}")
         
         try:
@@ -109,10 +93,8 @@ def login():
             if not firebase_uid or not id_token:
                 logger.warning(f"Firebase-Authentifizierung fehlgeschlagen für E-Mail: {email}. Keine UID oder Token zurückgegeben.")
                 flash('Anmeldung fehlgeschlagen. Ungültige E-Mail oder Passwort.', 'danger')
-                add_analytics(None, "login_firebase_fail_no_uid_token", f"auth_routes:login:email={email}")
                 return render_template('login.html') # Darkmode hier ggf. auch übergeben
             
-            add_analytics(None, "login_firebase_success", f"auth_routes:login:email={email},uid={firebase_uid}")
             logger.info(f"Firebase-Authentifizierung erfolgreich für E-Mail: {email}, Firebase UID: {firebase_uid}.")
             
             logger.debug(f"Suche lokalen Benutzer mit Firebase UID: {firebase_uid}.")
@@ -136,11 +118,9 @@ def login():
                     if not success:
                         logger.error(f"Fehler beim Erstellen des lokalen Benutzers für E-Mail: {email}, Firebase UID: {firebase_uid}.")
                         flash('Fehler beim Erstellen des Benutzerprofils.', 'danger')
-                        add_analytics(None, "login_create_local_user_fail", f"auth_routes:login:email={email},uid={firebase_uid}")
                         return render_template('login.html')
                     
                     local_user = db_handler.get_user_by_firebase_uid(firebase_uid) # Analytics inside
-                    add_analytics(local_user.get('id') if local_user else None, "login_create_local_user_success", f"auth_routes:login:email={email},uid={firebase_uid}")
                     logger.info(f"Neuer lokaler Benutzer erfolgreich erstellt für E-Mail: {email}, Lokale ID: {local_user.get('id') if local_user else 'N/A'}.")
                 else:
                     logger.info(f"Lokaler Benutzer (ID: {local_user.get('id')}) mit E-Mail {email} gefunden. Aktualisiere Firebase UID auf {firebase_uid}.")
@@ -150,7 +130,6 @@ def login():
             if not local_user: # Sollte nach obiger Logik nicht passieren, aber als Sicherheitsnetz
                 logger.critical(f"Kritischer Fehler: Konnte lokalen Benutzer für Firebase UID {firebase_uid} weder finden noch erstellen.")
                 flash('Ein schwerwiegender Fehler ist bei der Benutzeranmeldung aufgetreten.', 'danger')
-                add_analytics(None, "login_critical_local_user_fail", f"auth_routes:login:uid={firebase_uid}")
                 return render_template('login.html')
 
             logger.debug(f"Aktualisiere Session für Benutzer: {local_user.get('username')}, Lokale ID: {local_user['id']}, Firebase UID: {firebase_uid}.")
@@ -164,39 +143,26 @@ def login():
             logger.debug(f"Aktualisiere letzte Login-Zeit für Benutzer ID: {local_user['id']}.")
             db_handler.update_last_login(local_user['id']) # Analytics inside
             
-            # Alle verfügbaren Routen anzeigen (Debug) - kann bei Bedarf entfernt werden
-            # for rule in current_app.url_map.iter_rules():
-            #     logger.debug(f"Verfügbare Route: {rule.endpoint} -> {rule}")
-            
             logger.info(f"Benutzer {email} (Lokale ID: {local_user['id']}) erfolgreich angemeldet. Umleitung zum Dashboard.")
             flash('Anmeldung erfolgreich!', 'success')
-            add_analytics(local_user['id'], "login_success_redirect", f"auth_routes:login:email={email}")
             return redirect(url_for('main.dashboard'))
         except ValueError as ve: # Spezifischer Fehler von login_firebase_user_rest
             logger.warning(f"ValueError während Login für E-Mail {email}: {str(ve)}")
             flash(str(ve), 'danger') # Zeige die spezifische Fehlermeldung dem Benutzer
-            add_analytics(None, "login_value_error", f"auth_routes:login:email={email},error={ve}")
             return render_template('login.html')
         except Exception as e:
             logger.error(f"Unerwarteter Fehler während Login für E-Mail {email}: {str(e)}", exc_info=True)
             flash(f'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.', 'danger')
-            add_analytics(None, "login_exception", f"auth_routes:login:email={email},error={e}")
             return render_template('login.html')
     
-    # Für GET-Anfrage
-    dark_mode_active_login = request.args.get('darkmode', 'False').lower() == 'true' # Für den Fall, dass es als Parameter übergeben wird
-    # Alternativ, falls Theme aus Session oder g.user geladen werden soll, hier anpassen
-    # g.user ist hier None, wenn nicht angemeldet.
-    # Wenn ein Cookie für Darkmode existiert, könnte man das hier auslesen.
+    dark_mode_active_login = request.args.get('darkmode', 'False').lower() == 'true'
     return render_template('login.html', darkmode=dark_mode_active_login)
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
-    add_analytics(None, f"view_forgot_password_method_{request.method}", "auth_routes:forgot_password")
     logger.info(f"Passwort vergessen Seite aufgerufen. Methode: {request.method}")
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
-        add_analytics(None, "forgot_password_attempt", f"auth_routes:forgot_password:email={email}")
         logger.info(f"Passwort zurücksetzen Anfrage für E-Mail: {email}")
         if not email:
             flash('E-Mail ist erforderlich.', 'danger')
@@ -208,22 +174,18 @@ def forgot_password():
             auth_module.send_password_reset_email(email) # Analytics inside
             flash('E-Mail zum Zurücksetzen des Passworts gesendet. Bitte überprüfen Sie Ihren Posteingang.', 'success')
             logger.info(f"Passwort-Reset-E-Mail erfolgreich an {email} gesendet.")
-            add_analytics(None, "forgot_password_email_sent", f"auth_routes:forgot_password:email={email}")
             return redirect(url_for('auth.login'))
         except ValueError as e: # Von Firebase erwarteter Fehler
             flash(str(e), 'danger')
             logger.error(f"ValueError beim Senden der Passwort-Reset-E-Mail an {email}: {e}", exc_info=True)
-            add_analytics(None, "forgot_password_value_error", f"auth_routes:forgot_password:email={email},error={e}")
         except Exception as e:
             logger.error(f"Fehler beim Senden der Passwort-Reset-E-Mail an {email}: {e}", exc_info=True)
             flash('Beim Senden der Passwort-Reset-E-Mail ist ein Fehler aufgetreten.', 'danger')
-            add_analytics(None, "forgot_password_exception", f"auth_routes:forgot_password:email={email},error={e}")
     
     return render_template('forgot_password.html') # Darkmode?
 
 @auth_bp.route('/login-with-google')
 def login_with_google():
-    add_analytics(None, "login_with_google_start", "auth_routes:login_with_google")
     logger.info("Starte Google OAuth-Flow.")
     try:
         redirect_url = auth_module.get_google_auth_url() # Analytics inside
@@ -232,19 +194,16 @@ def login_with_google():
     except Exception as e:
         logger.error(f"Fehler beim Starten der Google-Anmeldung: {e}", exc_info=True)
         flash('Fehler beim Starten der Google-Anmeldung.', 'danger')
-        add_analytics(None, "login_with_google_exception", f"auth_routes:login_with_google,error={e}")
         return redirect(url_for('auth.login'))
 
 @auth_bp.route('/auth/google/callback')
 def google_auth_callback():
-    add_analytics(None, "google_auth_callback_received", "auth_routes:google_auth_callback")
     logger.info("Google Auth Callback empfangen.")
     try:
         auth_code = request.args.get('code')
         if not auth_code:
             flash('Google-Authentifizierungscode fehlt.', 'danger')
             logger.warning("Google Auth Callback: Authentifizierungscode fehlt.")
-            add_analytics(None, "google_auth_callback_no_code", "auth_routes:google_auth_callback")
             return redirect(url_for('auth.login'))
         
         logger.debug(f"Google Auth Code empfangen: {auth_code[:30]}...") # Gekürzt
@@ -255,7 +214,6 @@ def google_auth_callback():
         if not user_info: # Sollte durch exchange_google_code abgedeckt sein, aber als Sicherheit
             flash('Fehler beim Verarbeiten der Google-Anmeldung.', 'danger')
             logger.error("Google Auth Callback: exchange_google_code gab keine Benutzerinfo zurück.")
-            add_analytics(None, "google_auth_callback_no_user_info", "auth_routes:google_auth_callback")
             return redirect(url_for('auth.login'))
         
         email = user_info.get('email')
@@ -264,10 +222,8 @@ def google_auth_callback():
         if not email or not firebase_uid:
             flash('Unvollständige Benutzerinformationen von Google.', 'danger')
             logger.error(f"Google Auth Callback: Unvollständige Benutzerinfo. E-Mail: {email}, UID: {firebase_uid}")
-            add_analytics(None, "google_auth_callback_incomplete_info", f"auth_routes:google_auth_callback,email={email},uid={firebase_uid}")
             return redirect(url_for('auth.login'))
         
-        add_analytics(None, "google_auth_callback_user_info_ok", f"auth_routes:google_auth_callback,email={email},uid={firebase_uid}")
         logger.debug(f"Suche lokalen Benutzer mit Firebase UID: {firebase_uid} (von Google Auth).")
         local_user = db_handler.get_user_by_firebase_uid(firebase_uid) # Analytics inside
         
@@ -289,11 +245,9 @@ def google_auth_callback():
                 if not success:
                     flash('Fehler beim Erstellen des Benutzerprofils.', 'danger')
                     logger.error(f"Google Auth Callback: Fehler beim Erstellen des lokalen Benutzers für E-Mail {email}, UID {firebase_uid}.")
-                    add_analytics(None, "google_auth_create_local_user_fail", f"auth_routes:google_auth_callback,email={email},uid={firebase_uid}")
                     return redirect(url_for('auth.login'))
                 
                 local_user = db_handler.get_user_by_firebase_uid(firebase_uid) # Analytics inside
-                add_analytics(local_user.get('id') if local_user else None, "google_auth_create_local_user_success", f"auth_routes:google_auth_callback,email={email},uid={firebase_uid}")
                 logger.info(f"Neuer lokaler Benutzer (Google Auth) erfolgreich erstellt. Lokale ID: {local_user.get('id') if local_user else 'N/A'}")
             else:
                 logger.info(f"Lokaler Benutzer (ID: {local_user.get('id')}) mit E-Mail {email} (Google Auth) gefunden. Aktualisiere Firebase UID auf {firebase_uid}.")
@@ -303,7 +257,6 @@ def google_auth_callback():
         if not local_user: # Sicherheitsnetz
             logger.critical(f"Google Auth Callback: Konnte lokalen Benutzer für Firebase UID {firebase_uid} (E-Mail: {email}) weder finden noch erstellen.")
             flash('Ein schwerwiegender Fehler ist bei der Google-Anmeldung aufgetreten.', 'danger')
-            add_analytics(None, "google_auth_critical_local_user_fail", f"auth_routes:google_auth_callback,uid={firebase_uid}")
             return redirect(url_for('auth.login'))
 
         logger.debug(f"Aktualisiere Session für Google Auth Benutzer: {local_user.get('username')}, Lokale ID: {local_user['id']}, Firebase UID: {firebase_uid}.")
@@ -319,12 +272,10 @@ def google_auth_callback():
         
         flash('Erfolgreich mit Google angemeldet!', 'success')
         logger.info(f"Benutzer {email} (Lokale ID: {local_user['id']}) erfolgreich mit Google angemeldet. Umleitung zum Dashboard.")
-        add_analytics(local_user['id'], "google_auth_success_redirect", f"auth_routes:google_auth_callback,email={email}")
         return redirect(url_for('main.dashboard'))
     except Exception as e:
         logger.error(f"Fehler während Google Auth Callback: {e}", exc_info=True)
         flash('Ein Fehler ist während der Google-Authentifizierung aufgetreten.', 'danger')
-        add_analytics(None, "google_auth_callback_exception", f"auth_routes:google_auth_callback,error={e}")
         return redirect(url_for('auth.login'))
 
 @auth_bp.route('/delete_account', methods=['POST'])
@@ -332,7 +283,6 @@ def google_auth_callback():
 def delete_account():
     user_id_local = g.user.get('id') if hasattr(g, 'user') and g.user else 'Unbekannt'
     username_local = g.user.get('username') if hasattr(g, 'user') and g.user else 'Unbekannt'
-    add_analytics(user_id_local, "delete_account_attempt", f"auth_routes:delete_account,user={username_local}")
     logger.info(f"Konto löschen Anfrage von Benutzer: {username_local} (ID: {user_id_local}).")
 
     if request.method == 'POST': # Redundant wegen @login_required, aber schadet nicht
@@ -341,13 +291,11 @@ def delete_account():
         if not current_password_for_delete:
             flash('Passwort zur Bestätigung erforderlich.', 'danger')
             logger.warning(f"Konto löschen für {username_local}: Passwort zur Bestätigung fehlt.")
-            add_analytics(user_id_local, "delete_account_fail_no_password", f"auth_routes:delete_account,user={username_local}")
             return redirect(url_for('main.settings'))
 
         if not g.user or not g.user.get('email'): # Sollte durch @login_required abgedeckt sein
             flash('Benutzerdaten nicht gefunden oder E-Mail fehlt.', 'danger')
             logger.error(f"Konto löschen: Kritischer Fehler - g.user oder E-Mail fehlt für angemeldeten Benutzer {username_local}.")
-            add_analytics(user_id_local, "delete_account_fail_no_user_data", f"auth_routes:delete_account,user={username_local}")
             return redirect(url_for('auth.login')) # Zum Login umleiten, da etwas nicht stimmt
 
         user_email = g.user['email']
@@ -356,36 +304,29 @@ def delete_account():
             if not auth_module.verify_firebase_password_rest(user_email, current_password_for_delete): # Analytics inside
                 flash('Aktuelles Passwort ist nicht korrekt.', 'danger')
                 logger.warning(f"Konto löschen für {user_email}: Aktuelles Passwort falsch.")
-                add_analytics(user_id_local, "delete_account_fail_wrong_password", f"auth_routes:delete_account,email={user_email}")
                 return redirect(url_for('main.settings'))
             logger.info(f"Passwort für {user_email} (Konto löschen) erfolgreich verifiziert.")
-            add_analytics(user_id_local, "delete_account_password_verified", f"auth_routes:delete_account,email={user_email}")
         except ValueError as e:
             flash(f'Fehler bei der Passwortüberprüfung: {e}', 'danger')
             logger.error(f"ValueError bei Passwortüberprüfung für {user_email} (Konto löschen): {e}", exc_info=True)
-            add_analytics(user_id_local, "delete_account_verify_password_value_error", f"auth_routes:delete_account,email={user_email},error={e}")
             return redirect(url_for('main.settings'))
         except Exception as e:
             flash(f'Unerwarteter Fehler bei der Passwortüberprüfung: {e}', 'danger')
             logger.error(f"Unerwarteter Fehler bei Passwortüberprüfung für {user_email} (Konto löschen): {e}", exc_info=True)
-            add_analytics(user_id_local, "delete_account_verify_password_exception", f"auth_routes:delete_account,email={user_email},error={e}")
             return redirect(url_for('main.settings'))
 
         firebase_uid_to_delete = g.user.get('firebase_uid')
         if not firebase_uid_to_delete: # Sollte nicht passieren, wenn Benutzer angemeldet ist
             flash('Firebase Benutzer-ID nicht gefunden. Löschvorgang abgebrochen.', 'danger')
             logger.error(f"Konto löschen für {user_email}: Firebase UID nicht in g.user gefunden.")
-            add_analytics(user_id_local, "delete_account_fail_no_firebase_uid", f"auth_routes:delete_account,email={user_email}")
             return redirect(url_for('main.settings'))
 
         logger.info(f"Versuche Firebase-Konto mit UID {firebase_uid_to_delete} für Benutzer {user_email} zu löschen.")
         if not auth_module.delete_firebase_user(firebase_uid_to_delete): # Analytics inside
             flash('Fehler beim Löschen des Firebase-Kontos. Das lokale Konto wurde nicht gelöscht.', 'danger')
             logger.error(f"Fehler beim Löschen des Firebase-Kontos UID {firebase_uid_to_delete} für {user_email}.")
-            add_analytics(user_id_local, "delete_account_firebase_delete_fail", f"auth_routes:delete_account,uid={firebase_uid_to_delete}")
             return redirect(url_for('main.settings'))
         logger.info(f"Firebase-Konto UID {firebase_uid_to_delete} für {user_email} erfolgreich gelöscht.")
-        add_analytics(user_id_local, "delete_account_firebase_delete_success", f"auth_routes:delete_account,uid={firebase_uid_to_delete}")
 
         logger.info(f"Versuche lokales Konto ID {user_id_local} für Benutzer {user_email} zu löschen.")
         if db_handler.delete_user(user_id_local): # Analytics inside
@@ -393,17 +334,13 @@ def delete_account():
             session.clear()
             logger.info(f"Session für Benutzer {user_email} nach Kontolöschung geleert.")
             flash('Ihr Konto wurde erfolgreich gelöscht.', 'success')
-            add_analytics(user_id_local, "delete_account_local_delete_success", f"auth_routes:delete_account,user_id={user_id_local}")
             return redirect(url_for('main.index'))
         else:
             logger.critical(f"Kritischer Fehler: Firebase-Konto {firebase_uid_to_delete} gelöscht, aber lokales Konto {user_id_local} ({user_email}) konnte nicht gelöscht werden.")
             flash('Firebase-Konto gelöscht, aber Fehler beim Löschen des lokalen Kontos. Bitte kontaktieren Sie den Support.', 'danger')
-            add_analytics(user_id_local, "delete_account_critical_local_delete_fail", f"auth_routes:delete_account,user_id={user_id_local},uid={firebase_uid_to_delete}")
             return redirect(url_for('main.settings'))
     
-    # Sollte nicht erreicht werden, wenn POST und @login_required
     logger.warning("Konto löschen Route ohne POST erreicht, Umleitung zu Einstellungen.")
-    add_analytics(user_id_local, "delete_account_get_request_redirect", "auth_routes:delete_account")
     return redirect(url_for('main.settings'))
 
 @auth_bp.route('/change-password', methods=['POST'])
@@ -416,7 +353,6 @@ def change_password():
     new_password = request.form.get('new_password') # Nicht loggen
     confirm_new_password = request.form.get('confirm_new_password') # Nicht loggen
     
-    # Längen loggen für Debugging
     logger.debug(f"Passwort ändern für {user_email}: Aktuelles PW Länge: {len(current_password) if current_password else 0}, Neues PW Länge: {len(new_password) if new_password else 0}")
 
     if not current_password:
@@ -439,15 +375,14 @@ def change_password():
         logger.warning(f"Password change for {user_email}: New password and confirmation do not match.")
         return redirect(url_for('main.settings'))
     
-    # Zusätzliche Längenprüfung für neues Passwort (Beispiel)
-    if len(new_password) < 6: # Synchron mit Registrierungsanforderung halten
+    if len(new_password) < 6:
         flash('The new password must be at least 6 characters long.', 'danger')
         logger.warning(f"Password change for {user_email}: New password too short (length {len(new_password)}).")
         return redirect(url_for('main.settings'))
 
     try:
         firebase_uid_for_pw_change = g.user.get('firebase_uid')
-        if not firebase_uid_for_pw_change: # Sollte nicht passieren
+        if not firebase_uid_for_pw_change:
             logger.error(f"Password change for {user_email}: Firebase UID not found in g.user.")
             flash('User identification failed.', 'danger')
             return redirect(url_for('main.settings'))
@@ -456,7 +391,7 @@ def change_password():
         auth_module.change_firebase_password(firebase_uid_for_pw_change, new_password)
         flash('Password successfully changed!', 'success')
         logger.info(f"Password for user {user_email} (UID: {firebase_uid_for_pw_change}) successfully changed in Firebase.")
-    except ValueError as e: # Erwartete Fehler von Firebase-Operationen
+    except ValueError as e:
         flash(str(e), 'danger')
         logger.error(f"ValueError while changing password for {user_email}: {e}", exc_info=True)
     except Exception as e:
@@ -466,17 +401,12 @@ def change_password():
     return redirect(url_for('main.settings'))
 
 @auth_bp.route('/send-password-reset', methods=['POST'])
-@login_required # Ist das sinnvoll hier? Normalerweise ist man nicht angemeldet, wenn man PW zurücksetzt.
-                # Diese Route ist in settings.html, also ist der Benutzer angemeldet.
-                # Es könnte sein, dass der Benutzer sein PW vergessen hat, aber noch eingeloggt ist und es proaktiv ändern will.
+@login_required
 def send_password_reset():
-    user_email = g.user.get('email') if g.user else 'Unbekannt' # E-Mail des angemeldeten Benutzers
+    user_email = g.user.get('email') if g.user else 'Unbekannt'
     logger.info(f"Passwort-Reset-E-Mail senden Anfrage von angemeldetem Benutzer: {user_email}")
     
-    # Das Formularfeld 'email' wird hier ignoriert, stattdessen wird die E-Mail des angemeldeten Benutzers verwendet.
-    # email_form = request.form.get('email') # Aus Formular, falls benötigt, aber g.user['email'] ist sicherer.
-
-    if not user_email: # Sollte durch @login_required und g.user nicht passieren
+    if not user_email:
         flash('Benutzer-E-Mail nicht gefunden.', 'danger')
         logger.error("Passwort-Reset senden: E-Mail des angemeldeten Benutzers nicht in g.user gefunden.")
         return redirect(url_for('main.settings'))
@@ -486,7 +416,7 @@ def send_password_reset():
         auth_module.send_password_reset_email(user_email)
         flash('Link zum Zurücksetzen des Passworts an Ihre E-Mail gesendet.', 'success')
         logger.info(f"Passwort-Reset-Link erfolgreich an {user_email} gesendet.")
-    except ValueError as e: # Erwartete Fehler
+    except ValueError as e:
         flash(str(e), 'danger')
         logger.error(f"ValueError beim Senden des Passwort-Reset-Links an {user_email}: {e}", exc_info=True)
     except Exception as e:
