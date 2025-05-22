@@ -7,7 +7,6 @@ from rich import print
 import database.handler.postgres.postgre_education_handler as edu_handler
 import datetime
 import database.handler.postgres.postgre_market_mayhem_handler as market_mayhem_handler
-from database.handler.postgres.postgres_db_handler import add_analytics  # Import add_analytics
 
 # Configure basic logging
 # logging.basicConfig(level=logging.DEBUG) # Wird jetzt in app.py global konfiguriert

@@ -8,7 +8,6 @@ from utils.utils import login_required
 import os
 import utils.stock_data_api as stock_data
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
-from database.handler.postgres.postgres_db_handler import add_analytics
 import pandas as pd
 import logging
 import utils.auth as auth_module  # Fix the import path to match the correct module name

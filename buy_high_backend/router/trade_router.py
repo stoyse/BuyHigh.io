@@ -5,7 +5,6 @@ Router für Handelsfunktionalität (Kaufen/Verkaufen).
 from fastapi import APIRouter, Depends, HTTPException, status
 import logging
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
-from database.handler.postgres.postgres_db_handler import add_analytics
 from ..auth_utils import get_current_user, AuthenticatedUser
 from ..pydantic_models import TradeRequest
 
@@ -40,5 +39,4 @@ async def api_sell_stock(trade_data: TradeRequest, current_user: AuthenticatedUs
 
 @router.get("/trade/{symbol}/")
 async def api_stock_data_symbol_dummy(symbol: str, current_user: AuthenticatedUser = Depends(get_current_user)):
-    user_id_for_analytics = current_user.id
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Data for symbol {symbol} not yet implemented.")

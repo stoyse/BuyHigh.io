@@ -1,11 +1,10 @@
 import os  # Dieser Import fehlte
 import psycopg2
 import psycopg2.extras
+from psycopg2 import pool
 from datetime import datetime
 import logging
 from rich import print
-import database.handler.postgres.postgres_db_handler as db_handler  # Not used directly, but kept
-from .postgres_db_handler import add_analytics  # Import add_analytics
 
 logger = logging.getLogger(__name__)
 
@@ -16,28 +15,27 @@ PG_DB = os.getenv('POSTGRES_DB', 'buyhigh')
 PG_USER = os.getenv('POSTGRES_USER', 'postgres')
 PG_PASSWORD = os.getenv('POSTGRES_PASSWORD', '')
 
+connection_pool = psycopg2.pool.SimpleConnectionPool(1, 20,
+    host=PG_HOST,
+    port=PG_PORT,
+    dbname=PG_DB,
+    user=PG_USER,
+    password=PG_PASSWORD
+)
+
 def get_db_connection():
     print('[bold blue]Connection to DB from DEV Handler[/bold blue]')
     """Stellt eine Verbindung zur PostgreSQL-Datenbank her."""
-    add_analytics(None, "get_db_connection_dev_handler", "postgre_dev_handler:get_db_connection")
     try:
-        conn = psycopg2.connect(
-            host=PG_HOST,
-            port=PG_PORT,
-            dbname=PG_DB,
-            user=PG_USER,
-            password=PG_PASSWORD
-        )
-        conn.autocommit = False
-        return conn
+        connection = connection_pool.getconn()
+        connection.autocommit = False
+        return connection
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Öffnen der PostgreSQL-Verbindung: {e}", exc_info=True)
-        add_analytics(None, "get_db_connection_dev_handler_error", f"postgre_dev_handler:get_db_connection:error={e}")
         raise
 
 def get_total_user_count():
     """Gibt die Gesamtanzahl der Benutzer in der Datenbank zurück."""
-    add_analytics(None, "get_total_user_count", "postgre_dev_handler")
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -51,7 +49,6 @@ def get_total_user_count():
 
 def get_all_tables():
     """Gibt eine Liste aller Tabellen in der Datenbank zurück."""
-    add_analytics(None, "get_all_tables", "postgre_dev_handler")
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -66,7 +63,6 @@ def get_all_tables():
 
 def get_table_data(table_name):
     """Gibt die Daten einer bestimmten Tabelle zurück."""
-    add_analytics(None, "get_table_data", f"postgre_dev_handler:table={table_name}")
     try:
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
@@ -80,7 +76,6 @@ def get_table_data(table_name):
 
 def get_db_size():
     """Gibt die Größe der Datenbank und die Anzahl der Tabellen zurück."""
-    add_analytics(None, "get_db_size", "postgre_dev_handler")
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -104,7 +99,6 @@ def get_db_size():
 
 def get_api_calls():
     """Gibt die Anzahl der API-Aufrufe und den Minuten-Durchschnitt zurück."""
-    add_analytics(None, "get_api_calls", "postgre_dev_handler")
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cur:
@@ -153,7 +147,6 @@ def get_api_calls():
 
 def delete_user(user_id):
     """Löscht einen Benutzer aus der Datenbank."""
-    add_analytics(None, "delete_user_dev", f"postgre_dev_handler:user_id_to_delete={user_id}")  # user_id of admin performing action would be better
     print(f'[bold red]Lösche Benutzer mit ID: {user_id}[/]')
     try:
         with get_db_connection() as conn:

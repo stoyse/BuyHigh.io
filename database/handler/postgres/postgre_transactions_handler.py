@@ -4,7 +4,6 @@ from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 import utils.stock_data_api as stock_data  # Import des stock_data Moduls für aktuelle Kurse # Changed from stock_data to stock_data_api
 import database.handler.postgres.postgres_db_handler as db_handler  # Import des PostgreSQL DB Handlers
-from database.handler.postgres.postgres_db_handler import add_analytics  # Direkter Import
 from rich import print
 
 load_dotenv()
@@ -19,7 +18,6 @@ USD_TO_EUR_EXCHANGE_RATE = 0.92  # Beispielkurs, wie im SQLite-Handler
 
 def get_connection():
     print('[bold blue]Connection to DB from Transaction Handler[/bold blue]')
-    add_analytics(None, "get_db_connection_tx_handler", "postgre_transactions_handler:get_connection")
     return psycopg2.connect(
         host=POSTGRES_HOST,
         port=POSTGRES_PORT,
@@ -29,7 +27,6 @@ def get_connection():
     )
 
 def create_transactions_table():
-    add_analytics(None, "create_transactions_table", "postgre_transactions_handler")
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -50,7 +47,6 @@ def init_asset_types():
     """
     Initialisiert die Tabelle asset_types, falls sie nicht existiert und fügt Standardwerte ein.
     """
-    add_analytics(None, "init_asset_types", "postgre_transactions_handler")
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("""
@@ -68,7 +64,6 @@ def init_asset_types():
             conn.commit()
 
 def get_asset_type_id(asset_type_name):
-    add_analytics(None, "get_asset_type_id", f"postgre_transactions_handler:asset_type={asset_type_name}")
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT id FROM asset_types WHERE name = %s", (asset_type_name,))
@@ -82,7 +77,6 @@ def get_asset_id_by_symbol(cursor, symbol):
     """
     Findet die Asset-ID für ein bestimmtes Symbol.
     """
-    # Analytics wird in aufrufenden Funktionen gehandhabt, da dies eine Hilfsfunktion ist
     cursor.execute("SELECT id FROM assets WHERE symbol = %s", (symbol,))
     asset = cursor.fetchone()
     if not asset:
@@ -93,11 +87,8 @@ def update_portfolio_on_buy(cursor, user_id, asset_symbol, quantity, price_per_u
     """
     Aktualisiert das Portfolio beim Kauf von Assets.
     """
-    # Analytics wird in aufrufenden Funktionen gehandhabt
-    # Asset ID abrufen
     asset_id = get_asset_id_by_symbol(cursor, asset_symbol)
     
-    # Prüfen, ob das Asset bereits im Portfolio des Benutzers ist
     cursor.execute("""
         SELECT quantity, average_buy_price FROM portfolio 
         WHERE user_id = %s AND asset_id = %s
@@ -106,22 +97,18 @@ def update_portfolio_on_buy(cursor, user_id, asset_symbol, quantity, price_per_u
     portfolio_entry = cursor.fetchone()
     
     if portfolio_entry:
-        # Asset bereits vorhanden, Update durchführen
         current_quantity = float(portfolio_entry['quantity']) if isinstance(portfolio_entry, dict) else float(portfolio_entry[0])
         current_avg_price = float(portfolio_entry['average_buy_price']) if isinstance(portfolio_entry, dict) else float(portfolio_entry[1])
         
-        # Neue Durchschnittskosten berechnen
         new_quantity = current_quantity + quantity
         new_avg_price = ((current_quantity * current_avg_price) + (quantity * price_per_unit)) / new_quantity
         
-        # Portfolio aktualisieren
         cursor.execute("""
             UPDATE portfolio 
             SET quantity = %s, average_buy_price = %s, last_updated = CURRENT_TIMESTAMP
             WHERE user_id = %s AND asset_id = %s
         """, (new_quantity, new_avg_price, user_id, asset_id))
     else:
-        # Neuer Eintrag im Portfolio
         cursor.execute("""
             INSERT INTO portfolio (user_id, asset_id, quantity, average_buy_price)
             VALUES (%s, %s, %s, %s)
@@ -131,11 +118,8 @@ def update_portfolio_on_sell(cursor, user_id, asset_symbol, quantity):
     """
     Aktualisiert das Portfolio beim Verkauf von Assets.
     """
-    # Analytics wird in aufrufenden Funktionen gehandhabt
-    # Asset ID abrufen
     asset_id = get_asset_id_by_symbol(cursor, asset_symbol)
     
-    # Aktuelle Portfolio-Position abrufen
     cursor.execute("""
         SELECT quantity FROM portfolio 
         WHERE user_id = %s AND asset_id = %s
@@ -149,14 +133,12 @@ def update_portfolio_on_sell(cursor, user_id, asset_symbol, quantity):
     current_quantity = float(portfolio_entry['quantity']) if isinstance(portfolio_entry, dict) else float(portfolio_entry[0])
     new_quantity = current_quantity - quantity
     
-    if abs(new_quantity) < 0.000001:  # Praktisch 0
-        # Wenn keine Einheiten mehr übrig sind, den Eintrag löschen
+    if abs(new_quantity) < 0.000001:
         cursor.execute("""
             DELETE FROM portfolio 
             WHERE user_id = %s AND asset_id = %s
         """, (user_id, asset_id))
     elif new_quantity > 0:
-        # Menge aktualisieren
         cursor.execute("""
             UPDATE portfolio 
             SET quantity = %s, last_updated = CURRENT_TIMESTAMP
@@ -170,7 +152,6 @@ def buy_stock(user_id, asset_symbol, quantity, price_per_unit):
     Führt einen Aktienkauf für den Benutzer durch (PostgreSQL).
     User balance ist in EUR, price_per_unit in USD.
     """
-    add_analytics(user_id, "buy_stock_attempt", f"postgre_transactions_handler:symbol={asset_symbol},qty={quantity}")
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -198,17 +179,14 @@ def buy_stock(user_id, asset_symbol, quantity, price_per_unit):
                 """, (user_id, asset_type_id, asset_symbol, quantity, price_per_unit))
                 transaction = cur.fetchone()
                 
-                # Portfolio aktualisieren
                 update_portfolio_on_buy(cur, user_id, asset_symbol, quantity, price_per_unit)
                 
                 conn.commit()
-                add_analytics(user_id, "buy_stock_commit", f"postgre_transactions_handler:symbol={asset_symbol},id={transaction.get('id') if transaction else 'N/A'}")
                 db_handler.manage_user_xp("buy", user_id, quantity=quantity)
                 db_handler.check_user_level(user_id, db_handler.get_user_xp(user_id))
                 
                 return {"success": True, "transaction": transaction, "message": f"Successfully purchased {quantity} shares of {asset_symbol} for ${total_cost_usd:.2f} (approx. €{total_cost_eur:.2f})."}
     except Exception as e:
-        add_analytics(user_id, "buy_stock_error", f"postgre_transactions_handler:symbol={asset_symbol},error={str(e)}")
         return {"success": False, "message": f"Database error: {e}"}
 
 def sell_stock(user_id, asset_symbol, quantity, price_per_unit):
@@ -216,12 +194,10 @@ def sell_stock(user_id, asset_symbol, quantity, price_per_unit):
     Führt einen Aktienverkauf für den Benutzer durch (PostgreSQL) und berechnet realisierten Gewinn/Verlust (FIFO).
     User balance und profit_loss sind in EUR, price_per_unit in USD.
     """
-    add_analytics(user_id, "sell_stock_attempt", f"postgre_transactions_handler:symbol={asset_symbol},qty={quantity}")
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 asset_type_id = get_asset_type_id('stock')
-                # Prüfe, ob genug Aktien vorhanden sind
                 cur.execute("""
                     SELECT 
                         COALESCE(SUM(CASE WHEN transaction_type = 'buy' THEN quantity ELSE 0 END), 0) -
@@ -233,7 +209,6 @@ def sell_stock(user_id, asset_symbol, quantity, price_per_unit):
                 current_holding = holding_data['current_holding'] if holding_data else 0
                 if current_holding < quantity:
                     return {"success": False, "message": f"Insufficient shares of {asset_symbol} to sell."}
-                # FIFO Profit/Loss Calculation
                 cur.execute("""
                     SELECT quantity, price_per_unit 
                     FROM transactions
@@ -275,7 +250,6 @@ def sell_stock(user_id, asset_symbol, quantity, price_per_unit):
                 total_sale_value_usd = float(quantity) * float(price_per_unit)
                 realized_profit_or_loss_usd = total_sale_value_usd - cost_for_current_sale_usd
                 realized_profit_or_loss_eur = realized_profit_or_loss_usd * USD_TO_EUR_EXCHANGE_RATE
-                # Verkaufserlös in EUR
                 total_sale_amount_eur = total_sale_value_usd * USD_TO_EUR_EXCHANGE_RATE
                 cur.execute("SELECT balance, profit_loss FROM users WHERE id = %s", (user_id,))
                 user_data = cur.fetchone()
@@ -298,12 +272,10 @@ def sell_stock(user_id, asset_symbol, quantity, price_per_unit):
                 """, (user_id, asset_type_id, asset_symbol, quantity, price_per_unit))
                 transaction = cur.fetchone()
                 
-                # Portfolio aktualisieren
                 update_portfolio_on_sell(cur, user_id, asset_symbol, quantity)
                 
                 conn.commit()
-                add_analytics(user_id, "sell_stock_commit", f"postgre_transactions_handler:symbol={asset_symbol},id={transaction.get('id') if transaction else 'N/A'}")
-                db_handler.manage_user_xp("buy", user_id, quantity=quantity)  # Sollte "sell" sein, oder eine generische "trade" Aktion
+                db_handler.manage_user_xp("buy", user_id, quantity=quantity)
                 db_handler.check_user_level(user_id, db_handler.get_user_xp(user_id))
                 return {
                     "success": True,
@@ -311,7 +283,6 @@ def sell_stock(user_id, asset_symbol, quantity, price_per_unit):
                     "message": f"Successfully sold {quantity} shares of {asset_symbol} for ${total_sale_value_usd:.2f} (approx. €{total_sale_amount_eur:.2f}). Realized P/L: ${realized_profit_or_loss_usd:.2f} (approx. €{realized_profit_or_loss_eur:.2f})"
                 }
     except Exception as e:
-        add_analytics(user_id, "sell_stock_error", f"postgre_transactions_handler:symbol={asset_symbol},error={str(e)}")
         return {"success": False, "message": f"Database error: {e}"}
 
 def show_user_portfolio(user_id):
@@ -319,7 +290,6 @@ def show_user_portfolio(user_id):
     Zeigt das aktuelle Portfolio für einen Benutzer (PostgreSQL).
     Verwendet aktuelle Marktdaten für die Preise, ansonsten default_price aus der DB.
     """
-    add_analytics(user_id, "show_user_portfolio", "postgre_transactions_handler")
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -334,24 +304,21 @@ def show_user_portfolio(user_id):
                 portfolio = []
                 for row in cur.fetchall():
                     symbol = row['symbol']
-                    current_price = None # Wird später gesetzt
+                    current_price = None
                     
-                    # Versuche, den aktuellen Kurs von der API zu holen (für 1D Ansicht)
                     try:
-                        df = stock_data.get_cached_or_live_data(symbol, '1D') # '1D' für den aktuellsten Schlusskurs
-                        if df is not None and not df.empty and not getattr(df, 'is_demo', True): # Nur echte API-Daten verwenden
+                        df = stock_data.get_cached_or_live_data(symbol, '1D')
+                        if df is not None and not df.empty and not getattr(df, 'is_demo', True):
                             current_price = float(df['Close'].iloc[-1])
                         else:
                             print(f"API lieferte Demo-Daten oder keine Daten für {symbol} im Portfolio. Nutze DB Fallback.")
                     except Exception as e:
                         print(f"Fehler beim Abrufen des API-Kurses für {symbol} im Portfolio: {e}. Nutze DB Fallback.")
 
-                    # Fallback-Logik, wenn current_price nicht durch echte API-Daten gesetzt wurde
                     if current_price is None:
                         if row['default_price'] is not None:
                             current_price = float(row['default_price'])
                         else:
-                            # Allerletzter Fallback, wenn auch default_price fehlt
                             current_price = float(row['average_buy_price'])
                             print(f"Warnung: Weder API-Preis noch default_price für {symbol} verfügbar. Nutze average_buy_price.")
                     
@@ -359,12 +326,10 @@ def show_user_portfolio(user_id):
                     performance = ((current_price - avg_price) / avg_price * 100) if avg_price > 0 else 0
                     quantity = float(row['quantity'])
                     
-                    # Stelle sicher, dass asset_type nicht null ist
                     asset_type = row['asset_type'] 
                     if asset_type is None or asset_type.strip() == '':
-                        asset_type = 'stock'  # Standardwert, falls asset_type fehlt
+                        asset_type = 'stock'
                     
-                    # Berechne den aktuellen Wert des Assets
                     item_value = quantity * current_price
                     
                     portfolio.append({
@@ -376,7 +341,7 @@ def show_user_portfolio(user_id):
                         "current_price": current_price,
                         "performance": performance,
                         "sector": row['sector'],
-                        "value": item_value  # Wert des Assets für Asset Allocation
+                        "value": item_value
                     })
                 
                 cur.execute("SELECT balance FROM users WHERE id = %s", (user_id,))
@@ -395,7 +360,6 @@ def get_recent_transactions(user_id, limit=5):
     """
     Holt die letzten Transaktionen für einen Benutzer (PostgreSQL).
     """
-    add_analytics(user_id, "get_recent_transactions", f"postgre_transactions_handler:limit={limit}")
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -412,7 +376,6 @@ def get_recent_transactions(user_id, limit=5):
         return {"success": False, "message": f"Database error: {e}", "transactions": []}
 
 def create_transaction(user_id, asset_type, asset_symbol, quantity, price, transaction_type):
-    add_analytics(user_id, "create_transaction", f"postgre_transactions_handler:type={asset_type},symbol={asset_symbol},tx_type={transaction_type}")
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             asset_type_id = get_asset_type_id(asset_type)
@@ -426,28 +389,24 @@ def create_transaction(user_id, asset_type, asset_symbol, quantity, price, trans
             return transaction
 
 def get_transaction_by_id(transaction_id):
-    add_analytics(None, "get_transaction_by_id", f"postgre_transactions_handler:tx_id={transaction_id}")
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("SELECT * FROM transactions WHERE id = %s;", (transaction_id,))
             return cur.fetchone()
 
 def get_transactions_by_user_id(user_id):
-    add_analytics(user_id, "get_transactions_by_user_id", "postgre_transactions_handler")
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("SELECT * FROM transactions WHERE user_id = %s ORDER BY timestamp DESC;", (user_id,))
             return cur.fetchall()
 
 def delete_transaction(transaction_id):
-    add_analytics(None, "delete_transaction", f"postgre_transactions_handler:tx_id={transaction_id}")
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute("DELETE FROM transactions WHERE id = %s;", (transaction_id,))
             conn.commit()
 
 def get_asset_value(user_id):
-    add_analytics(user_id, "get_asset_value", "postgre_transactions_handler")
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
@@ -469,7 +428,6 @@ def get_all_assets(active_only=True, asset_type=None):
     Returns:
         dict: {"success": True, "assets": [...] } oder {"success": False, "message": "..."}
     """
-    add_analytics(None, "get_all_assets", f"postgre_transactions_handler:active_only={active_only},type={asset_type}")
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -487,7 +445,6 @@ def get_all_assets(active_only=True, asset_type=None):
                 assets = cur.fetchall()
                 return {"success": True, "assets": assets}
     except Exception as e:
-        add_analytics(None, "get_all_assets_error", f"postgre_transactions_handler:error={e}")
         return {"success": False, "message": f"Database error: {e}"}
 
 def get_asset_by_symbol(symbol):
@@ -495,7 +452,6 @@ def get_asset_by_symbol(symbol):
     Ruft ein Asset anhand seines Symbols ab.
     Gibt default_price zurück, aber NICHT last_price.
     """
-    add_analytics(None, "get_asset_by_symbol", f"postgre_transactions_handler:get_asset_by_symbol:symbol={symbol}")
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -507,10 +463,8 @@ def get_asset_by_symbol(symbol):
                 if asset:
                     return {"success": True, "asset": asset}
                 else:
-                    add_analytics(None, "get_asset_by_symbol_not_found", f"postgre_transactions_handler:get_asset_by_symbol:symbol={symbol}")
                     return {"success": False, "message": f"Asset with symbol '{symbol}' not found."}
     except Exception as e:
-        add_analytics(None, "get_asset_by_symbol_error", f"postgre_transactions_handler:get_asset_by_symbol:symbol={symbol},error={e}")
         return {"success": False, "message": f"Database error: {e}"}
 
 def create_asset(symbol, name, asset_type, exchange=None, currency="USD", 
@@ -521,7 +475,6 @@ def create_asset(symbol, name, asset_type, exchange=None, currency="USD",
     Returns:
         dict: Erstelltes Asset oder Fehlermeldung
     """
-    add_analytics(None, "tx_create_asset_attempt", f"postgre_transactions_handler:create_asset:symbol={symbol}")
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -533,31 +486,26 @@ def create_asset(symbol, name, asset_type, exchange=None, currency="USD",
                 """, (symbol, name, asset_type, exchange, currency, sector, industry, logo_url, description))
                 new_asset = cur.fetchone()
                 conn.commit()
-                add_analytics(None, "tx_create_asset_success", f"postgre_transactions_handler:create_asset:symbol={symbol},id={new_asset.get('id') if new_asset else 'N/A'}")
                 return {"success": True, "asset": new_asset}
     except Exception as e:
-        add_analytics(None, "tx_create_asset_error", f"postgre_transactions_handler:create_asset:symbol={symbol},error={e}")
         return {"success": False, "message": f"Database error: {e}"}
 
 def get_default_price_for_symbol(symbol):
     """
     Holt den default_price für ein Asset aus der Datenbank.
     """
-    add_analytics(None, "get_default_price_for_symbol", f"postgre_transactions_handler:get_default_price_for_symbol:symbol={symbol}")
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("SELECT default_price FROM assets WHERE symbol = %s", (symbol,))
             row = cur.fetchone()
             if row and row.get('default_price') is not None:
                 return float(row['default_price'])
-            add_analytics(None, "get_default_price_not_found", f"postgre_transactions_handler:get_default_price_for_symbol:symbol={symbol}")
             return None
 
 def get_user_assets(user_id):
     """
     Holt alle Assets eines Benutzers aus der Datenbank.
     """
-    add_analytics(user_id, "get_user_assets", f"postgre_transactions_handler:get_user_assets:user_id={user_id}")
     with get_connection() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             try:
@@ -569,5 +517,4 @@ def get_user_assets(user_id):
                 """, (user_id,))
                 return cur.fetchall()
             except Exception as e:
-                add_analytics(user_id, "get_user_assets_error", f"postgre_transactions_handler:get_user_assets:user_id={user_id},error={e}")
                 return [] # Return empty list on error

@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Optional
 import logging
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
-from database.handler.postgres.postgres_db_handler import add_analytics
 from ..auth_utils import get_current_user, AuthenticatedUser
 from ..pydantic_models import AssetResponse, AssetsListResponse
 

@@ -7,7 +7,6 @@ from typing import Optional
 from datetime import datetime
 import logging
 import database.handler.postgres.postgres_db_handler as db_handler
-from database.handler.postgres.postgres_db_handler import add_analytics
 from ..auth_utils import get_current_user, AuthenticatedUser
 from ..pydantic_models import EasterEggRedeemRequest, RedeemCodeRequest, RedeemCodeResponse
 

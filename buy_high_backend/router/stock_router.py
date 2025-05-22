@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 import logging
 import pandas as pd
 import utils.stock_data_api as stock_data
-from database.handler.postgres.postgres_db_handler import add_analytics
 from ..auth_utils import get_current_user, AuthenticatedUser
 from ..pydantic_models import StockDataPoint
 

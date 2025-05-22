@@ -8,7 +8,6 @@ import os
 import logging
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
 import database.handler.postgres.postgres_db_handler as db_handler
-from database.handler.postgres.postgres_db_handler import add_analytics
 from ..auth_utils import get_current_user, AuthenticatedUser
 from ..pydantic_models import ProfilePictureUploadResponse, UserDataResponse, TransactionsListResponse, PortfolioResponse
 
@@ -23,8 +22,6 @@ async def api_upload_profile_picture(
     file: UploadFile = File(...), 
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
-    user_id_for_analytics = current_user.id
-
     if not file:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No file part in the request.")
     
@@ -59,8 +56,6 @@ async def api_upload_profile_picture(
 
 @router.get("/get/profile-picture/{user_id_param}")
 async def api_get_profile_picture(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
-    user_id_for_analytics = current_user.id
-    
     file_path = os.path.join(PROJECT_ROOT, 'static', 'user_data', str(user_id_param), 'profile_picture.png')
     
     if os.path.exists(file_path):
@@ -70,8 +65,6 @@ async def api_get_profile_picture(user_id_param: int, current_user: Authenticate
 
 @router.get("/user/{user_id_param}", response_model=UserDataResponse)
 async def api_get_user_data(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
-    user_id_for_analytics = current_user.id
-    
     user_data = db_handler.get_user_by_id(user_id=user_id_param)
     if not user_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -80,8 +73,6 @@ async def api_get_user_data(user_id_param: int, current_user: AuthenticatedUser 
 
 @router.get("/user/transactions/{user_id_param}", response_model=TransactionsListResponse)
 async def api_get_user_last_transactions(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
-    user_id_for_analytics = current_user.id
-
     result = transactions_handler.get_recent_transactions(user_id=user_id_param)
     if result and result.get("success"):
         transactions_list = result.get("transactions", [])
@@ -92,8 +83,6 @@ async def api_get_user_last_transactions(user_id_param: int, current_user: Authe
 
 @router.get("/user/portfolio/{user_id_param}", response_model=PortfolioResponse)
 async def api_get_portfolio(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
-    user_id_for_analytics = current_user.id
-
     portfolio_data = transactions_handler.show_user_portfolio(user_id_param)
     if portfolio_data and portfolio_data.get("success"):
         return portfolio_data

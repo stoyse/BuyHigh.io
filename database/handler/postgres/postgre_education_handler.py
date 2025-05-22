@@ -1,10 +1,10 @@
 import os  # Dieser Import fehlte
 import psycopg2
 import psycopg2.extras
+from psycopg2 import pool
 from datetime import datetime
 import logging
 from rich import print
-from .postgres_db_handler import add_analytics  # Import add_analytics
 
 logger = logging.getLogger(__name__)
 
@@ -15,23 +15,22 @@ PG_DB = os.getenv('POSTGRES_DB', 'buyhigh')
 PG_USER = os.getenv('POSTGRES_USER', 'postgres')
 PG_PASSWORD = os.getenv('POSTGRES_PASSWORD', '')
 
-def get_db_connection():
+connection_pool = psycopg2.pool.SimpleConnectionPool(1, 20,
+    host=PG_HOST,
+    port=PG_PORT,
+    dbname=PG_DB,
+    user=PG_USER,
+    password=PG_PASSWORD
+)
+
+def get_db_connection(request):
     print('[bold blue]Connection to DB from Education Handler[/bold blue]')
     """Stellt eine Verbindung zur PostgreSQL-Datenbank her."""
-    add_analytics(None, "get_db_connection_edu_handler", "postgre_education_handler:get_db_connection")
     try:
-        conn = psycopg2.connect(
-            host=PG_HOST,
-            port=PG_PORT,
-            dbname=PG_DB,
-            user=PG_USER,
-            password=PG_PASSWORD
-        )
-        conn.autocommit = False
-        return conn
+        connection = connection_pool.getconn()
+        return connection
     except psycopg2.Error as e:
         logger.error(f"Fehler beim Öffnen der PostgreSQL-Verbindung: {e}", exc_info=True)
-        add_analytics(None, "get_db_connection_edu_handler_error", f"postgre_education_handler:get_db_connection:error={e}")
         raise
 
 def _parse_user_timestamps(user_row):
@@ -50,9 +49,8 @@ def _parse_user_timestamps(user_row):
 
 def get_daily_quiz(date):
     """Lädt das tägliche Quiz für ein bestimmtes Datum aus der PostgreSQL-Datenbank."""
-    add_analytics(None, "get_daily_quiz", f"postgre_education_handler:date={date}")
     try:
-        conn = get_db_connection()
+        conn = get_db_connection(None)
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             cursor.execute("SELECT * FROM daily_quiz WHERE date = %s", (date,))
             quiz_data = cursor.fetchone()
@@ -62,15 +60,14 @@ def get_daily_quiz(date):
         raise
     finally:
         if conn:
-            conn.close()
+            connection_pool.putconn(conn)
 
 def insert_daily_quiz_attempt(user_id, quiz_id, selected_answer, is_correct):
     """
     Fügt einen neuen Eintrag in die Tabelle daily_quiz_attempts ein.
     """
-    add_analytics(user_id, "insert_daily_quiz_attempt", f"postgre_education_handler:quiz_id={quiz_id},correct={is_correct}")
     try:
-        conn = get_db_connection()
+        conn = get_db_connection(None)
         with conn.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO daily_quiz_attempts (user_id, quiz_id, selected_answer, is_correct)
@@ -83,15 +80,14 @@ def insert_daily_quiz_attempt(user_id, quiz_id, selected_answer, is_correct):
         raise
     finally:
         if conn:
-            conn.close()
+            connection_pool.putconn(conn)
 
 def get_daily_quiz_attempts(user_id):
     """
     Lädt alle täglichen Quizversuche eines Benutzers aus der PostgreSQL-Datenbank.
     """
-    add_analytics(user_id, "get_daily_quiz_attempts", "postgre_education_handler")
     try:
-        conn = get_db_connection()
+        conn = get_db_connection(None)
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             cursor.execute("""
                 SELECT * FROM daily_quiz_attempts WHERE user_id = %s
@@ -103,15 +99,14 @@ def get_daily_quiz_attempts(user_id):
         raise
     finally:
         if conn:
-            conn.close()
+            connection_pool.putconn(conn)
 
 def get_dayly_quiz_attempt_day(user_id, date):
     """
     Lädt den täglichen Quizversuch eines Benutzers für ein bestimmtes Datum aus der PostgreSQL-Datenbank.
     """
-    add_analytics(user_id, "get_dayly_quiz_attempt_day", f"postgre_education_handler:date={date}")
     try:
-        conn = get_db_connection()
+        conn = get_db_connection(None)
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             cursor.execute("""
                 SELECT * FROM daily_quiz_attempts 
@@ -126,15 +121,14 @@ def get_dayly_quiz_attempt_day(user_id, date):
         raise
     finally:
         if conn:
-            conn.close()
+            connection_pool.putconn(conn)
 
 def create_daily_quiz(date, question, possible_answer_1, possible_answer_2, possible_answer_3, correct_answer):
     """
     Erstellt ein neues tägliches Quiz in der PostgreSQL-Datenbank.
     """
-    add_analytics(None, "create_daily_quiz", f"postgre_education_handler:date={date}")
     try:
-        conn = get_db_connection()
+        conn = get_db_connection(None)
         with conn.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO daily_quiz (date, question, possible_answer_1, possible_answer_2, possible_answer_3, correct_answer)
@@ -146,15 +140,14 @@ def create_daily_quiz(date, question, possible_answer_1, possible_answer_2, poss
         raise
     finally:
         if conn:
-            conn.close()
+            connection_pool.putconn(conn)
 
 def get_all_daily_quizzes():
     """
     Lädt alle täglichen Quiz aus der PostgreSQL-Datenbank.
     """
-    add_analytics(None, "get_all_daily_quizzes", "postgre_education_handler")
     try:
-        conn = get_db_connection()
+        conn = get_db_connection(None)
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             cursor.execute("SELECT * FROM daily_quiz")
             quizzes = cursor.fetchall()
@@ -164,15 +157,14 @@ def get_all_daily_quizzes():
         raise
     finally:
         if conn:
-            conn.close()
+            connection_pool.putconn(conn)
 
 def delete_daily_quiz(quiz_id):
     """
     Löscht ein tägliches Quiz aus der PostgreSQL-Datenbank.
     """
-    add_analytics(None, "delete_daily_quiz", f"postgre_education_handler:quiz_id={quiz_id}")
     try:
-        conn = get_db_connection()
+        conn = get_db_connection(None)
         with conn.cursor() as cursor:
             cursor.execute("DELETE FROM daily_quiz WHERE id = %s", (quiz_id,))
             conn.commit()
@@ -181,4 +173,4 @@ def delete_daily_quiz(quiz_id):
         raise
     finally:
         if conn:
-            conn.close()
+            connection_pool.putconn(conn)
