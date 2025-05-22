@@ -78,6 +78,13 @@ class DailyQuizResponse(BaseModel): # Assuming structure from education_handler
     success: bool
     data: Any # Replace Any with a more specific model if possible
 
+class DailyQuizAttemptRequest(BaseModel):
+    user_id: int
+    quiz_id: int
+    selected_answer: str
+    is_correct: bool
+    attempted_at: Optional[datetime] = None
+
 class UserDataResponse(BaseModel): # Assuming structure from db_handler.get_user_by_id
     # Define fields based on what db_handler.get_user_by_id returns
     # Example:
