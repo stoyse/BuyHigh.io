@@ -85,6 +85,22 @@ class DailyQuizAttemptRequest(BaseModel):
     is_correct: bool
     attempted_at: Optional[datetime] = None
 
+class RoadmapListResponse(BaseModel):
+    success: bool
+    roadmaps: List[Any] # Replace Any with a more specific Roadmap model if available
+
+class RoadmapStepsResponse(BaseModel):
+    success: bool
+    steps: List[Any] # Replace Any with a more specific RoadmapStep model if available
+
+class RoadmapQuizAttemptRequest(BaseModel):
+    user_id: int
+    roadmap_id: int
+    step_id: int
+    quiz_id: int
+    selected_answer: str
+    is_correct: bool
+
 class UserDataResponse(BaseModel): # Assuming structure from db_handler.get_user_by_id
     # Define fields based on what db_handler.get_user_by_id returns
     # Example:
