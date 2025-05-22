@@ -143,19 +143,19 @@ def get_user_by_firebase_uid(firebase_uid, log_analytics_event=True):
         if conn:
             conn.close()
 
-def get_user_by_id(user_id_param):
-    # add_analytics(user_id=user_id_param, event_type="get_user_by_id_call", details={"source_user_id": user_id_param, "source": "postgres_db_handler:get_user_by_id"})
+def get_user_by_id(user_id):
+    # add_analytics(user_id=user_id, event_type="get_user_by_id_call", details={"source_user_id": user_id, "source": "postgres_db_handler:get_user_by_id"})
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     try:
-        cur.execute("SELECT * FROM users WHERE id = %s", (user_id_param,))
+        cur.execute("SELECT * FROM users WHERE id = %s", (user_id,))
         user = cur.fetchone()
         if user:
             return _parse_user_timestamps(user)
         return None
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Suchen nach Benutzer-ID '{user_id_param}': {e}", exc_info=True)
-        # add_analytics(user_id=user_id_param, event_type="get_user_by_id_error", details={"source_user_id": user_id_param, "error": str(e), "source": "postgres_db_handler:get_user_by_id"})
+        logger.error(f"Fehler beim Suchen nach Benutzer-ID '{user_id}': {e}", exc_info=True)
+        # add_analytics(user_id=user_id, event_type="get_user_by_id_error", details={"source_user_id": user_id, "error": str(e), "source": "postgres_db_handler:get_user_by_id"})
         return None
     finally:
         cur.close()

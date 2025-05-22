@@ -82,7 +82,7 @@ def check_if_mayhem():
     events = {}
     for row in data:
         # Extract the date part from start_time
-        start_date = row['start_time'].strftime('%Y-%m-%d') if isinstance(row['start_time'], datetime.datetime) else row['start_time'][:10]
+        start_date = row['start_time'].strftime('%Y-%m-%d') if isinstance(row['start_time'], datetime) else row['start_time'][:10]
         if start_date == today:
             events[row['id']] = row
             mayhem_scenarios = get_mayhem_data(scenario_id=events[row['id']]['scenario_id'])
