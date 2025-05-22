@@ -78,7 +78,7 @@ def get_mayhem_data(scenario_id):
 
 def check_if_mayhem():
     data = get_all_mayhem()
-    today = datetime.datetime.now().strftime('%Y-%m-%d')  # Get today's date as a string
+    today = datetime.now().strftime('%Y-%m-%d')  # Get today's date as a string
     events = {}
     for row in data:
         # Extract the date part from start_time
