@@ -101,6 +101,13 @@ class RoadmapQuizAttemptRequest(BaseModel):
     selected_answer: str
     is_correct: bool
 
+class RoadmapQuizAttemptResponse(BaseModel):
+    success: bool
+    message: Optional[str] = None
+    # Add any other relevant fields for the response, e.g.:
+    # score: Optional[int] = None
+    # xp_gained: Optional[int] = None
+
 class UserDataResponse(BaseModel): # Assuming structure from db_handler.get_user_by_id
     # Define fields based on what db_handler.get_user_by_id returns
     # Example:

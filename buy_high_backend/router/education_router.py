@@ -7,7 +7,7 @@ from datetime import datetime
 import logging
 import database.handler.postgres.postgre_education_handler as education_handler
 from ..auth_utils import get_current_user, AuthenticatedUser
-from ..pydantic_models import DailyQuizAttemptRequest, RoadmapListResponse, RoadmapStepsResponse, RoadmapQuizAttemptRequest
+from ..pydantic_models import DailyQuizAttemptRequest, RoadmapListResponse, RoadmapStepsResponse, RoadmapQuizAttemptRequest, RoadmapQuizAttemptResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
