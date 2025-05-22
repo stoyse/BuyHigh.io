@@ -120,30 +120,27 @@ class UserDataResponse(BaseModel): # Assuming structure from db_handler.get_user
     user: Optional[Any] # Replace Any with a more specific User model
 
 class Transaction(BaseModel): # Assuming structure from transactions_handler.get_recent_transactions
-    # Define fields based on transaction structure
-    # Example:
-    # id: int
-    # symbol: str
-    # quantity: float
-    # price: float
-    # transaction_type: str
-    # transaction_date: datetime
-    pass # Define actual fields
+    asset_symbol: str
+    quantity: float
+    price_per_unit: float
+    transaction_type: str
+    timestamp: datetime
 
 class TransactionsListResponse(BaseModel):
     success: bool
     transactions: Optional[List[Transaction]] = None
     message: Optional[str] = None
 
-
 class PortfolioItem(BaseModel): # Assuming structure from transactions_handler.show_user_portfolio
-    # Define fields based on portfolio item structure
-    # Example:
-    # symbol: str
-    # quantity: float
-    # average_price: float
-    # current_value: float
-    pass # Define actual fields
+    symbol: str
+    name: str
+    type: str
+    quantity: float
+    average_price: float
+    current_price: float
+    performance: float
+    sector: Optional[str] = None
+    value: float
 
 class PortfolioResponse(BaseModel):
     success: bool
