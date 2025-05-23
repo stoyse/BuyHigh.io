@@ -18,26 +18,26 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    frontendLogger.info('Login-Versuch', { email });
+    frontendLogger.info('Login attempt', { email });
 
     if (!email || !password) {
       setError('Please enter both email and password');
-      frontendLogger.warn('Login fehlgeschlagen: Felder leer', { email });
+      frontendLogger.warn('Login failed: fields empty', { email });
       return;
     }
     
     try {
       const success = await login(email, password);
       if (success) {
-        frontendLogger.info('Login erfolgreich', { email });
+        frontendLogger.info('Login successful', { email });
         navigate(from, { replace: true });
       } else {
         setError('Invalid email or password');
-        frontendLogger.warn('Login fehlgeschlagen: Falsche Daten', { email });
+        frontendLogger.warn('Login failed: wrong credentials', { email });
       }
     } catch (err) {
       setError('An error occurred during login. Please try again.');
-      frontendLogger.error('Login Fehler', { email, error: err instanceof Error ? err.message : String(err) });
+      frontendLogger.error('Login error', { email, error: err instanceof Error ? err.message : String(err) });
       console.error('Login error:', err);
     }
   };

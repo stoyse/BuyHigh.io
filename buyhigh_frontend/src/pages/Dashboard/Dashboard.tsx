@@ -84,12 +84,15 @@ const Dashboard: React.FC = () => {
   const { user: authUser, loading: authLoading } = useAuth(); // Get user from AuthContext
 
   useEffect(() => {
+    console.log("[Dashboard] useEffect triggered");
+    console.log("[Dashboard] authUser:", authUser);
+    console.log("[Dashboard] authLoading:", authLoading);
     const fetchAllData = async () => {
-      if (!authUser || !authUser.id) { // Check if authUser and its id exist
-        setLoading(false); // Stop loading if no authenticated user
-        // Optional: redirect to login if not authLoading, or show a message
+      if (!authUser || !authUser.id) {
+        console.warn("[Dashboard] No authUser or no authUser.id present!", authUser);
+        setLoading(false);
         if (!authLoading) {
-          setError("Benutzer nicht authentifiziert.");
+          setError("User not authenticated.");
         }
         return;
       }
@@ -97,69 +100,88 @@ const Dashboard: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        
-        const userId = authUser.id.toString(); // Use userId from AuthContext
+        const userId = authUser.id.toString();
+        console.log(`[Dashboard] Starting API calls for userId: ${userId}`);
 
-        // Use authentication context to fetch current user data
+        // User Info
+        console.log("[Dashboard] Calling GetUserInfo...");
         const userData = await GetUserInfo(userId);
+        console.log("[Dashboard] GetUserInfo result:", userData);
         setUser(userData);
         setCurrentUserLevel(userData.level);
         setCurrentUserXp(userData.xp);
-        
-        // Calculate XP percentage
+
+        // XP calculation
         const currentLevel = levels.find(l => l.level === userData.level);
         const nextLevel = levels.find(l => l.level === userData.level + 1);
-        
         if (currentLevel && nextLevel) {
           const xpForCurrentLevel = currentLevel.xp_required;
           const xpForNextLevel = nextLevel.xp_required;
           const xpProgress = userData.xp - xpForCurrentLevel;
           const xpNeeded = xpForNextLevel - xpForCurrentLevel;
-          setXpPercentage((xpProgress / xpNeeded) * 100);
+          const percent = (xpProgress / xpNeeded) * 100;
+          console.log(`[Dashboard] XP percent: ${percent}`);
+          setXpPercentage(percent);
         }
-        
-        // Use the same authenticated user for portfolio data
+
+        // Portfolio
+        console.log("[Dashboard] Calling GetPortfolioData...");
         const portfolio = await GetPortfolioData(userId);
+        console.log("[Dashboard] GetPortfolioData result:", portfolio);
         setPortfolioData(portfolio);
-        
         if (portfolio && portfolio.success) {
-          // Calculate total portfolio value
-          const totalValue = portfolio.portfolio.reduce((sum: number, item: PortfolioItem) => {
-            // This is a simplification - you'd need actual price data
-            return sum + (item.quantity * 100); // placeholder calculation
+          const totalValue = portfolio.portfolio.reduce((sum, item) => {
+            const value = item.quantity * 100; // Placeholder
+            console.log(`[Dashboard] Portfolio item:`, item, "Value:", value);
+            return sum + value;
           }, 0);
           setPortfolioTotalValue(totalValue);
-          
-          // Calculate asset allocation
-          const totalQuantity = portfolio.portfolio.reduce((sum: number, item: PortfolioItem) => sum + item.quantity, 0);
-          const allocation = portfolio.portfolio.map((item: PortfolioItem) => ({
+          console.log(`[Dashboard] Portfolio total value: ${totalValue}`);
+
+          const totalQuantity = portfolio.portfolio.reduce((sum, item) => sum + item.quantity, 0);
+          const allocation = portfolio.portfolio.map((item) => ({
             symbol: item.symbol,
-            name: item.symbol, // Simplified - you might want a lookup for full names
+            name: item.symbol,
             percentage: totalQuantity > 0 ? (item.quantity / totalQuantity) * 100 : 0
           }));
           setAssetAllocation(allocation);
+          console.log("[Dashboard] Asset allocation:", allocation);
         }
-        
-        // Fetch recent transactions
+
+        // Transactions
+        console.log("[Dashboard] Calling GetRecentTransactions...");
         const transactions = await GetRecentTransactions(userId);
+        console.log("[Dashboard] GetRecentTransactions result:", transactions);
         setRecentTransactions(transactions);
-        
-        // Fetch daily quiz
+
+        // Quiz
+        console.log("[Dashboard] Calling GetDailyQuiz...");
         const dailyQuiz = await GetDailyQuiz();
+        console.log("[Dashboard] GetDailyQuiz result:", dailyQuiz);
         setQuiz(dailyQuiz);
-        
+
         setLoading(false);
+        console.log("[Dashboard] All data loaded!");
       } catch (err) {
-        console.error('Error fetching dashboard data:', err);
+        console.error('[Dashboard] Error loading dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
         setLoading(false);
       }
     };
-    
-    if (!authLoading) { // Fetch data only when auth state is resolved
+    if (!authLoading) {
       fetchAllData();
     }
-  }, [authUser, authLoading, levels]); // Add authUser and authLoading to dependencies
+  }, [authUser, authLoading, levels]);
+
+  // Logging for render phases
+  useEffect(() => {
+    console.log("[Dashboard] Render: user=", user);
+    console.log("[Dashboard] Render: portfolioData=", portfolioData);
+    console.log("[Dashboard] Render: recentTransactions=", recentTransactions);
+    console.log("[Dashboard] Render: quiz=", quiz);
+    console.log("[Dashboard] Render: error=", error);
+    console.log("[Dashboard] Render: loading=", loading);
+  }, [user, portfolioData, recentTransactions, quiz, error, loading]);
 
   const handleQuizSubmit = async (quizId: string, answer: string) => {
     try {
@@ -457,7 +479,7 @@ const Dashboard: React.FC = () => {
                                 <span className="font-medium text-neo-blue">{(item.symbol && item.symbol[0]) || 'X'}</span>
                               </div>
                               <div>
-                                <h4 className="font-medium text-sm text-gray-800 dark:text-gray-200">{item.symbol || 'Unbekannt'}</h4>
+                                <h4 className="font-medium text-sm text-gray-800 dark:text-gray-200">{item.symbol || 'Unknown'}</h4>
                                 <p className="text-xs text-gray-500">{item.type || 'Asset'}</p>
                               </div>
                             </div>
@@ -625,7 +647,7 @@ const Dashboard: React.FC = () => {
                       </div>
                       
                       {!user?.is_meme_mode && (
-                        // Business Accessories - nur anzeigen, wenn Meme-Modus AUS ist
+                        // Business Accessories - only show if Meme Mode is OFF
                         <div className="absolute -bottom-8 -left-4 -right-4">
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40">
                             {/* Suit Jacket */}
@@ -735,7 +757,7 @@ const Dashboard: React.FC = () => {
                 
                 {quiz && !quiz.attempted ? (
                   <>
-                    {/* Quiz anzeigen */}
+                    {/* Quiz display */}
                     <div className="mb-4">
                       <p className="text-base font-semibold text-gray-800 dark:text-gray-100">
                         {quiz.question}
@@ -768,9 +790,9 @@ const Dashboard: React.FC = () => {
                     </div>
                   </>
                 ) : quiz && quiz.attempted ? (
-                  /* Bereits erledigt Hinweis */
+                  /* Already completed notice */
                   <div className="glass-card p-4 rounded-xl backdrop-blur-sm border border-neo-emerald/30 bg-neo-emerald/5 text-neo-emerald text-center font-semibold">
-                    Du hast das heutige Quiz bereits erledigt! 🎉
+                    You have already completed today's quiz! 🎉
                   </div>
                 ) : (
                   /* No quiz available */

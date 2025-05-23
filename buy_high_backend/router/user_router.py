@@ -1,5 +1,5 @@
 """
-Router für Benutzerbezogene Funktionalität.
+Router for user-related functionality.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File

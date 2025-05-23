@@ -2,10 +2,9 @@
 
 ![Hackatime Badge](https://hackatime-badge.hackclub.com/U08RM2BCLBU/BuyHigh.io)
 
-
 ## Overview
 
-BuyHigh.io is a gamified stock trading platform designed for learning and entertainment. It combines trading mechanics with playful elements like XP, badges, and a mood pet to engage users. The app is built using Flask, with a modular codebase that supports extensibility and integration with external services like Firebase.
+BuyHigh.io is a gamified stock trading platform designed for learning and entertainment. It combines trading mechanics with playful elements like XP, badges, and a mood pet to engage users. The app is built using a modular architecture with FastAPI for the backend and React for the frontend.
 
 ---
 
@@ -36,57 +35,53 @@ BuyHigh.io is a gamified stock trading platform designed for learning and entert
 
 ## Codebase Overview
 
+### Backend (FastAPI)
+- **`main.py`**: Initializes the FastAPI app and includes API routes.
+- **`auth_utils.py`**: Helper functions for authentication and user management.
+- **`pydantic_models.py`**: Defines Pydantic models for data validation.
+- **Routers**: Modular route definitions for trading, user management, and more.
+  - Example: `trade_router.py` handles buy/sell operations.
+- **Middleware**: Custom middleware for request handling.
+
+### Frontend (React)
+- **`src/`**: Contains React components and application logic.
+- **`public/`**: Static assets like images and the `index.html` file.
+- **`package.json`**: Manages dependencies and scripts.
+- **Tailwind CSS**: Used for styling.
+
+### Database
+- **Schema**: Defined in `postgres_schema.sql`.
+- **Tables**:
+  - `users`: Stores user details, balance, and preferences.
+  - `transactions`: Records buy/sell actions.
+  - `portfolio`: Tracks user holdings and investments.
+- **Entity-Relationship Diagram**: See `erd_diagram.png` for a visual representation.
+
+### Utilities
+- **`auth.py`**: Firebase authentication integration.
+- **`utils.py`**: General utility functions.
+
+---
+
+## Running the Project
+
 ### Backend
-- **`app.py`**: Main Flask application setup, including routing, session handling, and error management.
-- **`routes/`**: Modular route definitions for main pages, authentication, API, and chat.
-- **`database/handler/`**: Database interaction modules for PostgreSQL and Firebase.
-- **`auth.py`**: Firebase authentication and user management.
-- **`manage.py`**: CLI for database and Firebase operations.
+Use the `start_fastapi.sh` script to start the FastAPI server:
+```bash
+./start_fastapi.sh
+```
+This script:
+- Activates the virtual environment.
+- Installs dependencies from `requirements.txt`.
+- Starts the FastAPI server on `http://127.0.0.1:9877`.
 
 ### Frontend
-- **Templates (`/templates/`)**: Jinja2 templates for rendering HTML pages.
-- **Static Files (`/static/`)**: JavaScript and CSS for interactivity and styling.
-
-### Key Modules
-- **`transactions_handler.py`**: Handles trading logic, portfolio updates, and profit/loss calculations.
-- **`stock_data.py`**: Fetches stock data from APIs or generates demo data.
-- **`utils.py`**: Utility functions like login decorators.
-
----
-
-## Database Structure
-
-![Database Diagram](database/db_diagram.png)
-
-### Tables Overview
-- **Users**: Stores user details, balance, XP, preferences, and more.
-- **Assets**: Information about tradable stocks, crypto, etc., including metadata like sector and industry.
-- **Transactions**: Records of buy/sell actions with calculated total values.
-- **Portfolio**: Tracks user holdings, average buy prices, and total investments.
-- **Chat Rooms**: Manages chat rooms, participants, and messages.
-- **XP Levels**: Defines XP requirements and bonuses for leveling up.
-- **XP Gains**: Configures XP rewards for specific user actions.
-- **Daily Quiz**: Stores quiz questions and tracks user attempts.
-- **Developers**: Identifies developers with special privileges.
-- **API Requests**: Logs API usage by users.
-
-### Key Relationships
-- **Users ↔ Transactions**: Tracks which user performed a transaction.
-- **Users ↔ Portfolio**: Links users to their asset holdings.
-- **Users ↔ Chat Rooms**: Manages user participation in chat rooms.
-- **Users ↔ XP Gains**: Awards XP for specific actions.
-- **Users ↔ Daily Quiz**: Tracks quiz attempts and correctness.
-
-Refer to the diagram above for a visual representation of the database schema.
-
----
-
-## Management Commands
-
-- **`setup`**: Initialize the database schema.
-- **`status`**: Check Firebase connection status.
-- **`migrate`**: Migrate chat data from SQLite to Firebase.
-- **`reset-firebase-chat`**: Reset Firebase chat data.
+Run the following commands in the `buyhigh_frontend` directory:
+```bash
+yarn install
+yarn start
+```
+This starts the React development server on `http://localhost:3000`.
 
 ---
 

@@ -55,7 +55,7 @@
   box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
 }
 
-/* Animation für Preisänderungen */
+/* Animation for price changes */
 @keyframes price-change {
   0% { 
     background-color: rgba(139, 92, 246, 0.2);
@@ -69,7 +69,7 @@
   animation: price-change 1s ease;
 }
 
-/* Preis-Änderungs-Animationen */
+/* Price change animations */
 .price-up {
   animation: highlight-green 1s ease;
 }
@@ -107,7 +107,7 @@
   color: #3b82f6;
 }
 
-/* Anpassungen für die Integration mit BaseLayout */
+/* Adjustments for integration with BaseLayout */
 .trade-container {
   padding: 0;
   max-width: 100%;
@@ -230,7 +230,7 @@
   padding: 2px 5px;
   border-radius: 4px;
   transition: background-color 0.3s ease;
-  margin-left: auto; /* Drängt das Preiselement nach rechts */
+  margin-left: auto; /* Pushes the price element to the right */
 }
 
 .change {
@@ -356,7 +356,7 @@
   border-left: 4px solid #d32f2f;
 }
 
-/* Dark mode Anpassungen */
+/* Dark mode adjustments */
 .dark .glass-card {
   background: rgba(17, 24, 39, 0.4);
   border-color: rgba(75, 85, 99, 0.2);

@@ -3,25 +3,25 @@ import logging
 
 
 _setup_logger = logging.getLogger("buyhigh_setup")
-if not _setup_logger.hasHandlers(): # Handler nur einmal hinzufügen
-    _ch = logging.StreamHandler() # Loggt auf die Konsole
+if not _setup_logger.hasHandlers(): # Only add handler once
+    _ch = logging.StreamHandler() # Logs to console
     _formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     _ch.setFormatter(_formatter)
     _setup_logger.addHandler(_ch)
     _setup_logger.setLevel(logging.INFO)
 
-# Korrekter Pfad zur Firebase-Konfigurationsdatei
-# Annahme: main.py ist in buy_high_backend, utils-Ordner ist auf gleicher Ebene wie buy_high_backend
-project_root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # BuyHigh.io Verzeichnis
+# Correct path to Firebase config file
+# Assumption: main.py is in buy_high_backend, utils folder is at the same level as buy_high_backend
+project_root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # BuyHigh.io directory
 firebase_config_path = os.path.join(project_root_dir, "utils", "buyhighio-firebase-adminsdk-fbsvc-df9d657bec.json")
 
-_setup_logger.info(f"MAIN.PY: Versuchter Pfad für Firebase-Konfig: {firebase_config_path}")
+_setup_logger.info(f"MAIN.PY: Attempted path for Firebase config: {firebase_config_path}")
 
 if os.path.exists(firebase_config_path):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = firebase_config_path
-    _setup_logger.info(f"MAIN.PY: GOOGLE_APPLICATION_CREDENTIALS gesetzt auf: {firebase_config_path}")
+    _setup_logger.info(f"MAIN.PY: GOOGLE_APPLICATION_CREDENTIALS set to: {firebase_config_path}")
 else:
-    _setup_logger.error(f"MAIN.PY: Firebase-Konfigurationsdatei NICHT gefunden unter: {firebase_config_path}")
+    _setup_logger.error(f"MAIN.PY: Firebase config file NOT found at: {firebase_config_path}")
 
 
 from fastapi import FastAPI, Request, Response
@@ -30,26 +30,26 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-# Importiere den kombinierten Router und die Middleware aus dem router-Paket.
-# Das debug_logger Objekt wird jetzt direkt aus dem router-Modul importiert.
+# Import the combined router and middleware from the router package.
+# The debug_logger object is now directly imported from the router module.
 from .router import router as api_router, RequestLoggingMiddleware, debug_logger as router_debug_logger
 
-# FastAPI-Anwendung mit Metadaten initialisieren
+# Initialize FastAPI application with metadata
 app = FastAPI(
     title="BuyHigh.io API",
-    description="Backend API für die BuyHigh.io Trading-Plattform",
+    description="Backend API for the BuyHigh.io trading platform",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
 
-# Definiere die erlaubten Ursprünge
+# Define allowed origins
 allowed_origins = [
     "https://buy-high-io.vercel.app/"
 ]
 
-# CORS-Middleware hinzufügen, um Cross-Origin-Anfragen zu ermöglichen
-# Diese sollte vor anderen Middlewares stehen, die Antworten modifizieren oder generieren könnten.
+# CORS middleware to enable cross-origin requests
+# This should be placed before other middlewares that modify or generate responses.
 #app.add_middleware(
 #    CORSMiddleware,
 #    allow_origins=[
@@ -59,21 +59,21 @@ allowed_origins = [
 #    allow_methods=["*"],
 #    allow_headers=["*"],
 #    expose_headers=["Authorization", "Content-Disposition"],
-#    max_age=600,  # Cache die CORS-Antwort für 10 Minuten
+#    max_age=600,  # Cache the CORS response for 10 minutes
 #)
 
-# Füge die Request-Logging-Middleware hinzu
+# Add the request logging middleware
 #app.add_middleware(RequestLoggingMiddleware)
 
-# API-Routen ohne Präfix einbinden (leerer String statt "")
+# Include API routes without prefix (empty string instead of "")
 app.include_router(api_router, prefix="")
 
-# Statische Dateien für Profilbilder usw.
+# Static files for profile pictures, etc.
 static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
-os.makedirs(static_dir, exist_ok=True)  # Verzeichnis erstellen, falls es nicht existiert
+os.makedirs(static_dir, exist_ok=True)  # Create directory if it doesn't exist
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-# Logging-Ordner und Datei für Frontend-Logs
+# Logging folder and file for frontend logs
 frontend_log_dir = os.path.join(project_root_dir, "frontend_logs")
 os.makedirs(frontend_log_dir, exist_ok=True)
 frontend_log_file = os.path.join(frontend_log_dir, "frontend.log")
@@ -91,13 +91,13 @@ async def frontend_log(entry: FrontendLogEntry, request: Request):
         f.write(log_line)
     return JSONResponse({"status": "ok"})
 
-# Root-Route für Gesundheitscheck
+# Root route for health check
 @app.get("/")
 async def root():
-    """Einfache Root-Route für API-Statusprüfung"""
+    """Simple root route for API status check"""
     router_debug_logger.debug("Root endpoint accessed")
     return {
-        "message": "Willkommen bei der BuyHigh.io API",
+        "message": "Welcome to the BuyHigh.io API",
         "status": "online",
         "version": "1.0.0"
     }
@@ -106,5 +106,5 @@ async def root():
 @app.options("/{rest_of_path:path}")
 async def preflight_handler(rest_of_path: str):
     return Response(status_code=200)
-# Um die App mit uvicorn zu starten:
+# To start the app with uvicorn:
 # uvicorn buy_high_backend.main:app --reload

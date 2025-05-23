@@ -1,5 +1,5 @@
 """
-Router für Asset-Verwaltung.
+Router for asset management.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -25,7 +25,7 @@ async def api_get_assets(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve assets data.")
     
     if result.get('success', False):
-        return result  # FastAPI wird die Antwort gegen AssetsListResponse validieren
+        return result  # FastAPI will validate the response against AssetsListResponse
     else:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=result.get("message", "Failed to retrieve assets."))
 

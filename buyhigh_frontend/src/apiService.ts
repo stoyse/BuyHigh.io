@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const rawApiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:9876'; // Fallback für den Fall, dass die Umgebungsvariable fehlt
-const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, ""); // Entfernt einen abschließenden Schrägstrich, falls vorhanden
-const DEBUG = true; // Debug-Modus aktivieren/deaktivieren
+const rawApiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:9876'; // Fallback if the environment variable is missing
+const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, ""); // Remove trailing slash if present
+const DEBUG = true; // Enable/disable debug mode
 
-// Debug-Logging-Funktion
+// Debug logging function
 const logDebug = (message: string, data: any = null) => {
   if (!DEBUG) return;
 
@@ -12,7 +12,7 @@ const logDebug = (message: string, data: any = null) => {
   console.debug(`[${timestamp}]`, message, data);
 };
 
-// Hilfsfunktion zum Loggen von API-Aufrufen
+// Helper function to log API calls
 const logApiCall = (method: string, endpoint: string, params?: any) => {
   const url = `${API_BASE_URL}${endpoint}`;
 
@@ -44,21 +44,21 @@ export const loginUser = async (email: string, password: string) => {
 export const logoutUser = async () => {
   logApiCall('POST', '/logout');
   try {
-    // Serveranfrage für Logout
+    // Server request for logout
     const response = await axios.post(`${API_BASE_URL}/logout`, {}, {
       withCredentials: true, // Sends cookies for authentication
     });
     
-    // Client-Session bereinigen
+    // Clear client session
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
-    sessionStorage.clear(); // Alle Session-Storage-Daten löschen
+    sessionStorage.clear(); // Clear all session storage data
     
-    // Optional: Setzen Sie einen Cookie mit abgelaufenem Datum, um ihn zu löschen
+    // Optionally: Set a cookie with an expired date to delete it
     document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     
-    // Axios-Standardheader zurücksetzen
+    // Reset Axios default headers
     if (axios.defaults.headers.common['Authorization']) {
       delete axios.defaults.headers.common['Authorization'];
     }
@@ -72,7 +72,7 @@ export const logoutUser = async () => {
       console.error('Unexpected error during logout:', error);
     }
     
-    // Trotz Fehlers Client-Session bereinigen
+    // Clear client session despite the error
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
@@ -83,7 +83,7 @@ export const logoutUser = async () => {
       delete axios.defaults.headers.common['Authorization'];
     }
     
-    // Auch bei Fehler erfolgreichen Status zurückgeben
+    // Return successful status even in case of error
     return { success: true, message: "Client session cleared" };
   }
 };
@@ -190,16 +190,16 @@ export const GetAssets = async (type?: string, activeOnly: boolean = true) => {
     });
     logDebug('Assets Response:', response.data);
 
-    // Sicherstellen, dass wir immer ein Array zurückgeben
+    // Ensure we always return an array
     let result = response.data;
     if (!Array.isArray(result)) {
       if (result && typeof result === 'object') {
-        // Suchen nach einem Array-Property in der Response
+        // Search for an array property in the response
         const possibleArrayKey = Object.keys(result).find(key => Array.isArray(result[key]));
         if (possibleArrayKey) {
           result = result[possibleArrayKey];
         } else {
-          // Fallback zu leerem Array
+          // Fallback to empty array
           console.warn('Assets API returned non-array data:', result);
           result = [];
         }
@@ -214,7 +214,7 @@ export const GetAssets = async (type?: string, activeOnly: boolean = true) => {
     } else {
       console.error('Unexpected error:', error);
     }
-    // Bei Fehlern leeres Array zurückgeben
+    // Return empty array in case of errors
     return [];
   }
 };

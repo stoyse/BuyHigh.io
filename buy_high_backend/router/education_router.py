@@ -1,5 +1,5 @@
 """
-Router für Bildungsfunktionen wie tägliches Quiz.
+Router for educational features such as the daily quiz.
 """
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -12,16 +12,16 @@ from ..pydantic_models import DailyQuizAttemptRequest, RoadmapListResponse, Road
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-@router.get("/daily-quiz") # Response-Modell je nach education_handler-Ausgabe anpassen
+@router.get("/daily-quiz") # Adjust response model according to education_handler output
 async def api_get_daily_quiz(current_user: AuthenticatedUser = Depends(get_current_user)):
     user_id_for_analytics = current_user.id
     today = datetime.today().strftime('%Y-%m-%d')
     quiz_data = education_handler.get_daily_quiz(date=today)
     return quiz_data
 
-@router.post("/daily-quiz/attempt") # Response-Modell anpassen
+@router.post("/daily-quiz/attempt") # Adjust response model
 async def api_submit_daily_quiz_attempt(
-    payload: DailyQuizAttemptRequest, # Pydantic-Modell für die Anfrage
+    payload: DailyQuizAttemptRequest, # Pydantic model for the request
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
     user_id = current_user.id

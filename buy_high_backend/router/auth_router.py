@@ -1,5 +1,5 @@
 """
-Router für Authentifizierungsfunktionen.
+Router for authentication functions.
 """
 
 from fastapi import APIRouter, HTTPException, status
@@ -13,7 +13,7 @@ router = APIRouter()
 
 @router.post("/login")
 async def api_login(login_data: LoginRequest):
-    """API-Route für die Benutzeranmeldung"""
+    """API route for user login"""
     logger.info(f"Login attempt for email: {login_data.email}")
     try:
         firebase_uid, id_token = auth_module.login_firebase_user_rest(login_data.email, login_data.password)
@@ -66,16 +66,16 @@ async def api_login(login_data: LoginRequest):
 
 @router.post("/logout")
 async def api_logout():
-    """API-Route für die Benutzerabmeldung"""
+    """API route for user logout"""
     logger.info("Logout request received")
     try:
-        # In einer vollständigen Implementierung könnten hier folgende Aktionen durchgeführt werden:
-        # 1. Löschen von Session-Cookies
-        # 2. Invalidieren von Token auf Serverseite (falls nötig)
-        # 3. Aktualisieren des letzten Logout-Zeitpunkts in der Datenbank
+        # In a complete implementation, the following actions could be performed here:
+        # 1. Deleting session cookies
+        # 2. Invalidating tokens on the server side (if necessary)
+        # 3. Updating the last logout timestamp in the database
         
-        # Da die meisten Firebase-bezogenen Logout-Vorgänge clientseitig erfolgen,
-        # geben wir eine Erfolgsmeldung zurück
+        # Since most Firebase-related logout operations are client-side,
+        # we return a success message
         return {
             "success": True,
             "message": "Logout successful"

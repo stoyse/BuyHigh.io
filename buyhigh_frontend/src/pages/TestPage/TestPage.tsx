@@ -21,36 +21,36 @@ interface ApiTestResult {
 }
 
 const TestPage: React.FC = () => {
-  // Ein Zustand für jede API-Abfrage
+  // A state for each API query
   const [apiResults, setApiResults] = useState<{ [key: string]: ApiTestResult }>({
-    funnyTips: { name: 'Lustige Tipps', data: null, loading: false, error: null },
-    userInfo: { name: 'Benutzerinfo', data: null, loading: false, error: null },
+    funnyTips: { name: 'Funny Tips', data: null, loading: false, error: null },
+    userInfo: { name: 'User Info', data: null, loading: false, error: null },
     portfolioData: { name: 'Portfolio', data: null, loading: false, error: null },
-    transactions: { name: 'Transaktionen', data: null, loading: false, error: null },
-    dailyQuiz: { name: 'Tägliches Quiz', data: null, loading: false, error: null },
-    assets: { name: 'Vermögenswerte', data: null, loading: false, error: null },
-    stockData: { name: 'Aktiendaten (AAPL)', data: null, loading: false, error: null }
+    transactions: { name: 'Transactions', data: null, loading: false, error: null },
+    dailyQuiz: { name: 'Daily Quiz', data: null, loading: false, error: null },
+    assets: { name: 'Assets', data: null, loading: false, error: null },
+    stockData: { name: 'Stock Data (AAPL)', data: null, loading: false, error: null }
   });
 
-  // Login-Felder
+  // Login fields
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [loginResult, setLoginResult] = useState<any>(null);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
 
-  // Aktien kaufen/verkaufen Felder
+  // Buy/Sell stock fields
   const [symbol, setSymbol] = useState<string>('AAPL');
   const [quantity, setQuantity] = useState<number>(1);
   const [price, setPrice] = useState<number>(150);
   const [tradeResult, setTradeResult] = useState<any>(null);
   const [tradeError, setTradeError] = useState<string | null>(null);
 
-  // API-Abfrage-Funktion
+  // API query function
   const fetchApiData = async (key: string, fetchFunction: () => Promise<any>, url: string) => {
     setApiResults(prev => ({
       ...prev,
-      [key]: { ...prev[key], loading: true, error: null, url } // Speichere die URL
+      [key]: { ...prev[key], loading: true, error: null, url } // Save the URL
     }));
 
     try {
@@ -62,12 +62,12 @@ const TestPage: React.FC = () => {
     } catch (err: any) {
       setApiResults(prev => ({
         ...prev,
-        [key]: { ...prev[key], loading: false, error: err.message || 'Ein Fehler ist aufgetreten' }
+        [key]: { ...prev[key], loading: false, error: err.message || 'An error occurred' }
       }));
     }
   };
 
-  // Beim Laden der Seite die GET-Anfragen ausführen, die keine Benutzer-ID benötigen
+  // Execute GET requests that do not require a user ID when the page loads
   useEffect(() => {
     fetchApiData('funnyTips', () => fetchFunnyTips(), 'https://api.stoyse.hackclub.app/funny-tips');
     fetchApiData('dailyQuiz', () => GetDailyQuiz(), 'https://api.stoyse.hackclub.app/daily-quiz');
@@ -75,7 +75,7 @@ const TestPage: React.FC = () => {
     fetchApiData('stockData', () => GetStockData('AAPL', '1d'), 'https://api.stoyse.hackclub.app/stock-data?symbol=AAPL&range=1d');
   }, []);
 
-  // Benutzer-spezifische Daten abrufen, wenn loggedInUserId verfügbar ist
+  // Fetch user-specific data when loggedInUserId is available
   useEffect(() => {
     if (loggedInUserId) {
       fetchApiData('userInfo', () => GetUserInfo(loggedInUserId), `https://api.stoyse.hackclub.app/user/${loggedInUserId}`);
@@ -84,7 +84,7 @@ const TestPage: React.FC = () => {
     }
   }, [loggedInUserId]);
 
-  // Login-Funktion
+  // Login function
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginResult(null);
@@ -97,14 +97,14 @@ const TestPage: React.FC = () => {
       if (result && result.success && result.userId) {
         setLoggedInUserId(result.userId.toString()); // Store user ID from login response
       } else if (result && !result.success) {
-        setLoginError(result.message || 'Login fehlgeschlagen');
+        setLoginError(result.message || 'Login failed');
       }
     } catch (err: any) {
-      setLoginError(err.message || 'Login fehlgeschlagen');
+      setLoginError(err.message || 'Login failed');
     }
   };
 
-  // Aktie kaufen
+  // Buy stock
   const handleBuyStock = async (e: React.FormEvent) => {
     e.preventDefault();
     setTradeResult(null);
@@ -112,13 +112,13 @@ const TestPage: React.FC = () => {
     
     try {
       const result = await BuyStock(symbol, quantity, price);
-      setTradeResult({ action: 'Kauf', ...result });
+      setTradeResult({ action: 'Buy', ...result });
     } catch (err: any) {
-      setTradeError(`Kauf fehlgeschlagen: ${err.message}`);
+      setTradeError(`Buy failed: ${err.message}`);
     }
   };
 
-  // Aktie verkaufen
+  // Sell stock
   const handleSellStock = async (e: React.FormEvent) => {
     e.preventDefault();
     setTradeResult(null);
@@ -126,19 +126,19 @@ const TestPage: React.FC = () => {
     
     try {
       const result = await SellStock(symbol, quantity, price);
-      setTradeResult({ action: 'Verkauf', ...result });
+      setTradeResult({ action: 'Sell', ...result });
     } catch (err: any) {
-      setTradeError(`Verkauf fehlgeschlagen: ${err.message}`);
+      setTradeError(`Sell failed: ${err.message}`);
     }
   };
 
-  // Render-Funktion für ein API-Ergebnis
+  // Render function for an API result
   const renderApiResult = (key: string, result: ApiTestResult) => (
     <div key={key} className="api-result">
       <h3>{result.name}</h3>
-      {result.url && <p><strong>URL:</strong> {result.url}</p>} {/* Zeige die URL an */}
+      {result.url && <p><strong>URL:</strong> {result.url}</p>} {/* Show the URL */}
       {result.loading ? (
-        <p>Lädt...</p>
+        <p>Loading...</p>
       ) : result.error ? (
         <div className="error">{result.error}</div>
       ) : (
@@ -152,10 +152,10 @@ const TestPage: React.FC = () => {
       <h1>API Test Dashboard</h1>
 
       <div className="test-section">
-        <h2>Login-Test</h2>
+        <h2>Login Test</h2>
         <form onSubmit={handleLogin} className="test-form">
           <div className="form-group">
-            <label>E-Mail:</label>
+            <label>Email:</label>
             <input 
               type="email" 
               value={email} 
@@ -164,7 +164,7 @@ const TestPage: React.FC = () => {
             />
           </div>
           <div className="form-group">
-            <label>Passwort:</label>
+            <label>Password:</label>
             <input 
               type="password" 
               value={password} 
@@ -177,7 +177,7 @@ const TestPage: React.FC = () => {
         
         {loginResult && (
           <div className="result-section">
-            <h3>Login-Ergebnis:</h3>
+            <h3>Login Result:</h3>
             <pre>{JSON.stringify(loginResult, null, 2)}</pre>
           </div>
         )}
@@ -186,7 +186,7 @@ const TestPage: React.FC = () => {
       </div>
 
       <div className="test-section">
-        <h2>Handel-Test</h2>
+        <h2>Trade Test</h2>
         <form className="test-form">
           <div className="form-group">
             <label>Symbol:</label>
@@ -198,7 +198,7 @@ const TestPage: React.FC = () => {
             />
           </div>
           <div className="form-group">
-            <label>Menge:</label>
+            <label>Quantity:</label>
             <input 
               type="number" 
               value={quantity} 
@@ -208,7 +208,7 @@ const TestPage: React.FC = () => {
             />
           </div>
           <div className="form-group">
-            <label>Preis:</label>
+            <label>Price:</label>
             <input 
               type="number" 
               value={price} 
@@ -219,14 +219,14 @@ const TestPage: React.FC = () => {
             />
           </div>
           <div className="button-group">
-            <button type="button" onClick={handleBuyStock}>Kaufen</button>
-            <button type="button" onClick={handleSellStock}>Verkaufen</button>
+            <button type="button" onClick={handleBuyStock}>Buy</button>
+            <button type="button" onClick={handleSellStock}>Sell</button>
           </div>
         </form>
         
         {tradeResult && (
           <div className="result-section">
-            <h3>Handel-Ergebnis:</h3>
+            <h3>Trade Result:</h3>
             <pre>{JSON.stringify(tradeResult, null, 2)}</pre>
           </div>
         )}
@@ -235,7 +235,7 @@ const TestPage: React.FC = () => {
       </div>
 
       <div className="api-results">
-        <h2>GET API Abfrageergebnisse</h2>
+        <h2>GET API Query Results</h2>
         {Object.entries(apiResults).map(([key, result]) => renderApiResult(key, result))}
       </div>
 

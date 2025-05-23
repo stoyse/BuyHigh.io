@@ -7,7 +7,7 @@ from rich import print
 
 logger = logging.getLogger(__name__)
 
-# PostgreSQL-Verbindungsdetails aus .env
+# PostgreSQL connection details from .env
 PG_HOST = os.getenv('POSTGRES_HOST', 'localhost')
 PG_PORT = os.getenv('POSTGRES_PORT', '5432')
 PG_DB = os.getenv('POSTGRES_DB', 'buyhigh')
@@ -16,7 +16,7 @@ PG_PASSWORD = os.getenv('POSTGRES_PASSWORD', '')
 
 def get_db_connection():
     print('[bold blue]Connection to DB from Roadmap Handler[/bold blue]') # Corrected from Education Handler
-    """Stellt eine Verbindung zur PostgreSQL-Datenbank her."""
+    """Establishes a connection to the PostgreSQL database."""
     try:
         conn = psycopg2.connect(
             host=PG_HOST,
@@ -28,11 +28,11 @@ def get_db_connection():
         conn.autocommit = False
         return conn
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Öffnen der PostgreSQL-Verbindung: {e}", exc_info=True)
+        logger.error(f"Error opening PostgreSQL connection: {e}", exc_info=True)
         raise
 
 def get_roadmap(id):
-    """Lädt die Roadmap mit der angegebenen ID aus der Datenbank."""
+    """Loads the roadmap with the specified ID from the database."""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -41,16 +41,16 @@ def get_roadmap(id):
             if roadmap:
                 return dict(roadmap)
             else:
-                logger.warning(f"Roadmap mit ID {id} nicht gefunden.")
+                logger.warning(f"Roadmap with ID {id} not found.")
                 return None
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Abrufen der Roadmap: {e}", exc_info=True)
+        logger.error(f"Error fetching roadmap: {e}", exc_info=True)
         raise
     finally:
         conn.close()
 
 def get_roadmap_steps(roadmap_id):
-    """Lädt die Schritte der Roadmap mit der angegebenen ID aus der Datenbank."""
+    """Loads the steps of the roadmap with the specified ID from the database."""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -58,13 +58,13 @@ def get_roadmap_steps(roadmap_id):
             steps = cursor.fetchall()
             return [dict(step) for step in steps]
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Abrufen der Roadmap-Schritte: {e}", exc_info=True)
+        logger.error(f"Error fetching roadmap steps: {e}", exc_info=True)
         raise
     finally:
         conn.close()
 
 def get_roadmap_quizes_roadmapid(roadmap_id):
-    """Lädt die Quizze für eine bestimmte Roadmap-ID."""
+    """Loads the quizzes for a specific roadmap ID."""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -72,40 +72,40 @@ def get_roadmap_quizes_roadmapid(roadmap_id):
             quizzes = cursor.fetchall()
             return [dict(quiz) for quiz in quizzes]
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Abrufen der Roadmap-Quizze: {e}", exc_info=True)
+        logger.error(f"Error fetching roadmap quizzes: {e}", exc_info=True)
         raise
     finally:
         conn.close()
 
 def get_roadmap_quizes_stepid(roadmap_step, roadmap_id=None):
     """
-    Lädt die Quizze für einen bestimmten Roadmap-Schritt.
-    Optional kann eine roadmap_id angegeben werden, um die Ergebnisse weiter einzuschränken.
+    Loads the quizzes for a specific roadmap step.
+    Optionally, a roadmap_id can be specified to further restrict the results.
     """
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
             if roadmap_id is not None:
-                # Präzisere Abfrage mit roadmap_id und step_id
+                # More precise query with roadmap_id and step_id
                 cursor.execute("SELECT * FROM roadmap_quizzes WHERE step_id = %s AND roadmap_id = %s", 
                               (roadmap_step, roadmap_id))
             else:
-                # Ursprüngliche Abfrage nur mit step_id
+                # Original query only with step_id
                 cursor.execute("SELECT * FROM roadmap_quizzes WHERE step_id = %s", (roadmap_step,))
             
             quizzes = cursor.fetchall()
-            logger.info(f"Gefundene Quizze für step_id={roadmap_step}, roadmap_id={roadmap_id}: {len(quizzes)}")
+            logger.info(f"Found quizzes for step_id={roadmap_step}, roadmap_id={roadmap_id}: {len(quizzes)}")
             return [dict(quiz) for quiz in quizzes]
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Abrufen der Roadmap-Quizze: {e}", exc_info=True)
+        logger.error(f"Error fetching roadmap quizzes: {e}", exc_info=True)
         raise
     finally:
         conn.close()
 
 def get_roadmap_quizes_specific(step_id, roadmap_id):
     """
-    Lädt die Quizze für eine spezifische Kombination aus Roadmap-ID und Step-ID.
-    Dies ist die präziseste Abfrage und sollte bevorzugt verwendet werden.
+    Loads the quizzes for a specific combination of roadmap ID and step ID.
+    This is the most precise query and should be preferred.
     """
     conn = get_db_connection()
     try:
@@ -116,33 +116,33 @@ def get_roadmap_quizes_specific(step_id, roadmap_id):
             """, (step_id, roadmap_id))
             
             quizzes = cursor.fetchall()
-            logger.info(f"Gefundene Quizze für step_id={step_id}, roadmap_id={roadmap_id}: {len(quizzes)}")
+            logger.info(f"Found quizzes for step_id={step_id}, roadmap_id={roadmap_id}: {len(quizzes)}")
             
             if len(quizzes) == 0:
-                # Zur Diagnose: Überprüfe, ob es überhaupt Quizze für diese step_id gibt
+                # Diagnostic: Check if there are any quizzes for this step_id
                 cursor.execute("SELECT COUNT(*) FROM roadmap_quizzes WHERE step_id = %s", (step_id,))
                 count_by_step = cursor.fetchone()[0]
                 
-                # Überprüfe, ob es Quizze für diese roadmap_id gibt
+                # Check if there are quizzes for this roadmap_id
                 cursor.execute("SELECT COUNT(*) FROM roadmap_quizzes WHERE roadmap_id = %s", (roadmap_id,))
                 count_by_roadmap = cursor.fetchone()[0]
                 
-                logger.warning(f"Keine Quizze gefunden für step_id={step_id}, roadmap_id={roadmap_id}. "
-                              f"Einzeln gefunden: {count_by_step} für step_id, {count_by_roadmap} für roadmap_id")
+                logger.warning(f"No quizzes found for step_id={step_id}, roadmap_id={roadmap_id}. "
+                              f"Individually found: {count_by_step} for step_id, {count_by_roadmap} for roadmap_id")
                 
             return [dict(quiz) for quiz in quizzes]
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Abrufen spezifischer Roadmap-Quizze: {e}", exc_info=True)
-        return [] # Leere Liste im Fehlerfall zurückgeben
+        logger.error(f"Error fetching specific roadmap quizzes: {e}", exc_info=True)
+        return [] # Return empty list in case of error
     finally:
         conn.close()
 
 def check_and_fix_quiz_mappings():
-    """Diagnostische Funktion zur Überprüfung und Reparatur inkonsistenter Quiz-Mappings."""
+    """Diagnostic function to check and fix inconsistent quiz mappings."""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            # Überprüfe auf Quiz-Einträge, bei denen step_id nicht zu roadmap_id passt
+            # Check for quiz entries where step_id does not match roadmap_id
             cursor.execute("""
                 SELECT q.id, q.step_id, q.roadmap_id, s.roadmap_id AS expected_roadmap_id
                 FROM roadmap_quizzes q
@@ -153,12 +153,12 @@ def check_and_fix_quiz_mappings():
             inconsistent_quizzes = cursor.fetchall()
             
             if inconsistent_quizzes:
-                logger.warning(f"Gefunden {len(inconsistent_quizzes)} inkonsistente Quiz-Mappings:")
+                logger.warning(f"Found {len(inconsistent_quizzes)} inconsistent quiz mappings:")
                 for quiz in inconsistent_quizzes:
                     logger.warning(f"Quiz ID: {quiz['id']}, step_id: {quiz['step_id']}, "
-                                 f"aktuell roadmap_id: {quiz['roadmap_id']}, erwartet: {quiz['expected_roadmap_id']}")
+                                 f"current roadmap_id: {quiz['roadmap_id']}, expected: {quiz['expected_roadmap_id']}")
                     
-                    # Optional: Automatische Korrektur, wenn gewünscht
+                    # Optional: Automatic correction if desired
                     if quiz['expected_roadmap_id'] is not None:
                         cursor.execute("""
                             UPDATE roadmap_quizzes
@@ -167,22 +167,22 @@ def check_and_fix_quiz_mappings():
                         """, (quiz['expected_roadmap_id'], quiz['id']))
                         
                 conn.commit()
-                logger.info("Inkonsistente Quiz-Mappings wurden korrigiert.")
+                logger.info("Inconsistent quiz mappings have been corrected.")
             else:
-                logger.info("Keine inkonsistenten Quiz-Mappings gefunden.")
+                logger.info("No inconsistent quiz mappings found.")
                 
             return len(inconsistent_quizzes)
     except psycopg2.Error as e:
         conn.rollback()
-        logger.error(f"Fehler bei der Überprüfung/Reparatur der Quiz-Mappings: {e}", exc_info=True)
+        logger.error(f"Error checking/fixing quiz mappings: {e}", exc_info=True)
         return -1
     finally:
         conn.close()
 
 def get_user_progress_for_quizzes(user_id, quiz_ids):
     """
-    Lädt den Fortschritt eines Benutzers für eine gegebene Liste von Quiz-IDs.
-    Gibt ein Dictionary zurück, das quiz_id auf {'attempted': bool, 'is_correct': bool} abbildet.
+    Loads the progress of a user for a given list of quiz IDs.
+    Returns a dictionary mapping quiz_id to {'attempted': bool, 'is_correct': bool}.
     """
     if not quiz_ids:
         return {}
@@ -190,7 +190,7 @@ def get_user_progress_for_quizzes(user_id, quiz_ids):
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            # Erstelle eine Platzhalter-Zeichenkette für die IN-Klausel: (%s, %s, ...)
+            # Create a placeholder string for the IN clause: (%s, %s, ...)
             placeholders = ', '.join(['%s'] * len(quiz_ids))
             sql_query = f"""
             SELECT 
@@ -200,7 +200,7 @@ def get_user_progress_for_quizzes(user_id, quiz_ids):
             FROM user_roadmap_quiz_progress
             WHERE user_id = %s AND quiz_id IN ({placeholders});
             """
-            # Die Parameterliste muss user_id zuerst enthalten, dann die quiz_ids
+            # The parameter list must contain user_id first, then the quiz_ids
             params = [user_id] + quiz_ids
             cursor.execute(sql_query, tuple(params))
             progress_data = cursor.fetchall()
@@ -213,13 +213,13 @@ def get_user_progress_for_quizzes(user_id, quiz_ids):
                 }
             return user_progress
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Abrufen des Benutzerfortschritts für Quizze: {e}", exc_info=True)
-        return {} # Im Fehlerfall leeres Dictionary zurückgeben, um den Rest der Logik nicht zu blockieren
+        logger.error(f"Error fetching user progress for quizzes: {e}", exc_info=True)
+        return {} # Return empty dictionary in case of error
     finally:
         conn.close()
 
 def get_quiz_by_id(quiz_id):
-    """Lädt ein einzelnes Quiz anhand seiner ID."""
+    """Loads a single quiz by its ID."""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -229,17 +229,17 @@ def get_quiz_by_id(quiz_id):
                 return dict(quiz)
             return None
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Abrufen des Quiz mit ID {quiz_id}: {e}", exc_info=True)
+        logger.error(f"Error fetching quiz with ID {quiz_id}: {e}", exc_info=True)
         raise
     finally:
         conn.close()
 
 def record_user_quiz_attempt(user_id, quiz_id, is_correct):
-    """Speichert den Quiz-Versuch eines Benutzers oder aktualisiert ihn."""
+    """Records or updates a user's quiz attempt."""
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
-            # Versuche, einen vorhandenen Eintrag zu aktualisieren oder einen neuen einzufügen
+            # Attempt to update an existing entry or insert a new one
             sql_query = """
             INSERT INTO user_roadmap_quiz_progress (user_id, quiz_id, is_correct, attempted_at)
             VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
@@ -249,16 +249,16 @@ def record_user_quiz_attempt(user_id, quiz_id, is_correct):
             """
             cursor.execute(sql_query, (user_id, quiz_id, is_correct))
             conn.commit()
-            logger.info(f"Quiz-Versuch für Benutzer {user_id}, Quiz {quiz_id} gespeichert. Korrekt: {is_correct}")
+            logger.info(f"Quiz attempt for user {user_id}, quiz {quiz_id} recorded. Correct: {is_correct}")
     except psycopg2.Error as e:
         conn.rollback()
-        logger.error(f"Fehler beim Speichern des Quiz-Versuchs für Benutzer {user_id}, Quiz {quiz_id}: {e}", exc_info=True)
+        logger.error(f"Error recording quiz attempt for user {user_id}, quiz {quiz_id}: {e}", exc_info=True)
         raise
     finally:
         conn.close()
 
 def get_xp_for_action(action_name):
-    """Ruft den XP-Betrag für eine bestimmte Aktion ab."""
+    """Fetches the XP amount for a specific action."""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -266,31 +266,31 @@ def get_xp_for_action(action_name):
             result = cursor.fetchone()
             if result:
                 return result['xp_amount']
-            logger.warning(f"Kein XP-Betrag für Aktion '{action_name}' in xp_gains gefunden.")
-            return 0  # Standardwert, falls Aktion nicht gefunden wird
+            logger.warning(f"No XP amount found for action '{action_name}' in xp_gains.")
+            return 0  # Default value if action is not found
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Abrufen von XP für Aktion {action_name}: {e}", exc_info=True)
-        return 0 # Im Fehlerfall 0 zurückgeben
+        logger.error(f"Error fetching XP for action {action_name}: {e}", exc_info=True)
+        return 0 # Return 0 in case of error
     finally:
         conn.close()
 
 def add_xp_to_user(user_id, xp_to_add):
-    """Fügt einem Benutzer XP hinzu und aktualisiert sein Level, falls erforderlich."""
+    """Adds XP to a user and updates their level if necessary."""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            # Aktuelle XP und Level des Benutzers abrufen
+            # Fetch current XP and level of the user
             cursor.execute("SELECT xp, level FROM users WHERE id = %s", (user_id,))
             user_data = cursor.fetchone()
             if not user_data:
-                logger.error(f"Benutzer mit ID {user_id} nicht gefunden für XP-Update.")
+                logger.error(f"User with ID {user_id} not found for XP update.")
                 return
 
             current_xp = user_data['xp']
             current_level = user_data['level']
             new_xp = current_xp + xp_to_add
 
-            # Alle XP-Level abrufen, um das neue Level zu bestimmen
+            # Fetch all XP levels to determine the new level
             cursor.execute("SELECT level, xp_required FROM xp_levels ORDER BY level DESC")
             levels = cursor.fetchall()
             
@@ -300,10 +300,10 @@ def add_xp_to_user(user_id, xp_to_add):
                     new_level = level_info['level']
                     break 
             
-            # Benutzer-XP und Level aktualisieren
+            # Update user XP and level
             cursor.execute("UPDATE users SET xp = %s, level = %s WHERE id = %s", (new_xp, new_level, user_id))
             conn.commit()
-            logger.info(f"Benutzer {user_id}: {xp_to_add} XP hinzugefügt. Neues XP: {new_xp}, Neues Level: {new_level}")
+            logger.info(f"User {user_id}: {xp_to_add} XP added. New XP: {new_xp}, New Level: {new_level}")
             
             xp_info = {"added_xp": xp_to_add, "total_xp": new_xp, "old_level": current_level, "new_level": new_level}
             if new_level > current_level:
@@ -312,25 +312,25 @@ def add_xp_to_user(user_id, xp_to_add):
 
     except psycopg2.Error as e:
         conn.rollback()
-        logger.error(f"Fehler beim Hinzufügen von XP zu Benutzer {user_id}: {e}", exc_info=True)
+        logger.error(f"Error adding XP to user {user_id}: {e}", exc_info=True)
         raise
     finally:
         conn.close()
 
 def update_user_roadmap_step_progress(user_id, roadmap_id, step_id, is_completed, progress_percentage=None):
     """
-    Aktualisiert den Fortschritt eines Benutzers für einen bestimmten Roadmap-Schritt.
-    Setzt completed_at, wenn is_completed True ist.
+    Updates the progress of a user for a specific roadmap step.
+    Sets completed_at if is_completed is True.
     """
     conn = get_db_connection()
     try:
         with conn.cursor() as cursor:
             completed_at_val = datetime.now() if is_completed else None
             
-            # Wenn kein spezifischer Fortschrittsprozentsatz angegeben ist und der Schritt abgeschlossen ist, auf 100% setzen
+            # If no specific progress percentage is provided and the step is completed, set to 100%
             if progress_percentage is None and is_completed:
                 progress_percentage = 100.0
-            elif progress_percentage is None and not is_completed: # Falls nicht abgeschlossen und kein Wert, 0%
+            elif progress_percentage is None and not is_completed: # If not completed and no value, set to 0%
                 progress_percentage = 0.0
 
             sql_query = """
@@ -343,18 +343,18 @@ def update_user_roadmap_step_progress(user_id, roadmap_id, step_id, is_completed
             """
             cursor.execute(sql_query, (user_id, roadmap_id, step_id, is_completed, progress_percentage, completed_at_val))
             conn.commit()
-            logger.info(f"Fortschritt für Benutzer {user_id}, Roadmap {roadmap_id}, Schritt {step_id} aktualisiert. Abgeschlossen: {is_completed}, Fortschritt: {progress_percentage}%")
+            logger.info(f"Progress for user {user_id}, roadmap {roadmap_id}, step {step_id} updated. Completed: {is_completed}, Progress: {progress_percentage}%")
     except psycopg2.Error as e:
         conn.rollback()
-        logger.error(f"Fehler beim Aktualisieren des Roadmap-Schritt-Fortschritts: {e}", exc_info=True)
+        logger.error(f"Error updating roadmap step progress: {e}", exc_info=True)
         raise
     finally:
         conn.close()
 
 def get_user_roadmap_progress_all_steps(user_id, roadmap_id):
     """
-    Ruft den Fortschritt aller Schritte einer Roadmap für einen bestimmten Benutzer ab.
-    Gibt ein Dictionary zurück, das step_id auf {'is_completed': bool, 'progress_percentage': float} abbildet.
+    Fetches the progress of all steps of a roadmap for a specific user.
+    Returns a dictionary mapping step_id to {'is_completed': bool, 'progress_percentage': float}.
     """
     conn = get_db_connection()
     progress_map = {}
@@ -373,13 +373,13 @@ def get_user_roadmap_progress_all_steps(user_id, roadmap_id):
                 }
         return progress_map
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Abrufen des gesamten Roadmap-Fortschritts für Benutzer {user_id}, Roadmap {roadmap_id}: {e}", exc_info=True)
-        return {} # Leeres Dictionary im Fehlerfall
+        logger.error(f"Error fetching full roadmap progress for user {user_id}, roadmap {roadmap_id}: {e}", exc_info=True)
+        return {} # Return empty dictionary in case of error
     finally:
         conn.close()
 
 def get_roadmap_collection():
-    """Lädt alle Roadmaps aus der Datenbank."""
+    """Loads all roadmaps from the database."""
     conn = get_db_connection()
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
@@ -387,77 +387,77 @@ def get_roadmap_collection():
             roadmaps = cursor.fetchall()
             return [dict(roadmap) for roadmap in roadmaps]
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Abrufen der Roadmap-Sammlung: {e}", exc_info=True)
+        logger.error(f"Error fetching roadmap collection: {e}", exc_info=True)
         raise
     finally:
         conn.close()
 
 if __name__ == "__main__":
-    # Führen Sie eine Überprüfung und ggf. Korrektur der Quiz-Mappings durch
-    print("[bold yellow]Überprüfung der Quiz-Mappings:[/bold yellow]")
+    # Perform a check and correction of quiz mappings if necessary
+    print("[bold yellow]Checking quiz mappings:[/bold yellow]")
     check_and_fix_quiz_mappings()
     print("-" * 50)
 
-    # Beispiel-IDs für Tests
+    # Example IDs for tests
     EXAMPLE_WORKING_ROADMAP_ID = 1
-    EXAMPLE_WORKING_STEP_ID = 1 # Dies ist roadmap_steps.id
+    EXAMPLE_WORKING_STEP_ID = 1 # This is roadmap_steps.id
 
-    # Basierend auf vorherigen Logs als Beispiel für eine problematische Prüfung:
+    # Based on previous logs as an example for a problematic test:
     EXAMPLE_PROBLEM_ROADMAP_ID = 3
-    EXAMPLE_PROBLEM_STEP_ID = 4 # Dies ist roadmap_steps.id
+    EXAMPLE_PROBLEM_STEP_ID = 4 # This is roadmap_steps.id
 
-    # --- Test für funktionierendes Beispiel ---
-    print(f"[bold green]Test für Roadmap {EXAMPLE_WORKING_ROADMAP_ID} (funktionierendes Beispiel):[/bold green]")
+    # --- Test for working example ---
+    print(f"[bold green]Test for roadmap {EXAMPLE_WORKING_ROADMAP_ID} (working example):[/bold green]")
     roadmap_working = get_roadmap(EXAMPLE_WORKING_ROADMAP_ID)
     if roadmap_working:
         print(f"Roadmap {EXAMPLE_WORKING_ROADMAP_ID}: {roadmap_working}")
         steps_working_roadmap = get_roadmap_steps(EXAMPLE_WORKING_ROADMAP_ID)
         if steps_working_roadmap:
-            # Finde die tatsächliche ID des ersten Schritts, falls vorhanden
+            # Find the actual ID of the first step, if available
             actual_first_step_id_working = steps_working_roadmap[0]['id'] if steps_working_roadmap else EXAMPLE_WORKING_STEP_ID
-            print(f"Quizze für Roadmap {EXAMPLE_WORKING_ROADMAP_ID}, Step ID {actual_first_step_id_working} (spezifisch):")
+            print(f"Quizzes for roadmap {EXAMPLE_WORKING_ROADMAP_ID}, step ID {actual_first_step_id_working} (specific):")
             print(get_roadmap_quizes_specific(step_id=actual_first_step_id_working, roadmap_id=EXAMPLE_WORKING_ROADMAP_ID))
         else:
-            print(f"Keine Schritte für Roadmap {EXAMPLE_WORKING_ROADMAP_ID} gefunden.")
+            print(f"No steps found for roadmap {EXAMPLE_WORKING_ROADMAP_ID}.")
     else:
-        print(f"Roadmap {EXAMPLE_WORKING_ROADMAP_ID} nicht gefunden.")
+        print(f"Roadmap {EXAMPLE_WORKING_ROADMAP_ID} not found.")
     print("-" * 30)
 
-    # --- Test für problematisches Beispiel ---
-    print(f"[bold red]Test für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} (problematisches Beispiel):[/bold red]")
+    # --- Test for problematic example ---
+    print(f"[bold red]Test for roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} (problematic example):[/bold red]")
     roadmap_problem = get_roadmap(EXAMPLE_PROBLEM_ROADMAP_ID)
     if roadmap_problem:
         print(f"Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}: {roadmap_problem}")
         steps_problem_roadmap = get_roadmap_steps(EXAMPLE_PROBLEM_ROADMAP_ID)
-        problem_step_details = None # Initialisieren
+        problem_step_details = None # Initialize
         if steps_problem_roadmap:
             for step in steps_problem_roadmap:
-                if step['id'] == EXAMPLE_PROBLEM_STEP_ID: # Vergleiche mit roadmap_steps.id
+                if step['id'] == EXAMPLE_PROBLEM_STEP_ID: # Compare with roadmap_steps.id
                     problem_step_details = step
                     break
             if problem_step_details:
-                 print(f"Details für Step ID {EXAMPLE_PROBLEM_STEP_ID} (Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}): {problem_step_details}")
+                 print(f"Details for step ID {EXAMPLE_PROBLEM_STEP_ID} (roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}): {problem_step_details}")
             else:
-                print(f"Step mit ID {EXAMPLE_PROBLEM_STEP_ID} nicht in Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} gefunden.")
+                print(f"Step with ID {EXAMPLE_PROBLEM_STEP_ID} not found in roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}.")
         else:
-            print(f"Keine Schritte für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} gefunden.")
+            print(f"No steps found for roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}.")
 
-        print(f"Quizze für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}, Step ID {EXAMPLE_PROBLEM_STEP_ID} (spezifisch):")
+        print(f"Quizzes for roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}, step ID {EXAMPLE_PROBLEM_STEP_ID} (specific):")
         quizzes_specific = get_roadmap_quizes_specific(step_id=EXAMPLE_PROBLEM_STEP_ID, roadmap_id=EXAMPLE_PROBLEM_ROADMAP_ID)
         print(quizzes_specific)
         if not quizzes_specific:
-            print(f"[bold yellow]WARNUNG: get_roadmap_quizes_specific hat keine Quizze für Step ID {EXAMPLE_PROBLEM_STEP_ID} (roadmap_steps.id), Roadmap ID {EXAMPLE_PROBLEM_ROADMAP_ID} zurückgegeben.[/bold yellow]")
+            print(f"[bold yellow]WARNING: get_roadmap_quizes_specific returned no quizzes for step ID {EXAMPLE_PROBLEM_STEP_ID} (roadmap_steps.id), roadmap ID {EXAMPLE_PROBLEM_ROADMAP_ID}.[/bold yellow]")
 
-        print(f"Alle Quizze für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} (via get_roadmap_quizes_roadmapid):")
+        print(f"All quizzes for roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} (via get_roadmap_quizes_roadmapid):")
         all_quizzes_for_roadmap = get_roadmap_quizes_roadmapid(EXAMPLE_PROBLEM_ROADMAP_ID)
         print(all_quizzes_for_roadmap)
-        # Überprüfen, ob ein Quiz mit der gesuchten step_id in der Liste ist
+        # Check if a quiz with the searched step_id is in the list
         found_in_all = any(q['step_id'] == EXAMPLE_PROBLEM_STEP_ID for q in all_quizzes_for_roadmap)
-        if not found_in_all and quizzes_specific: # Wenn spezifisch was findet, aber "alle" nicht, ist das seltsam
-             print(f"[bold yellow]WARNUNG: Quiz für Step ID {EXAMPLE_PROBLEM_STEP_ID} wurde spezifisch gefunden, aber nicht in der Gesamtliste der Quizze für Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} über step_id-Attribut.[/bold yellow]")
+        if not found_in_all and quizzes_specific: # If specific finds something but "all" does not, that's odd
+             print(f"[bold yellow]WARNING: Quiz for step ID {EXAMPLE_PROBLEM_STEP_ID} was found specifically, but not in the full list of quizzes for roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} via step_id attribute.[/bold yellow]")
         elif not found_in_all and not quizzes_specific:
-             print(f"[bold yellow]INFO: Weder spezifisch noch in der Gesamtliste wurde ein Quiz für Step ID {EXAMPLE_PROBLEM_STEP_ID} (roadmap_steps.id) in Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} gefunden.[/bold yellow]")
+             print(f"[bold yellow]INFO: Neither specifically nor in the full list was a quiz found for step ID {EXAMPLE_PROBLEM_STEP_ID} (roadmap_steps.id) in roadmap {EXAMPLE_PROBLEM_ROADMAP_ID}.[/bold yellow]")
     else:
-        print(f"Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} nicht gefunden.")
+        print(f"Roadmap {EXAMPLE_PROBLEM_ROADMAP_ID} not found.")
     print("-" * 50)
-    print("[bold blue]Diagnose-Skript-Tests abgeschlossen.[/bold blue]")
+    print("[bold blue]Diagnostic script tests completed.[/bold blue]")

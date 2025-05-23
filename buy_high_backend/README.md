@@ -1,84 +1,84 @@
 # BuyHigh.io FastAPI Backend
 
-Dieses Verzeichnis enthält das FastAPI-Backend für die BuyHigh.io-Anwendung. Es ist dafür zuständig, API-Endpunkte bereitzustellen, Benutzeranfragen zu verarbeiten, mit der Datenbank zu interagieren und Geschäftslogik auszuführen.
+This directory contains the FastAPI backend for the BuyHigh.io application. It is responsible for providing API endpoints, processing user requests, interacting with the database, and executing business logic.
 
-## Projektstruktur
+## Project Structure
 
 ```
 buy_high_backend/
-├── api_router.py       # Definiert die API-Routen und deren Logik
-├── auth_utils.py       # Hilfsfunktionen für Authentifizierung und Benutzerverwaltung
-├── main.py             # Hauptanwendungspunkt, initialisiert FastAPI
-├── pydantic_models.py  # Pydantic-Modelle für Datenvalidierung
-└── README.md           # Diese Datei
+├── api_router.py       # Defines the API routes and their logic
+├── auth_utils.py       # Helper functions for authentication and user management
+├── main.py             # Main entry point, initializes FastAPI
+├── pydantic_models.py  # Pydantic models for data validation
+└── README.md           # This file
 ```
 
 ### `main.py`
 
-Dies ist der Haupteinstiegspunkt für die FastAPI-Anwendung.
--   Initialisiert die `FastAPI`-Instanz.
--   Bindet den `api_router` aus `api_router.py` ein, der alle API-Endpunkte unter dem Präfix `/api` bereitstellt.
--   Konfiguriert das Servieren von statischen Dateien (z.B. hochgeladene Profilbilder) aus dem Verzeichnis `static/`. Das `static`-Verzeichnis wird relativ zum Projektstamm erwartet (eine Ebene über `buy_high_backend`).
--   Definiert eine Root-Route (`/`) für einen einfachen Willkommens-Check.
--   Enthält einen Kommentar, wie die Anwendung mit `uvicorn` gestartet werden kann.
+This is the main entry point for the FastAPI application.
+-   Initializes the `FastAPI` instance.
+-   Includes the `api_router` from `api_router.py`, which provides all API endpoints under the `/api` prefix.
+-   Configures the serving of static files (e.g., uploaded profile pictures) from the `static/` directory. The `static` directory is expected to be relative to the project root (one level above `buy_high_backend`).
+-   Defines a root route (`/`) for a simple welcome check.
+-   Contains a comment on how to start the application using `uvicorn`.
 
 ### `api_router.py`
 
-Diese Datei enthält die Logik für alle API-Endpunkte. Die Routen wurden von einer früheren Flask-Implementierung (`routes/api_routes.py`) zu FastAPI konvertiert.
--   Verwendet `APIRouter` um Endpunkte zu gruppieren.
--   Implementiert Endpunkte für:
-    -   Benutzerauthentifizierung (`/login`)
-    -   Abrufen von Aktiendaten (`/stock-data`)
-    -   Handelsoperationen (`/trade/buy`, `/trade/sell`)
-    -   Verwaltung von Assets (`/assets`, `/assets/{symbol}`)
-    -   Abrufen von "Funny Tips" (`/funny-tips`)
-    -   API-Status (`/status`)
-    -   Hochladen und Abrufen von Profilbildern (`/upload/profile-picture`, `/get/profile-picture/{user_id}`)
-    -   Tägliches Quiz (`/daily-quiz`)
-    -   Benutzerdaten und Transaktionen (`/user/{user_id}`, `/user/transactions/{user_id}`, `/user/portfolio/{user_id}`)
-    -   Einlösen von Easter-Egg-Codes (`/easter-egg/redeem`, `/redeem-code`)
-    -   Gesundheitscheck (`/health`)
--   Nutzt `Depends` für Dependency Injection, insbesondere für `get_current_user` aus `auth_utils.py` zur Absicherung von Routen.
--   Verwendet Pydantic-Modelle aus `pydantic_models.py` für die Validierung von Anfrage- und Antwortdaten.
--   Interagiert mit verschiedenen Modulen für Datenbankoperationen (`db_handler`, `transactions_handler`, `education_handler`), Aktiendaten (`stock_data_api`) und Authentifizierung (`auth_module`).
--   Implementiert Logging und Fehlerbehandlung über `HTTPException`.
+This file contains the logic for all API endpoints. The routes were converted from a previous Flask implementation (`routes/api_routes.py`) to FastAPI.
+-   Uses `APIRouter` to group endpoints.
+-   Implements endpoints for:
+    -   User authentication (`/login`)
+    -   Retrieving stock data (`/stock-data`)
+    -   Trading operations (`/trade/buy`, `/trade/sell`)
+    -   Managing assets (`/assets`, `/assets/{symbol}`)
+    -   Retrieving "Funny Tips" (`/funny-tips`)
+    -   API status (`/status`)
+    -   Uploading and retrieving profile pictures (`/upload/profile-picture`, `/get/profile-picture/{user_id}`)
+    -   Daily quiz (`/daily-quiz`)
+    -   User data and transactions (`/user/{user_id}`, `/user/transactions/{user_id}`, `/user/portfolio/{user_id}`)
+    -   Redeeming Easter egg codes (`/easter-egg/redeem`, `/redeem-code`)
+    -   Health check (`/health`)
+-   Uses `Depends` for dependency injection, particularly for `get_current_user` from `auth_utils.py` to secure routes.
+-   Uses Pydantic models from `pydantic_models.py` for request and response data validation.
+-   Interacts with various modules for database operations (`db_handler`, `transactions_handler`, `education_handler`), stock data (`stock_data_api`), and authentication (`auth_module`).
+-   Implements logging and error handling via `HTTPException`.
 
 ### `auth_utils.py`
 
-Diese Datei stellt Hilfsfunktionen für die Authentifizierung bereit.
--   `oauth2_scheme`: Definiert das OAuth2 Password Bearer Flow für die Token-basierte Authentifizierung. Der Token-URL verweist auf `/api/login`.
--   `get_current_user`: Eine asynchrone Funktion, die als FastAPI-Dependency dient. Sie ist dafür zuständig, den aktuellen Benutzer basierend auf dem bereitgestellten Token zu identifizieren.
-    -   **Wichtiger Hinweis:** Die aktuelle Implementierung ist ein **Platzhalter** und **nicht sicher für den Produktionseinsatz**. Sie simuliert die Benutzerauthentifizierung, indem sie prüft, ob ein Token mit `firebase_uid_` beginnt oder greift auf einen Testbenutzer zurück. Eine echte Implementierung würde JWT-Token-Dekodierung und -Verifizierung beinhalten.
--   `AuthenticatedUser`: Eine Pydantic-Modellklasse, die von `User` (aus `pydantic_models.py`) erbt und den Typ des authentifizierten Benutzers repräsentiert.
--   Enthält auskommentierte Beispiele für eine robustere `get_current_user`-Implementierung mit `jose` für JWTs.
+This file provides helper functions for authentication.
+-   `oauth2_scheme`: Defines the OAuth2 Password Bearer Flow for token-based authentication. The token URL points to `/api/login`.
+-   `get_current_user`: An asynchronous function that serves as a FastAPI dependency. It is responsible for identifying the current user based on the provided token.
+    -   **Important Note:** The current implementation is a **placeholder** and **not secure for production use**. It simulates user authentication by checking if a token starts with `firebase_uid_` or falls back to a test user. A real implementation would involve JWT token decoding and verification.
+-   `AuthenticatedUser`: A Pydantic model class that inherits from `User` (from `pydantic_models.py`) and represents the type of the authenticated user.
+-   Contains commented-out examples for a more robust `get_current_user` implementation using `jose` for JWTs.
 
 ### `pydantic_models.py`
 
-Diese Datei definiert Pydantic-Modelle, die für die Datenvalidierung und -serialisierung in den API-Routen verwendet werden.
--   Für jeden komplexen Request-Body oder jede strukturierte Response gibt es ein entsprechendes Modell (z.B. `LoginRequest`, `StockDataPoint`, `TradeRequest`, `AssetResponse`).
--   Dies stellt sicher, dass die API typsichere Daten empfängt und sendet, und ermöglicht automatische Validierung und Generierung von OpenAPI-Dokumentation.
+This file defines Pydantic models used for data validation and serialization in the API routes.
+-   For every complex request body or structured response, there is a corresponding model (e.g., `LoginRequest`, `StockDataPoint`, `TradeRequest`, `AssetResponse`).
+-   This ensures that the API receives and sends type-safe data and enables automatic validation and generation of OpenAPI documentation.
 
-## Externe Abhängigkeiten und Module
+## External Dependencies and Modules
 
-Das Backend interagiert mit mehreren externen oder projektinternen Modulen, die nicht Teil dieses spezifischen `buy_high_backend`-Verzeichnisses sind, aber für seine Funktion entscheidend sind:
+The backend interacts with several external or project-internal modules that are not part of this specific `buy_high_backend` directory but are crucial for its functionality:
 
--   `database.handler.postgres.postgres_db_handler` (`db_handler`): Für allgemeine Datenbankoperationen (Benutzerverwaltung, etc.).
--   `database.handler.postgres.postgre_transactions_handler` (`transactions_handler`): Speziell für Transaktions- und Asset-bezogene Datenbankoperationen.
--   `database.handler.postgres.postgre_education_handler` (`education_handler`): Für Logik im Zusammenhang mit Lerninhalten wie dem täglichen Quiz.
--   `stock_data_api`: Modul zum Abrufen von Aktiendaten von externen APIs oder aus einem Cache.
--   `auth` (`auth_module`): Das ursprüngliche Modul zur Firebase-Authentifizierung.
--   `add_analytics`: Eine Funktion (vermutlich aus `postgres_db_handler`), um Analyseereignisse zu protokollieren.
+-   `database.handler.postgres.postgres_db_handler` (`db_handler`): For general database operations (user management, etc.).
+-   `database.handler.postgres.postgre_transactions_handler` (`transactions_handler`): Specifically for transaction- and asset-related database operations.
+-   `database.handler.postgres.postgre_education_handler` (`education_handler`): For logic related to educational content like the daily quiz.
+-   `stock_data_api`: Module for retrieving stock data from external APIs or a cache.
+-   `auth` (`auth_module`): The original module for Firebase authentication.
+-   `add_analytics`: A function (presumably from `postgres_db_handler`) to log analytics events.
 
-## Starten der Anwendung
+## Starting the Application
 
-Um die FastAPI-Anwendung lokal zu starten, verwenden Sie `uvicorn`. Stellen Sie sicher, dass Sie sich im Hauptverzeichnis des Projekts (`BuyHigh.io`) befinden:
+To start the FastAPI application locally, use `uvicorn`. Ensure you are in the project's root directory (`BuyHigh.io`):
 
 ```bash
 uvicorn buy_high_backend.main:app --reload
 ```
 
--   `buy_high_backend.main`: Verweist auf die Datei `main.py` im Verzeichnis `buy_high_backend`.
--   `app`: Ist die FastAPI-Instanz, die in `main.py` erstellt wurde.
--   `--reload`: Sorgt dafür, dass der Server bei Codeänderungen automatisch neu startet (nützlich für die Entwicklung).
+-   `buy_high_backend.main`: Refers to the `main.py` file in the `buy_high_backend` directory.
+-   `app`: Is the FastAPI instance created in `main.py`.
+-   `--reload`: Ensures the server restarts automatically on code changes (useful for development).
 
-Die API ist dann standardmäßig unter `http://127.0.0.1:8000` erreichbar. Die API-Dokumentation (Swagger UI) finden Sie unter `http://127.0.0.1:8000/docs` und alternative Dokumentation (ReDoc) unter `http://127.0.0.1:8000/redoc`.
+The API will then be accessible by default at `http://127.0.0.1:8000`. The API documentation (Swagger UI) can be found at `http://127.0.0.1:8000/docs` and alternative documentation (ReDoc) at `http://127.0.0.1:8000/redoc`.

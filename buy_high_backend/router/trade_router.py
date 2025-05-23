@@ -1,5 +1,5 @@
 """
-Router für Handelsfunktionalität (Kaufen/Verkaufen).
+Router for trading functionality (buying/selling).
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -13,6 +13,7 @@ router = APIRouter()
 
 @router.post("/trade/buy")
 async def api_buy_stock(trade_data: TradeRequest, current_user: AuthenticatedUser = Depends(get_current_user)):
+    """API route for buying stocks"""
     user_id = current_user.id
 
     if trade_data.quantity <= 0 or trade_data.price <= 0:
@@ -26,6 +27,7 @@ async def api_buy_stock(trade_data: TradeRequest, current_user: AuthenticatedUse
 
 @router.post("/trade/sell")
 async def api_sell_stock(trade_data: TradeRequest, current_user: AuthenticatedUser = Depends(get_current_user)):
+    """API route for selling stocks"""
     user_id = current_user.id
 
     if trade_data.quantity <= 0 or trade_data.price <= 0:
@@ -39,4 +41,5 @@ async def api_sell_stock(trade_data: TradeRequest, current_user: AuthenticatedUs
 
 @router.get("/trade/{symbol}/")
 async def api_stock_data_symbol_dummy(symbol: str, current_user: AuthenticatedUser = Depends(get_current_user)):
+    """Dummy API route for stock data by symbol"""
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Data for symbol {symbol} not yet implemented.")

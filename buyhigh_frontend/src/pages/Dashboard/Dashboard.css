@@ -68,10 +68,10 @@
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* Quiz Button Styles - neu gestaltet */
+  /* Quiz Button Styles - redesigned */
   .quiz-btn {
     @apply font-medium border transition-all duration-200;
-    padding: 1.1rem 2.2rem; /* Mehr Padding: oben/unten 1.1rem, rechts/links 2.2rem */
+    padding: 1.1rem 2.2rem; /* More padding: top/bottom 1.1rem, left/right 2.2rem */
     margin-right: 0.5rem;
     margin-bottom: 0.5rem;
     min-width: 220px;

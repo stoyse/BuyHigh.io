@@ -1,5 +1,5 @@
 """
-Router für Aktiendatenfunktionalität.
+Router for stock data functionality.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 def update_asset_price_in_db(symbol: str, price: float, user_id_for_analytics: Optional[int] = None):
-    """Aktualisiert den letzten bekannten Preis eines Assets in der Datenbank"""
+    """Updates the last known price of an asset in the database."""
     import database.handler.postgres.postgre_transactions_handler as transactions_handler
     
     try:
@@ -26,7 +26,7 @@ def update_asset_price_in_db(symbol: str, price: float, user_id_for_analytics: O
                 asset_row = cur.fetchone()
                 
                 if not asset_row:
-                    logger.warning(f"Asset mit Symbol '{symbol}' nicht gefunden, kann Preis nicht aktualisieren.")
+                    logger.warning(f"Asset with symbol '{symbol}' not found, cannot update price.")
                     return False
                 
                 cur.execute("""

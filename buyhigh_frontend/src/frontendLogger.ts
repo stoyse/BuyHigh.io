@@ -1,4 +1,4 @@
-// Logging-Utility für das Frontend, sendet Logs an das Backend
+// Logging utility for the frontend, sends logs to the backend
 export type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
 interface LogContext {
@@ -19,13 +19,13 @@ export async function logToBackend(level: LogLevel, message: string, context: Lo
       body: JSON.stringify({ level, message, context }),
     });
   } catch (err) {
-    // Fallback: Logge Fehler in der Konsole
+    // Fallback: log error to console
     // eslint-disable-next-line no-console
-    console.error('Fehler beim Senden des Logs an das Backend:', err);
+    console.error('Error sending log to backend:', err);
   }
 }
 
-// Komfort-Wrapper
+// Convenience wrapper
 export const frontendLogger = {
   info: (msg: string, ctx?: LogContext) => logToBackend('info', msg, ctx),
   warn: (msg: string, ctx?: LogContext) => logToBackend('warn', msg, ctx),

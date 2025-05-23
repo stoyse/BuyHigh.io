@@ -1,5 +1,5 @@
 """
-Router für Easter-Egg und Code-Einlösungsfunktionen.
+Router for Easter egg and code redemption functions.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request as FastAPIRequest
@@ -21,7 +21,7 @@ async def redeem_easter_egg(
     logger.info("FastAPI Easter egg redemption endpoint called")
     code = payload.code.upper()
     
-    # Stark vereinfachte Version ohne Benutzerauthentifizierung
+    # Strongly simplified version without user authentication
     user_id: Optional[int] = None
     current_balance: float = 0.0
     
@@ -31,17 +31,17 @@ async def redeem_easter_egg(
 
     if code == "SECRETLAMBO":
         reward = 5000
-        message = "Du hast einen virtuellen Lamborghini und 5000 Credits gewonnen!"
+        message = "You won a virtual Lamborghini and 5000 credits!"
     elif code == "TOTHEMOON":
         reward = 1000
-        message = "Deine Investitionen gehen TO THE MOON! +1000 Credits"
+        message = "Your investments are going TO THE MOON! +1000 credits"
     elif code == "1337":
         reward = 1337
-        message = "Retro-Gaming-Modus aktiviert! +1337 Credits"
+        message = "Retro gaming mode activated! +1337 credits"
         reload_page = True
     else:
         logger.warning(f"Invalid easter egg code: {code}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ungültiger Code")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid code")
     
     return {
         "success": True,
@@ -61,7 +61,7 @@ async def api_redeem_code(
 
     user_data = db_handler.get_user_by_id(user_id)
     if not user_data:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Benutzer nicht gefunden")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
     current_balance = user_data.get('balance', 0.0)
 
@@ -69,30 +69,30 @@ async def api_redeem_code(
     message = ""
     reload_page = False
 
-    # Code-Logik wie im Original
+    # Code logic as in the original
     if code == "SECRETLAMBO":
-        reward = 5000; message = "Du hast einen virtuellen Lamborghini und 5000 Credits gewonnen!"
+        reward = 5000; message = "You won a virtual Lamborghini and 5000 credits!"
     elif code == "TOTHEMOON":
-        reward = 1000; message = "Deine Investitionen gehen TO THE MOON! +1000 Credits"
+        reward = 1000; message = "Your investments are going TO THE MOON! +1000 credits"
     elif code == "HODLGANG":
-        reward = 2500; message = "HODL! HODL! HODL! Du hast 2500 Credits für deine Diamond Hands erhalten!"
+        reward = 2500; message = "HODL! HODL! HODL! You received 2500 credits for your diamond hands!"
     elif code == "STONKS":
         today = datetime.now()
         if today.month == 4 and today.day == 20:
-            reward = 4200; message = "STONKS! Du hast den speziellen 4/20 Code gefunden! +4200 Credits"
+            reward = 4200; message = "STONKS! You found the special 4/20 code! +4200 credits"
         else:
-            reward = 420; message = "STONKS! Aber es ist nicht der richtige Tag für den vollen Bonus! +420 Credits"
+            reward = 420; message = "STONKS! But it's not the right day for the full bonus! +420 credits"
     elif code == "1337":
-        reward = 1337; message = "Retro-Gaming-Modus aktiviert! +1337 Credits"; reload_page = True
+        reward = 1337; message = "Retro gaming mode activated! +1337 credits"; reload_page = True
     else:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ungültiger Code")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid code")
         
     new_balance = current_balance + reward
     
     update_success = db_handler.update_user_balance(user_id, new_balance)
     if not update_success:
         logger.error(f"Failed to update balance for user {user_id} after redeeming code {code}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Fehler beim Aktualisieren des Guthabens.")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error updating balance.")
 
     return RedeemCodeResponse(
         success=True, message=message, reload=reload_page, reward=reward, new_balance=new_balance

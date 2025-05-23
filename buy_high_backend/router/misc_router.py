@@ -1,5 +1,5 @@
 """
-Router für verschiedene kleinere Funktionen.
+Router for various smaller features.
 """
 
 from fastapi import APIRouter, Depends

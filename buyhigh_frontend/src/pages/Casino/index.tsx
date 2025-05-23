@@ -3,7 +3,7 @@ import './Casino.css';
 import BaseLayout from '../../components/Layout/BaseLayout';
 
 const Casino = () => {
-  // Generiere zufällige animierte Elemente
+  // Generate random animated elements
   const generateRandomElements = () => {
     const elements = [];
     for (let i = 0; i < 20; i++) {

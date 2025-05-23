@@ -223,9 +223,9 @@ VALUES
 
 CREATE TABLE IF NOT EXISTS market_mayhem_scenarios (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE, -- Name des Szenarios (z. B. "Flash Crash", "Positive News")
-    description TEXT, -- Beschreibung des Szenarios
-    stock_price_change REAL, -- Preisänderung in Prozent
+    name TEXT NOT NULL UNIQUE, -- Name of the scenario (e.g., "Flash Crash", "Positive News")
+    description TEXT, -- Description of the scenario
+    stock_price_change REAL, -- Price change in percentage
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -260,8 +260,8 @@ ON CONFLICT (name) DO NOTHING;
 -- Roadmap Table
 CREATE TABLE IF NOT EXISTS roadmap (
     id SERIAL PRIMARY KEY,
-    title TEXT NOT NULL, -- Titel der Roadmap
-    description TEXT, -- Beschreibung der Roadmap
+    title TEXT NOT NULL, -- Title of the roadmap
+    description TEXT, -- Description of the roadmap
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -276,41 +276,41 @@ ON CONFLICT DO NOTHING;
 CREATE TABLE IF NOT EXISTS roadmap_steps (
     id SERIAL PRIMARY KEY,
     roadmap_id INTEGER NOT NULL REFERENCES roadmap(id) ON DELETE CASCADE,
-    step_number INTEGER NOT NULL, -- Reihenfolge der Schritte
-    title TEXT NOT NULL, -- Titel des Schritts
-    description TEXT, -- Beschreibung des Schritts
-    page_layout INTEGER[], -- Liste von Zahlen, z.B. ARRAY[1,2,3]
-    explain TEXT, -- Erklärung des konzepts
+    step_number INTEGER NOT NULL, -- Order of the steps
+    title TEXT NOT NULL, -- Title of the step
+    description TEXT, -- Description of the step
+    page_layout INTEGER[], -- List of numbers, e.g., ARRAY[1,2,3]
+    explain TEXT, -- Explanation of the concept
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(roadmap_id, step_number) -- Sicherstellen, dass die Schritt-Reihenfolge eindeutig ist
+    UNIQUE(roadmap_id, step_number) -- Ensure the step order is unique
 );
 
 -- Example steps for the roadmap
 INSERT INTO roadmap_steps (roadmap_id, step_number, title, description, page_layout, explain)
 VALUES 
 (1, 1, 'What are financial markets?', 'Learn what financial markets are and how they work.', ARRAY[1,2,3], 
-'Finanzmärkte sind organisierte Plattformen oder Systeme, auf denen Käufer und Verkäufer Finanzinstrumente wie Aktien, Anleihen, Währungen und Derivate handeln. Sie erfüllen mehrere wichtige Funktionen: Sie ermöglichen Unternehmen und Regierungen die Kapitalaufnahme, bieten Investoren die Möglichkeit, ihr Geld anzulegen, sorgen für Liquidität (d.h. die Möglichkeit, Vermögenswerte schnell zu kaufen oder zu verkaufen), und helfen, Preise für Finanzprodukte durch Angebot und Nachfrage zu bestimmen. Ohne Finanzmärkte wäre es für Unternehmen schwieriger, zu wachsen, und für Investoren schwerer, ihr Geld zu investieren oder zu diversifizieren.'),
+'Financial markets are organized platforms or systems where buyers and sellers trade financial instruments such as stocks, bonds, currencies, and derivatives. They serve several important functions: they allow companies and governments to raise capital, provide investors with opportunities to invest their money, ensure liquidity (i.e., the ability to quickly buy or sell assets), and help determine prices for financial products through supply and demand. Without financial markets, it would be harder for companies to grow and for investors to invest or diversify their money.'),
 
 (1, 2, 'Stocks and Bonds', 'Understand the difference between stocks and bonds.', ARRAY[1,2,3], 
-'Aktien und Anleihen sind zwei der wichtigsten Arten von Finanzinstrumenten. Eine Aktie steht für einen Eigentumsanteil an einem Unternehmen. Wer eine Aktie besitzt, ist Miteigentümer und kann von Gewinnen (Dividenden) profitieren, trägt aber auch das Risiko von Verlusten. Eine Anleihe hingegen ist ein Schuldtitel: Der Käufer leiht einem Unternehmen oder Staat Geld und erhält dafür regelmäßige Zinszahlungen sowie die Rückzahlung des Nennwerts am Ende der Laufzeit. Während Aktien mehr Renditechancen, aber auch höhere Risiken bieten, gelten Anleihen als sicherer, bringen aber meist geringere Erträge.'),
+'Stocks and bonds are two of the most important types of financial instruments. A stock represents an ownership share in a company. Whoever owns a stock is a co-owner and can benefit from profits (dividends) but also bears the risk of losses. A bond, on the other hand, is a debt security: the buyer lends money to a company or government and receives regular interest payments as well as the repayment of the principal at the end of the term. While stocks offer more return opportunities but also higher risks, bonds are considered safer but usually yield lower returns.'),
 
 (1, 3, 'Market Mechanisms', 'Understand how supply and demand influence the markets.', ARRAY[1,2,3], 
-'Marktmechanismen beschreiben, wie Preise auf Finanzmärkten durch das Zusammenspiel von Angebot und Nachfrage entstehen. Wenn viele Investoren ein bestimmtes Wertpapier kaufen wollen (hohe Nachfrage), aber nur wenige verkaufen möchten (geringes Angebot), steigt der Preis. Umgekehrt sinkt der Preis, wenn das Angebot das Interesse der Käufer übersteigt. Diese Dynamik sorgt dafür, dass Preise ständig angepasst werden und spiegelt die Einschätzungen und Erwartungen aller Marktteilnehmer wider.')
+'Market mechanisms describe how prices on financial markets are formed by the interaction of supply and demand. When many investors want to buy a particular security (high demand) but only a few want to sell (low supply), the price rises. Conversely, the price falls when supply exceeds buyer interest. This dynamic ensures that prices are constantly adjusted and reflects the assessments and expectations of all market participants.')
 ON CONFLICT DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS roadmap_quizzes (
     id SERIAL PRIMARY KEY,
-    roadmap_id INTEGER NOT NULL REFERENCES roadmap(id) ON DELETE CASCADE, -- Verknüpfung mit der Roadmap
-    step_id INTEGER NOT NULL REFERENCES roadmap_steps(id) ON DELETE CASCADE, -- Verknüpfung mit einem Roadmap-Schritt
-    question TEXT NOT NULL, -- Die Quizfrage
-    possible_answer_1 TEXT NOT NULL, -- Mögliche Antwort 1
-    possible_answer_2 TEXT NOT NULL, -- Mögliche Antwort 2
-    possible_answer_3 TEXT NOT NULL, -- Mögliche Antwort 3
-    correct_answer TEXT NOT NULL, -- Die richtige Antwort
+    roadmap_id INTEGER NOT NULL REFERENCES roadmap(id) ON DELETE CASCADE, -- Link to the roadmap
+    step_id INTEGER NOT NULL REFERENCES roadmap_steps(id) ON DELETE CASCADE, -- Link to a roadmap step
+    question TEXT NOT NULL, -- The quiz question
+    possible_answer_1 TEXT NOT NULL, -- Possible answer 1
+    possible_answer_2 TEXT NOT NULL, -- Possible answer 2
+    possible_answer_3 TEXT NOT NULL, -- Possible answer 3
+    correct_answer TEXT NOT NULL, -- The correct answer
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Beispiel-Quizfragen für die Roadmap-Schritte
+-- Example quiz questions for the roadmap steps
 INSERT INTO roadmap_quizzes (roadmap_id, step_id, question, possible_answer_1, possible_answer_2, possible_answer_3, correct_answer)
 VALUES 
 (1, 1, 'What is a financial market?', 'A place to buy groceries', 'A platform for trading financial assets', 'A type of bank', 'A platform for trading financial assets'),
@@ -325,9 +325,9 @@ CREATE TABLE IF NOT EXISTS user_roadmap_quiz_progress (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     quiz_id INTEGER NOT NULL REFERENCES roadmap_quizzes(id) ON DELETE CASCADE,
-    is_correct BOOLEAN DEFAULT FALSE, -- Ob die Antwort korrekt war
-    attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Zeitstempel des Versuchs
-    UNIQUE(user_id, quiz_id) -- Sicherstellen, dass ein Benutzer dasselbe Quiz nicht mehrfach abschließt
+    is_correct BOOLEAN DEFAULT FALSE, -- Whether the answer was correct
+    attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Timestamp of the attempt
+    UNIQUE(user_id, quiz_id) -- Ensure a user does not complete the same quiz multiple times
 );
 
 
@@ -337,10 +337,10 @@ CREATE TABLE IF NOT EXISTS user_roadmap_progress (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     roadmap_id INTEGER NOT NULL REFERENCES roadmap(id) ON DELETE CASCADE,
     step_id INTEGER NOT NULL REFERENCES roadmap_steps(id) ON DELETE CASCADE,
-    is_completed BOOLEAN DEFAULT FALSE, -- Fortschritt des Schritts
-    progress_percentage REAL DEFAULT 0.0, -- Fortschritt in Prozent
-    completed_at TIMESTAMP, -- Zeitstempel, wann der Schritt abgeschlossen wurde
-    UNIQUE(user_id, roadmap_id, step_id) -- Sicherstellen, dass ein Benutzer denselben Schritt nicht mehrfach abschließt
+    is_completed BOOLEAN DEFAULT FALSE, -- Progress of the step
+    progress_percentage REAL DEFAULT 0.0, -- Progress in percentage
+    completed_at TIMESTAMP, -- Timestamp when the step was completed
+    UNIQUE(user_id, roadmap_id, step_id) -- Ensure a user does not complete the same step multiple times
 );
 
 CREATE TABLE IF NOT EXISTS analytics (
@@ -352,7 +352,7 @@ CREATE TABLE IF NOT EXISTS analytics (
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Optional: Indizes für häufig abgefragte Spalten hinzufügen
+-- Optional: Indices for frequently queried columns
 CREATE INDEX IF NOT EXISTS idx_analytics_user_id ON analytics(user_id);
 CREATE INDEX IF NOT EXISTS idx_analytics_action ON analytics(action);
 CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics(timestamp);

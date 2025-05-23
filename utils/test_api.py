@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Python-Script zum Testen der FastAPI-API-Endpunkte.
-Kompatibel mit der modularen Router-Struktur.
+Python script for testing FastAPI API endpoints.
+Compatible with the modular router structure.
 """
 
 import os
@@ -12,11 +12,11 @@ import sys
 from dotenv import load_dotenv
 from typing import Dict, Any, Optional, List, Tuple
 
-# Konstanten
-BASE_URL = "https://api.stoyse.hackclub.app/"  # Remote API-URL
+# Constants
+BASE_URL = "https://api.stoyse.hackclub.app/"  # Remote API URL
 #BASE_URL = "http://localhost:9876/"
 
-# Farben für die Ausgabe
+# Colors for output
 GREEN = "\033[92m"
 RED = "\033[91m"
 YELLOW = "\033[93m"
@@ -25,17 +25,17 @@ BLUE = "\033[94m"
 BOLD = "\033[1m"
 
 def print_color(message: str, color: str = RESET):
-    """Gibt eine farbige Nachricht aus."""
+    """Prints a colored message."""
     print(f"{color}{message}{RESET}")
 
 def print_section(title: str):
-    """Gibt einen Abschnittstitel aus."""
+    """Prints a section title."""
     print_color(f"\n{BOLD}{'='*30}{RESET}")
     print_color(f"{BOLD}{BLUE}{title}{RESET}")
     print_color(f"{BOLD}{'='*30}{RESET}\n")
 
 def load_env_vars() -> Dict[str, str]:
-    """Lädt die Umgebungsvariablen aus der .env-Datei."""
+    """Loads environment variables from the .env file."""
     load_dotenv()
     return {
         "Username": os.getenv("Username"),
@@ -45,18 +45,18 @@ def load_env_vars() -> Dict[str, str]:
 def test_route(method: str, route: str, expected_status: int, data: Optional[Dict] = None, 
                token: Optional[str] = None, detailed: bool = True) -> Dict:
     """
-    Testet eine API-Route und gibt die Antwort zurück.
+    Tests an API route and returns the response.
     
-    :param method: HTTP-Methode (GET, POST)
-    :param route: API-Route (z.B. "/api/health")
-    :param expected_status: Erwarteter HTTP-Statuscode
-    :param data: JSON-Daten für die Anfrage (optional)
-    :param token: Auth-Token für geschützte Routen (optional)
-    :param detailed: Wenn True, werden Details der API-Anfrage und -Antwort ausgegeben
-    :return: Dictionary mit Antwortdaten
+    :param method: HTTP method (GET, POST)
+    :param route: API route (e.g., "/api/health")
+    :param expected_status: Expected HTTP status code
+    :param data: JSON data for the request (optional)
+    :param token: Auth token for protected routes (optional)
+    :param detailed: If True, details of the API request and response are displayed
+    :return: Dictionary with response data
     """
     url = f"{BASE_URL}{route}"
-    print_color(f"Teste {method} {url}", BLUE)
+    print_color(f"Testing {method} {url}", BLUE)
     
     headers = {}
     if token:
@@ -70,68 +70,68 @@ def test_route(method: str, route: str, expected_status: int, data: Optional[Dic
             headers["Content-Type"] = "application/json"
             response = requests.post(url, json=data, headers=headers, timeout=10)
         else:
-            raise ValueError(f"Unbekannte Methode: {method}")
+            raise ValueError(f"Unknown method: {method}")
         
         request_time = time.time() - start_time
         
-        # Prüfe den Statuscode
+        # Check the status code
         if response.status_code == expected_status:
-            print_color(f"✅ {method} {route} lieferte erwarteten Status {expected_status} in {request_time:.2f}s", GREEN)
+            print_color(f"✅ {method} {route} returned expected status {expected_status} in {request_time:.2f}s", GREEN)
         else:
-            print_color(f"❌ {method} {route} lieferte Status {response.status_code} (erwartet: {expected_status}) in {request_time:.2f}s", RED)
+            print_color(f"❌ {method} {route} returned status {response.status_code} (expected: {expected_status}) in {request_time:.2f}s", RED)
         
-        # Versuche, die Antwort als JSON zu parsen
+        # Try to parse the response as JSON
         try:
             response_data = response.json()
             if detailed:
-                print_color("Empfangene Daten:", YELLOW)
-                # Für große JSON-Strukturen nur einen Teil anzeigen
+                print_color("Received data:", YELLOW)
+                # For large JSON structures, only display a part
                 response_str = json.dumps(response_data, indent=2)
                 if len(response_str) > 1000:
-                    # Zeige nur die ersten 1000 Zeichen
-                    response_str = response_str[:1000] + "...\n(gekürzt)"
+                    # Display only the first 1000 characters
+                    response_str = response_str[:1000] + "...\n(truncated)"
                 print_color(response_str, RESET)
             return response_data
         except json.JSONDecodeError:
-            print_color("Antwort ist kein gültiges JSON.", YELLOW)
+            print_color("Response is not valid JSON.", YELLOW)
             if detailed:
                 text_response = response.text
                 if len(text_response) > 1000:
-                    text_response = text_response[:1000] + "...\n(gekürzt)"
-                print_color(f"Empfangene Daten (Text): {text_response}", RESET)
+                    text_response = text_response[:1000] + "...\n(truncated)"
+                print_color(f"Received data (text): {text_response}", RESET)
             return {"text": response.text}
             
     except requests.exceptions.RequestException as e:
-        print_color(f"❌ Fehler bei {method} {route}: {e}", RED)
+        print_color(f"❌ Error during {method} {route}: {e}", RED)
         return {"error": str(e)}
 
 def run_tests() -> List[Tuple[str, bool]]:
-    """Führt alle Tests aus und gibt eine Liste mit Testergebnissen zurück"""
+    """Runs all tests and returns a list of test results."""
     test_results = []
     
-    # Lade Umgebungsvariablen
+    # Load environment variables
     env_vars = load_env_vars()
     if not env_vars["Username"] or not env_vars["Password"]:
-        print_color("Warnung: Username oder Password fehlen in der .env-Datei.", YELLOW)
+        print_color("Warning: Username or Password missing in the .env file.", YELLOW)
     
     id_token = None
     
-    # --- Basistests ---
-    print_section("Basis-Tests")
+    # --- Basic Tests ---
+    print_section("Basic Tests")
     
-    # Test der Root-Route
+    # Test the root route
     root_response = test_route("GET", "/", 200)
     test_results.append(("Root Route", "status" in root_response))
     
-    # Test des Gesundheitschecks
+    # Test the health check
     health_response = test_route("GET", "/health", 200)
     test_results.append(("Health Check", "status" in health_response))
     
-    # --- Login-Test ---
-    print_section("Login-Test")
+    # --- Login Test ---
+    print_section("Login Test")
     
-    # Test mit gültigen Anmeldedaten
-    print_color(f"Versuche Login mit Anmeldedaten aus .env: {env_vars['Username']}", BLUE)
+    # Test with valid login credentials
+    print_color(f"Attempting login with credentials from .env: {env_vars['Username']}", BLUE)
     login_data = {
         "email": env_vars["Username"],
         "password": env_vars["Password"]
@@ -140,15 +140,15 @@ def run_tests() -> List[Tuple[str, bool]]:
     login_success = login_response.get("success", False)
     test_results.append(("Login", login_success))
     
-    # Extrahiere Token aus der Login-Antwort
+    # Extract token from the login response
     if login_success:
         for token_field in ['id_token', 'firebase_token', 'access_token']:
             if token_field in login_response:
                 id_token = login_response[token_field]
                 break
     
-    # --- Tests für geschützte Routen ---
-    print_section("Tests für geschützte Routen")
+    # --- Tests for Protected Routes ---
+    print_section("Tests for Protected Routes")
     
     if id_token:
         stock_data_response = test_route("GET", "/stock-data?symbol=AAPL&timeframe=3M", 200, token=id_token)
@@ -158,16 +158,16 @@ def run_tests() -> List[Tuple[str, bool]]:
         funny_tips_success = isinstance(funny_tips_response, dict) and funny_tips_response.get("success", False)
         test_results.append(("Funny Tips", funny_tips_success))
     else:
-        print_color("⚠️ Kein Token extrahiert, überspringe Tests für geschützte Routen.", YELLOW)
+        print_color("⚠️ No token extracted, skipping tests for protected routes.", YELLOW)
         test_results.append(("Stock Data", None))
         test_results.append(("Funny Tips", None))
     
-    # --- Test für fehlschlagenden Login ---
-    print_section("Test für fehlschlagenden Login")
+    # --- Test for Failed Login ---
+    print_section("Test for Failed Login")
     
     invalid_login_data = {
-        "email": "ungueltig@example.com", 
-        "password": "falschespasswort123"
+        "email": "invalid@example.com", 
+        "password": "wrongpassword123"
     }
     invalid_login_response = test_route("POST", "/login", 401, invalid_login_data)
     invalid_login_expected = "success" not in invalid_login_response or not invalid_login_response["success"]
@@ -176,46 +176,46 @@ def run_tests() -> List[Tuple[str, bool]]:
     return test_results
 
 def main():
-    """Hauptfunktion zum Testen der API."""
-    print_section("API-Tests")
+    """Main function for testing the API."""
+    print_section("API Tests")
     
     try:
         test_results = run_tests()
         
-        # Zusammenfassung der Tests ausgeben
-        print_section("Testergebnisse")
+        # Display test summary
+        print_section("Test Results")
         success_count = 0
         skip_count = 0
         fail_count = 0
         
         for name, result in test_results:
             if result is None:
-                print_color(f"⚠️ {name}: ÜBERSPRUNGEN", YELLOW)
+                print_color(f"⚠️ {name}: SKIPPED", YELLOW)
                 skip_count += 1
             elif result:
-                print_color(f"✅ {name}: ERFOLGREICH", GREEN)
+                print_color(f"✅ {name}: SUCCESSFUL", GREEN)
                 success_count += 1
             else:
-                print_color(f"❌ {name}: FEHLGESCHLAGEN", RED)
+                print_color(f"❌ {name}: FAILED", RED)
                 fail_count += 1
         
-        print_section("Zusammenfassung")
-        print_color(f"Durchgeführte Tests: {len(test_results)}", BLUE)
-        print_color(f"✅ Erfolgreich: {success_count}", GREEN)
-        print_color(f"⚠️ Übersprungen: {skip_count}", YELLOW)
-        print_color(f"❌ Fehlgeschlagen: {fail_count}", RED)
+        print_section("Summary")
+        print_color(f"Tests conducted: {len(test_results)}", BLUE)
+        print_color(f"✅ Successful: {success_count}", GREEN)
+        print_color(f"⚠️ Skipped: {skip_count}", YELLOW)
+        print_color(f"❌ Failed: {fail_count}", RED)
         
         if fail_count > 0:
-            sys.exit(1)  # Beende mit Fehlercode, wenn Tests fehlgeschlagen sind
+            sys.exit(1)  # Exit with error code if tests failed
         
     except KeyboardInterrupt:
-        print_color("\nTests durch Benutzer abgebrochen.", YELLOW)
-        sys.exit(130)  # Standard-Exit-Code für SIGINT (Ctrl+C)
+        print_color("\nTests aborted by user.", YELLOW)
+        sys.exit(130)  # Standard exit code for SIGINT (Ctrl+C)
     except Exception as e:
-        print_color(f"\nUnerwarteter Fehler: {str(e)}", RED)
+        print_color(f"\nUnexpected error: {str(e)}", RED)
         sys.exit(1)
     
-    print_color("\nTest abgeschlossen.", GREEN)
+    print_color("\nTest completed.", GREEN)
 
 if __name__ == "__main__":
     main()

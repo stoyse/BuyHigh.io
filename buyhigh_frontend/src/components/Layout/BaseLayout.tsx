@@ -56,10 +56,10 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const data = await GetUserInfo('1'); // Beispiel-User-ID
+        const data = await GetUserInfo('1'); // Example user ID
         setUserData(data);
       } catch (err) {
-        setError('Fehler beim Abrufen der Benutzerdaten.');
+        setError('Error fetching user data.');
         console.error(err);
       }
     };
@@ -73,7 +73,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
         const data = await GetUserInfo('1');
         setUser(data);
       } catch (err) {
-        setError('Fehler beim Abrufen der Benutzerdaten.');
+        setError('Error fetching user data.');
         console.error(err);
       }
     };
