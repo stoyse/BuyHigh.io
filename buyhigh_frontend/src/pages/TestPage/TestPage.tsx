@@ -9,7 +9,10 @@ import {
   GetAssets,
   GetStockData,
   BuyStock,
-  SellStock
+  SellStock,
+  SubmitDailyQuizAnswer,
+  DailyQuizAttemptPayload,
+  DailyQuizAttemptResponse
 } from '../../apiService';
 
 interface ApiTestResult {
@@ -46,6 +49,13 @@ const TestPage: React.FC = () => {
   const [tradeResult, setTradeResult] = useState<any>(null);
   const [tradeError, setTradeError] = useState<string | null>(null);
 
+  // Daily Quiz Attempt fields
+  const [quizIdForAttempt, setQuizIdForAttempt] = useState<string>('');
+  const [selectedAnswerForAttempt, setSelectedAnswerForAttempt] = useState<string>('');
+  const [quizAttemptResult, setQuizAttemptResult] = useState<DailyQuizAttemptResponse | null>(null);
+  const [quizAttemptError, setQuizAttemptError] = useState<string | null>(null);
+  const [quizAttemptLoading, setQuizAttemptLoading] = useState<boolean>(false);
+
   // API query function
   const fetchApiData = async (key: string, fetchFunction: () => Promise<any>, url: string) => {
     setApiResults(prev => ({
@@ -70,7 +80,7 @@ const TestPage: React.FC = () => {
   // Execute GET requests that do not require a user ID when the page loads
   useEffect(() => {
     fetchApiData('funnyTips', () => fetchFunnyTips(), 'https://api.stoyse.hackclub.app/funny-tips');
-    fetchApiData('dailyQuiz', () => GetDailyQuiz(), 'https://api.stoyse.hackclub.app/daily-quiz');
+    fetchApiData('dailyQuiz', () => GetDailyQuiz(), 'https://api.stoyse.hackclub.app/education/daily-quiz');
     fetchApiData('assets', () => GetAssets(), 'https://api.stoyse.hackclub.app/assets');
     fetchApiData('stockData', () => GetStockData('AAPL', '1d'), 'https://api.stoyse.hackclub.app/stock-data?symbol=AAPL&range=1d');
   }, []);
@@ -129,6 +139,41 @@ const TestPage: React.FC = () => {
       setTradeResult({ action: 'Sell', ...result });
     } catch (err: any) {
       setTradeError(`Sell failed: ${err.message}`);
+    }
+  };
+
+  // Handle Daily Quiz Attempt Submission
+  const handleQuizAttemptSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setQuizAttemptResult(null);
+    setQuizAttemptError(null);
+    setQuizAttemptLoading(true);
+
+    if (!loggedInUserId) {
+      setQuizAttemptError("Please login first to attempt the quiz.");
+      setQuizAttemptLoading(false);
+      return;
+    }
+    if (!quizIdForAttempt.trim() || !selectedAnswerForAttempt.trim()) {
+        setQuizAttemptError("Quiz ID and Answer cannot be empty.");
+        setQuizAttemptLoading(false);
+        return;
+    }
+
+    try {
+      const payload: DailyQuizAttemptPayload = { 
+        quiz_id: quizIdForAttempt, 
+        selected_answer: selectedAnswerForAttempt 
+      };
+      const result = await SubmitDailyQuizAnswer(payload);
+      setQuizAttemptResult(result);
+      if (!result.success) {
+        setQuizAttemptError(result.message || "Quiz submission failed.");
+      }
+    } catch (err: any) {
+      setQuizAttemptError(err.message || 'An error occurred during quiz submission.');
+    } finally {
+      setQuizAttemptLoading(false);
     }
   };
 
@@ -232,6 +277,49 @@ const TestPage: React.FC = () => {
         )}
         
         {tradeError && <div className="error">{tradeError}</div>}
+      </div>
+
+      <div className="test-section">
+        <h2>Daily Quiz Attempt Test</h2>
+        <p>Note: You must be logged in. Get a Quiz ID from the "Daily Quiz" GET request results below.</p>
+        <form onSubmit={handleQuizAttemptSubmit} className="test-form">
+          <div className="form-group">
+            <label htmlFor="quizIdAttempt">Quiz ID:</label>
+            <input 
+              id="quizIdAttempt"
+              type="text" 
+              value={quizIdForAttempt} 
+              onChange={(e) => setQuizIdForAttempt(e.target.value)} 
+              placeholder="Enter Quiz ID (e.g., from GET /daily-quiz)"
+              required 
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="selectedAnswerAttempt">Your Answer:</label>
+            <input 
+              id="selectedAnswerAttempt"
+              type="text" 
+              value={selectedAnswerForAttempt} 
+              onChange={(e) => setSelectedAnswerForAttempt(e.target.value)} 
+              placeholder="Enter your selected answer"
+              required 
+            />
+          </div>
+          <button type="submit" disabled={quizAttemptLoading}>
+            {quizAttemptLoading ? 'Submitting...' : 'Submit Quiz Answer'}
+          </button>
+        </form>
+        
+        {quizAttemptLoading && <p>Loading...</p>}
+        
+        {quizAttemptResult && (
+          <div className="result-section">
+            <h4>Quiz Attempt Result:</h4>
+            <pre className="json-result">{JSON.stringify(quizAttemptResult, null, 2)}</pre>
+          </div>
+        )}
+        
+        {quizAttemptError && <div className="error">{quizAttemptError}</div>}
       </div>
 
       <div className="api-results">
