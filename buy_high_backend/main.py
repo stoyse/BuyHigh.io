@@ -34,7 +34,6 @@ else:
 
 from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -58,23 +57,7 @@ allowed_origins = [
     "https://buy-high-io.vercel.app/"
 ]
 
-# CORS middleware to enable cross-origin requests
-# This should be placed before other middlewares that modify or generate responses.
-#app.add_middleware(
-#    CORSMiddleware,
-#    allow_origins=[
-#    "https://buy-high-io.vercel.app",
-#    "https://buy-high-io.vercel.app/",], 
-#    allow_credentials=True,
-#    allow_methods=["*"],
-#    allow_headers=["*"],
-#    expose_headers=["Authorization", "Content-Disposition"],
-#    max_age=600,  # Cache the CORS response for 10 minutes
-#)
-
 # Add the request logging middleware
-#app.add_middleware(RequestLoggingMiddleware)
-
 _setup_logger.info(f"MAIN.PY: Attempting to include api_router (id: {id(api_router)}) from buy_high_backend.router into app (id: {id(app)}) with prefix=''.")
 # Include API routes without prefix (empty string instead of "")
 app.include_router(api_router, prefix="")
@@ -113,11 +96,6 @@ async def root():
         "status": "online",
         "version": "1.0.0"
     }
-
-# Temporarily commented out for debugging POST 405 issue
-# @app.options("/{rest_of_path:path}")
-# async def preflight_handler(rest_of_path: str):
-#     return Response(status_code=200)
 
 # To start the app with uvicorn:
 # uvicorn buy_high_backend.main:app --reload
