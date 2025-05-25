@@ -49,8 +49,8 @@ const LoginPage: React.FC = () => {
       try {
         const success = await loginWithGoogle(credentialResponse.credential);
         if (success) {
-          frontendLogger.info('Google login successful');
-          navigate(from, { replace: true });
+          frontendLogger.info('Google login successful, redirecting to dashboard');
+          navigate('/dashboard', { replace: true });
         } else {
           setError('Google login failed. Please try again.');
           frontendLogger.warn('Google login failed: backend or token issue');
