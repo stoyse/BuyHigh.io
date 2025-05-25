@@ -48,19 +48,21 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
 
   // Diagnostic useEffect to log user state
   useEffect(() => {
-    if (user) {
-      console.log("BaseLayout - User state updated:", JSON.stringify(user, null, 2));
-      if (typeof user !== 'object' || user === null) {
-        console.warn("BaseLayout - User state is not a valid object.");
+    if (user && user.user) {
+      console.log("BaseLayout - User state updated (actual user object):", JSON.stringify(user.user, null, 2));
+      if (typeof user.user !== 'object' || user.user === null) {
+        console.warn("BaseLayout - User.user state is not a valid object.");
       } else {
         // Check for presence of username and email properties
-        if (!('username' in user)) {
-          console.warn("BaseLayout - User object is missing 'username' property. Available keys:", Object.keys(user));
+        if (!('username' in user.user)) {
+          console.warn("BaseLayout - User.user object is missing 'username' property. Available keys:", Object.keys(user.user));
         }
-        if (!('email' in user)) {
-          console.warn("BaseLayout - User object is missing 'email' property. Available keys:", Object.keys(user));
+        if (!('email' in user.user)) {
+          console.warn("BaseLayout - User.user object is missing 'email' property. Available keys:", Object.keys(user.user));
         }
       }
+    } else if (user && !user.user) {
+      console.warn("BaseLayout - User state exists, but user.user is missing. User state:", JSON.stringify(user, null, 2));
     } else {
       console.log("BaseLayout - User state is null or undefined after fetch attempt.");
     }
@@ -104,7 +106,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
               </Link>
               
               <div className="hidden sm:ml-10 sm:flex items-baseline space-x-4">
-                {user && (
+                {user && user.user && (
                   <>
                     <Link to="/dashboard" className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/dashboard' ? 'bg-neo-purple/10 text-neo-purple' : 'text-gray-700 dark:text-gray-300 hover:bg-neo-purple/10 hover:text-neo-purple dark:hover:text-neo-purple'} transition-all duration-200 flex items-center group`}>
                       <svg className="w-5 h-5 mr-1.5 text-neo-purple/70 group-hover:text-neo-purple transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -148,7 +150,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
             </div>
             
             <div className="flex items-center space-x-4">
-              {user ? (
+              {user && user.user ? (
                 <>
                   <div className="hidden sm:block dropdown">
                     <div 
@@ -158,21 +160,21 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
                       <div className="relative w-8 h-8 rounded-full overflow-hidden mr-2 bg-gradient-to-br from-neo-purple to-neo-blue p-0.5">
                         <div className="absolute inset-0 bg-gradient-neo opacity-30 animate-gradient"></div>
                         <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center relative z-10">
-                          <span className="font-medium text-sm text-neo-purple">{user.username ? user.username[0].toUpperCase() : 'U'}</span>
+                          <span className="font-medium text-sm text-neo-purple">{user.user.username ? user.user.username[0].toUpperCase() : 'U'}</span>
                         </div>
                       </div>
-                      <span className="text-sm font-medium">{user.username}</span>
+                      <span className="text-sm font-medium">{user.user.username}</span>
                       <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                       </svg>
                     </div>
                     
                     {/* Dropdown Menu */}
-                    {dropdownOpen && user && (
+                    {dropdownOpen && user && user.user && (
                       <div className="dropdown-content glass-card rounded-xl shadow-neo-lg overflow-hidden border border-gray-200/20 dark:border-gray-700/30 block opacity-100 transform-none">
                         <div className="p-4 border-b border-gray-200/20 dark:border-gray-700/30">
-                          <p className="font-medium text-sm text-gray-800 dark:text-gray-200">{user.username}</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">{user.email}</p>
+                          <p className="font-medium text-sm text-gray-800 dark:text-gray-200">{user.user.username}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-300">{user.user.email}</p>
                         </div>
                         
                         <div className="p-2">
