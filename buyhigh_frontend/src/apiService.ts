@@ -194,9 +194,10 @@ export interface DailyQuizAttemptResponse {
 }
 
 export const SubmitDailyQuizAnswer = async (payload: DailyQuizAttemptPayload): Promise<DailyQuizAttemptResponse> => {
-  logApiCall('POST', '/education/daily-quiz/attempt', payload);
+  // Corrected endpoint: Removed /education prefix to align with how GetDailyQuiz is successfully called
+  logApiCall('POST', '/daily-quiz/attempt', payload);
   try {
-    const response = await axios.post(`${API_BASE_URL}/education/daily-quiz/attempt`, payload, {
+    const response = await axios.post(`${API_BASE_URL}/daily-quiz/attempt`, payload, {
       withCredentials: true,
     });
     logDebug('Submit Daily Quiz Answer Response:', response.data);
