@@ -227,16 +227,32 @@ const Dashboard: React.FC = () => {
           const dailyQuizResponse = await GetDailyQuiz();
           console.log("[Dashboard] GetDailyQuiz (for structure and content) result:", dailyQuizResponse);
 
-          if (dailyQuizResponse && dailyQuizResponse.success && dailyQuizResponse.quiz) {
-            const todaysQuizStructure = dailyQuizResponse.quiz;
-            console.log("[Dashboard] Successfully fetched quiz structure:", todaysQuizStructure);
+          let parsedQuizStructure: Quiz | null = null;
+
+          if (dailyQuizResponse) {
+            if (dailyQuizResponse.success === true && dailyQuizResponse.quiz) {
+              // Handles { success: true, quiz: { ... } }
+              parsedQuizStructure = dailyQuizResponse.quiz as Quiz;
+              console.log("[Dashboard] Successfully fetched quiz structure (nested in .quiz property):", parsedQuizStructure);
+            } else if (typeof dailyQuizResponse.id !== 'undefined' && typeof dailyQuizResponse.question !== 'undefined') {
+              // Handles if dailyQuizResponse itself is the quiz object { id: ..., question: ... }
+              // And it's not an error object like { success: false, ... }
+              if (dailyQuizResponse.success !== false) { // Allows success to be true or undefined (for direct quiz object)
+                parsedQuizStructure = dailyQuizResponse as Quiz;
+                console.log("[Dashboard] Successfully fetched quiz structure (direct object):", parsedQuizStructure);
+              }
+            }
+          }
+
+          if (parsedQuizStructure) {
+            const todaysQuizStructure = parsedQuizStructure; // Use this variable for the rest of the logic
 
             console.log("[Dashboard] Calling GetDailyQuizAttemptToday...");
             const attemptTodayResponse = await GetDailyQuizAttemptToday();
             console.log("[Dashboard] GetDailyQuizAttemptToday result:", attemptTodayResponse);
             setDailyQuizAttempt(attemptTodayResponse); // Store the raw attempt response
 
-            if (attemptTodayResponse && attemptTodayResponse.success && 
+            if (attemptTodayResponse && attemptTodayResponse.success &&
                 typeof attemptTodayResponse.selected_answer !== 'undefined' && 
                 attemptTodayResponse.quiz_id === todaysQuizStructure.id) {
               console.log("[Dashboard] User has an attempt for today's quiz. Setting quiz state as attempted.");
@@ -268,16 +284,14 @@ const Dashboard: React.FC = () => {
               });
             }
           } else {
+            // This 'else' means parsedQuizStructure is null (fetch failed or no quiz in expected format).
             let warningMessage = "[Dashboard] No daily quiz available or fetch failed. ";
             if (!dailyQuizResponse) {
               warningMessage += "The response from GetDailyQuiz was null or undefined.";
-            } else if (!dailyQuizResponse.success) {
-              warningMessage += `API call GetDailyQuiz was not successful. Message: ${dailyQuizResponse.message || 'No specific error message provided by API.'}`;
-            } else if (!dailyQuizResponse.quiz) {
-              warningMessage += "API call GetDailyQuiz was successful, but no quiz data was included in the response.";
+            } else if (dailyQuizResponse.success === false) {
+              warningMessage += `API call GetDailyQuiz explicitly failed. Message: ${dailyQuizResponse.message || 'No specific error message provided by API.'}`;
             } else {
-              // This case should ideally not be reached if the main if condition is structured correctly
-              warningMessage += "Unexpected issue with the daily quiz response structure.";
+              warningMessage += "The response from GetDailyQuiz was not in a recognized format.";
             }
             console.warn(warningMessage, "Full response for GetDailyQuiz:", dailyQuizResponse);
             setQuiz(null); // No quiz available for today
