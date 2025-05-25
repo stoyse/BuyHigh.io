@@ -32,6 +32,10 @@ def fetch_general_news(category="general"):
     """
     news = finnhub_client.general_news(category=category)
     for article in news:
-        if article.get('image') == 'https://static2.finnhub.io/file/publicdatany/finnhubimage/market_watch_logo.png':
-            article['image'] = None
+        # Ensure 'image' field exists and is not the placeholder
+        image_url = article.get('image')
+        if image_url == 'https://static2.finnhub.io/file/publicdatany/finnhubimage/market_watch_logo.png':
+            article['image'] = None  # Set to None if it's the placeholder
+        elif not image_url: # If image is empty or None
+             article['image'] = None # Explicitly set to None
     return news

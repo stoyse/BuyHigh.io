@@ -46,6 +46,7 @@ class Asset(BaseModel):
     asset_type: str
     default_price: Optional[float] = None
     url: Optional[str] = None  # Hinzugefügtes Feld für die Artikel-URL
+    image_url: Optional[str] = None # Hinzugefügtes Feld für die Bild-URL
 
 class AssetResponse(BaseModel):
     success: bool

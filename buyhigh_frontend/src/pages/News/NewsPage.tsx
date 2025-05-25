@@ -12,6 +12,7 @@ interface ApiNewsAsset {
   asset_type: string;  // Wird als Kategorie verwendet
   default_price?: number | null; // Dieses Feld kommt von der API, wird aber nicht direkt in NewsCard verwendet
   url?: string;        // URL des Artikels
+  image_url?: string;  // Bild-URL des Artikels
 }
 
 // NewsItem erbt von NewsCardProps (definiert in NewsCard.tsx),
@@ -44,6 +45,7 @@ const NewsPage: React.FC = () => {
             source: asset.symbol,
             animationDelay: `${index * 0.1}s`,
             articleUrl: asset.url, // articleUrl aus den API-Daten übernehmen
+            imageUrl: asset.image_url, // imageUrl aus den API-Daten übernehmen
             // imageUrl, summary, dateTime sind optionale Props in NewsCardProps
             // und werden von dieser API nicht direkt geliefert. NewsCard.tsx behandelt das.
           }));

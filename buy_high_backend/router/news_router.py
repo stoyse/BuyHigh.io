@@ -68,6 +68,10 @@ async def api_news():
             url_val = item.get("url")
             asset_url = str(url_val) if url_val is not None and isinstance(url_val, str) else None
 
+            # Image URL - aus 'image' von Finnhub
+            image_url_val = item.get("image")
+            asset_image_url = str(image_url_val) if image_url_val is not None and isinstance(image_url_val, str) else None
+
             # Default Price (Optional[float])
             price_val = item.get("price") # 'price' ist kein Standardfeld in Finnhub general_news
             asset_default_price = None
@@ -85,12 +89,13 @@ async def api_news():
                     name=asset_name,
                     asset_type=asset_category,
                     default_price=asset_default_price,
-                    url=asset_url  # URL hier übergeben
+                    url=asset_url,  # URL hier übergeben
+                    image_url=asset_image_url # image_url hier übergeben
                 )
                 transformed_assets.append(asset)
             except Exception as e: # Fängt Pydantic ValidationErrors und andere Fehler bei der Instanzerstellung ab
                 logger.error(f"Failed to create Asset instance for item (id/index {asset_id}). Error: {e}")
-                logger.error(f"Data used: id={asset_id}, symbol='{asset_symbol}', name='{asset_name}', asset_type='{asset_category}', default_price={asset_default_price}, url='{asset_url}'")
+                logger.error(f"Data used: id={asset_id}, symbol='{asset_symbol}', name='{asset_name}', asset_type='{asset_category}', default_price={asset_default_price}, url='{asset_url}', image_url='{asset_image_url}'")
                 logger.error(f"Original item from Finnhub: {item}")
                 # Hier könnten Sie entscheiden, das fehlerhafte Element zu überspringen oder einen Platzhalter hinzuzufügen
     else:
