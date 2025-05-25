@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import BaseLayout from '../../components/Layout/BaseLayout';
-import { GetUserInfo, GetPortfolioData, GetRecentTransactions, GetDailyQuiz, SubmitDailyQuizAnswer } from '../../apiService';
+import { GetUserInfo, GetPortfolioData, GetRecentTransactions, GetDailyQuiz, SubmitDailyQuizAnswer, GetDailyQuizAttemptToday, DailyQuizAttemptResponse } from '../../apiService';
 import './Dashboard.css';
 import { useAuth } from '../../contexts/AuthContext'; // Import useAuth
 
@@ -54,10 +54,9 @@ interface Quiz {
   possible_answer_2: string;
   possible_answer_3: string;
   attempted: boolean;
-  // New fields to handle quiz state after an attempt
-  selected_answer?: string; // Store which answer the user selected
-  is_correct?: boolean;     // Was the selected answer correct?
-  correct_answer_text?: string; // The text of the correct answer from backend
+  selected_answer?: string;
+  is_correct?: boolean;
+  correct_answer_text?: string; // Ensure this is populated from the attempt or quiz details
 }
 
 interface Level {
@@ -73,6 +72,7 @@ const Dashboard: React.FC = () => {
   const [assetAllocation, setAssetAllocation] = useState<AssetAllocation[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [dailyQuizAttempt, setDailyQuizAttempt] = useState<DailyQuizAttemptResponse | null>(null); // To store attempt details
   const [currentUserLevel, setCurrentUserLevel] = useState<number>(1);
   const [currentUserXp, setCurrentUserXp] = useState<number>(0);
   const [xpPercentage, setXpPercentage] = useState<number>(0);
@@ -98,8 +98,8 @@ const Dashboard: React.FC = () => {
       if (!authUser || !authUser.id) {
         console.warn("[Dashboard] No authUser or no authUser.id present!", authUser);
         setLoading(false);
-        if (!authLoading) {
-          setError("User not authenticated.");
+        if (!authLoading) { // Check if auth is not loading to prevent premature error
+          setError("User not authenticated. Please login.");
         }
         return;
       }
@@ -108,7 +108,6 @@ const Dashboard: React.FC = () => {
         setLoading(true);
         setError(null);
         const userId = authUser.id.toString();
-        console.log(`[Dashboard] Starting API calls for userId: ${userId}`);
 
         // User Info & XP Calculation
         console.log("[Dashboard] Calling GetUserInfo...");
@@ -216,22 +215,28 @@ const Dashboard: React.FC = () => {
         // Quiz
         console.log("[Dashboard] Calling GetDailyQuiz...");
         if (token) {
-          const dailyQuizData = await GetDailyQuiz(); // Assuming GetDailyQuiz is updated to use token if needed by apiService
-          console.log("[Dashboard] GetDailyQuiz result:", dailyQuizData);
-          // Ensure the quiz data structure matches the Quiz interface
-          if (dailyQuizData && typeof dailyQuizData.id !== 'undefined') { // Basic check
-            setQuiz(dailyQuizData);
-          } else if (dailyQuizData && dailyQuizData.success === false && dailyQuizData.message) {
-            console.warn("[Dashboard] Failed to get daily quiz:", dailyQuizData.message);
-            setQuiz(null); // Or handle as an error
-          } else if (dailyQuizData && Array.isArray(dailyQuizData) && dailyQuizData.length > 0 && typeof dailyQuizData[0].id !== 'undefined') {
-            // If API returns an array of quizzes, take the first one
-            console.log("[Dashboard] GetDailyQuiz returned an array, taking the first element.");
-            setQuiz(dailyQuizData[0]);
-          }
-          else {
-            console.warn("[Dashboard] GetDailyQuiz result was not in the expected format or was empty:", dailyQuizData);
-            setQuiz(null);
+          const quizData = await GetDailyQuiz();
+          if (quizData && quizData.id) { // Check if quizData and its id is not null
+            // Fetch today's attempt status
+            const attemptToday = await GetDailyQuizAttemptToday();
+            setDailyQuizAttempt(attemptToday);
+
+            if (attemptToday && attemptToday.success && attemptToday.selected_answer) {
+              // If an attempt was made today, update quiz state accordingly
+              setQuiz({
+                ...quizData,
+                attempted: true,
+                selected_answer: attemptToday.selected_answer,
+                is_correct: attemptToday.is_correct,
+                correct_answer_text: attemptToday.correct_answer, // Populate correct answer text
+                explanation: attemptToday.explanation || quizData.explanation, // Use explanation from attempt if available
+              });
+            } else {
+              // No attempt made today or attempt fetch failed (treat as not attempted)
+              setQuiz({ ...quizData, attempted: false });
+            }
+          } else {
+            setQuiz(null); // No quiz available for today
           }
         } else {
           console.warn("[Dashboard] No token available for GetDailyQuiz");
@@ -240,15 +245,17 @@ const Dashboard: React.FC = () => {
         setLoading(false);
         console.log("[Dashboard] All data loaded!");
       } catch (err) {
-        console.error('[Dashboard] Error loading dashboard data:', err);
+        console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
+        // Ensure quiz state is reset or handled in case of error during its fetch
+        setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, attempted: false } : null);
         setLoading(false);
       }
     };
     if (!authLoading) {
       fetchAllData();
     }
-  }, [authUser, authLoading, levels, token]);
+  }, [authUser, authLoading, token]);
 
   // Logging for render phases
   useEffect(() => {
@@ -256,61 +263,40 @@ const Dashboard: React.FC = () => {
     console.log("[Dashboard] Render: portfolioData=", portfolioData);
     console.log("[Dashboard] Render: recentTransactions=", recentTransactions);
     console.log("[Dashboard] Render: quiz=", quiz);
+    console.log("[Dashboard] Render: dailyQuizAttempt=", dailyQuizAttempt); // Log new state
     console.log("[Dashboard] Render: error=", error);
     console.log("[Dashboard] Render: loading=", loading);
-  }, [user, portfolioData, recentTransactions, quiz, error, loading]);
+  }, [user, portfolioData, recentTransactions, quiz, dailyQuizAttempt, error, loading]);
 
   const handleQuizSubmit = async (quizId: string, answer: string) => {
-    if (!token || quizSubmitting || quiz?.attempted) return; // Prevent multiple submissions or if already attempted
+    if (!token || quizSubmitting || quiz?.attempted) return;
 
     setQuizSubmitting(true);
-    setError(null); // Clear previous errors
+    setError(null);
 
     try {
       const payload = { quiz_id: quizId, selected_answer: answer };
-      const result = await SubmitDailyQuizAnswer(payload); // Assuming SubmitDailyQuizAnswer uses token if needed
-
+      const result = await SubmitDailyQuizAnswer(payload);
       if (result.success) {
         setQuiz(prevQuiz => {
           if (!prevQuiz) return null;
           return {
             ...prevQuiz,
             attempted: true,
-            selected_answer: answer,
+            selected_answer: result.selected_answer,
             is_correct: result.is_correct,
-            correct_answer_text: result.correct_answer, // Store the correct answer text
-            explanation: result.explanation || prevQuiz.explanation, // Update explanation if backend provides a new one
+            correct_answer_text: result.correct_answer,
+            explanation: result.explanation || prevQuiz.explanation,
           };
         });
-
-        // Update user's XP if it changed
+        // Optionally, update user XP here if not handled by a global state update or re-fetch
         if (result.xp_gained && result.xp_gained > 0 && user) {
-          const newXp = user.xp + result.xp_gained;
-          setUser(prevUser => prevUser ? { ...prevUser, xp: newXp } : null);
-          // Optionally, re-calculate level and XP percentage here or let the main useEffect handle it if `user` is a dependency
-          setCurrentUserXp(newXp); // Update current user XP state
-          // Recalculate XP percentage (copied and adapted from main useEffect)
-          const userLvl = user.level; // Assuming level doesn't change instantly from one quiz
-          const currentLevelData = levels.find(l => l.level === userLvl);
-          const xpFromPreviousLevels = (userLvl === 1) ? 0 : (levels.find(l => l.level === userLvl - 1)?.xp_required || 0);
-          if (currentLevelData) {
-            const xpToCompleteCurrentLevel = currentLevelData.xp_required;
-            const xpSpanOfCurrentLevel = xpToCompleteCurrentLevel - xpFromPreviousLevels;
-            const xpEarnedInCurrentLevel = newXp - xpFromPreviousLevels;
-            if (xpSpanOfCurrentLevel > 0) {
-              let percent = (xpEarnedInCurrentLevel / xpSpanOfCurrentLevel) * 100;
-              percent = Math.max(0, Math.min(percent, 100));
-              setXpPercentage(percent);
-            } else {
-              setXpPercentage(newXp >= xpToCompleteCurrentLevel ? 100 : 0);
-            }
-          }
+          setUser(prevUser => prevUser ? { ...prevUser, xp: prevUser.xp + (result.xp_gained || 0) } : null);
         }
-        // Potentially show a success message to the user
       } else {
         setError(result.message || 'Failed to submit quiz answer.');
-        // Optionally, allow retry or show specific error feedback
-        setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, selected_answer: answer, attempted: false } : null); // Reset attempted state on failure to allow retry
+        // Keep UI interactive but show it's attempted with the user's pick
+        setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, attempted: true, selected_answer: answer, is_correct: false } : null);
       }
     } catch (err: any) {
       console.error('Error submitting quiz answer:', err);

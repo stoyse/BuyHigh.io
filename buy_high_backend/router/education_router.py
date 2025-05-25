@@ -110,27 +110,66 @@ async def api_submit_daily_quiz_attempt(
 async def api_get_daily_quiz_attempt_today(current_user: AuthenticatedUser = Depends(get_current_user)):
     user_id = current_user.id
     today_str = datetime.today().strftime('%Y-%m-%d')
-    
-    attempt = education_handler.get_dayly_quiz_attempt_day(user_id, today_str)
-    
-    if attempt:
+
+    # 1. Fetch today's quiz details
+    todays_quiz_details = education_handler.get_daily_quiz(date=today_str)
+
+    if not todays_quiz_details:
+        # If no quiz is defined for today, then no attempt can exist for it.
         return DailyQuizAttemptResponse(
-            success=True,
-            is_correct=attempt['is_correct'],
-            correct_answer=attempt['correct_answer'],
-            explanation=attempt['explanation'],
-            xp_gained=0, 
-            message="Existing attempt found.",
-            selected_answer=attempt['selected_answer']
-        )
-    else:
-         return DailyQuizAttemptResponse(
             success=False,
             is_correct=False,
             correct_answer="",
             explanation="",
             xp_gained=0,
-            message="No attempt found for today.",
+            message="No daily quiz available for today.",
+            selected_answer=None
+        )
+
+    actual_quiz_id_from_db = todays_quiz_details.get('id')
+    if actual_quiz_id_from_db is None:
+        logger.error(f"Quiz data for date {today_str} is missing 'id' field for /daily-quiz/attempt/today endpoint.")
+        # This is a server-side issue if quiz exists but has no ID.
+        return DailyQuizAttemptResponse(
+            success=False,
+            is_correct=False,
+            correct_answer="",
+            explanation="",
+            xp_gained=0,
+            message="Daily quiz data is incomplete.",
+            selected_answer=None
+        )
+
+    # 2. Fetch all user's quiz attempts
+    all_user_attempts = education_handler.get_daily_quiz_attempts(user_id)
+    found_todays_attempt_details = None
+    if all_user_attempts:
+        for attempt in all_user_attempts:
+            # Ensure 'quiz_id' exists in attempt dictionary
+            if attempt.get('quiz_id') == actual_quiz_id_from_db:
+                found_todays_attempt_details = attempt
+                break
+    
+    if found_todays_attempt_details:
+        # An attempt for today's specific quiz ID was found
+        return DailyQuizAttemptResponse(
+            success=True,
+            is_correct=found_todays_attempt_details.get('is_correct', False), # Provide default if key missing
+            correct_answer=todays_quiz_details.get('correct_answer', ""), 
+            explanation=todays_quiz_details.get('explanation', ""),
+            xp_gained=0, # XP is not re-awarded on fetch
+            message="Existing attempt found for today's quiz.",
+            selected_answer=found_todays_attempt_details.get('selected_answer') # Provide default if key missing
+        )
+    else:
+        # No attempt found for today's specific quiz ID
+        return DailyQuizAttemptResponse(
+            success=False,
+            is_correct=False, # Default
+            correct_answer="", # Not attempted, so don't reveal
+            explanation="",   # Not attempted, so don't reveal
+            xp_gained=0,
+            message="No attempt found for today's quiz.",
             selected_answer=None
         )
 
