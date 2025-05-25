@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { frontendLogger } from '../../frontendLogger';
 import BaseLayout from '../../components/Layout/BaseLayout';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
+
+const GOOGLE_REDIRECT_URI = process.env.REACT_APP_GOOGLE_REDIRECT_URI || 'http://localhost:3000';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -14,6 +16,15 @@ const LoginPage: React.FC = () => {
   const location = useLocation();
   
   const from = location.state?.from?.pathname || '/dashboard';
+
+  useEffect(() => {
+    if (!process.env.REACT_APP_GOOGLE_REDIRECT_URI) {
+      console.warn('REACT_APP_GOOGLE_REDIRECT_URI is not set. Defaulting to http://localhost:3000');
+    }
+  }, []);
+
+  // Ensure the environment variable is logged for debugging purposes
+  frontendLogger.info('Google Redirect URI', { redirectUri: process.env.REACT_APP_GOOGLE_REDIRECT_URI || 'http://localhost:3000' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
