@@ -25,13 +25,22 @@ async def api_submit_daily_quiz_attempt(
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
     user_id = current_user.id
-    possible_answers = education_handler.get_daily_quiz(date=datetime.today().strftime('%Y-%m-%d'))
-    possible_answers = possible_answers.get('possible_answers', [])
-    if payload.selected_answer in possible_answers:
-        is_correct = payload.selected_answer == possible_answers[0]
+    quiz_data = education_handler.get_daily_quiz(date=datetime.today().strftime('%Y-%m-%d')) # Renamed for clarity
+    
+    is_correct = False # Initialize is_correct
+    
+    if quiz_data and 'correct_answer' in quiz_data: # Check if quiz_data and correct_answer exist
+        correct_answer = quiz_data.get('correct_answer')
+        # Assuming selected_answer is the direct value to compare
+        if payload.selected_answer == correct_answer:
+            is_correct = True
+    
+    # It's good practice to ensure quiz_id is valid or handle if not
+    # For example, check if payload.quiz_id matches quiz_data.get('id') if available
+    
     result = education_handler.insert_daily_quiz_attempt(
         user_id=user_id,
-        quiz_id=payload.quiz_id,
+        quiz_id=payload.quiz_id, # Ensure this quiz_id is relevant/validated
         selected_answer=payload.selected_answer,
         is_correct=is_correct
     )
