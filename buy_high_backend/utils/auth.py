@@ -92,6 +92,7 @@ def verify_firebase_id_token(id_token: str):
     """
     Überprüft ein Firebase ID-Token.
     """
+    logger.info("UTILS.AUTH: Entered verify_firebase_id_token") # DIAGNOSTIC LOG
     if not firebase_admin._apps:
         logger.error("UTILS.AUTH: Firebase App nicht initialisiert. Token-Überprüfung nicht möglich.")
         return None
@@ -115,12 +116,17 @@ def verify_google_id_token(id_token: str):
     Verifiziert ein Google OAuth ID-Token direkt ohne Firebase.
     Dies ist notwendig für Tokens, die vom Google OAuth-Flow kommen.
     """
+    logger.info("UTILS.AUTH: Entered verify_google_id_token") # DIAGNOSTIC LOG
     try:
         from google.oauth2 import id_token as google_id_token
         from google.auth.transport import requests
+        import os # Import os module to access environment variables
         
-        # Google's Client ID - dies sollte aus einer Umgebungsvariable kommen
-        google_client_id = "947345312696-clbipulo67p0advaj5tmch1pnj5vb7kk.apps.googleusercontent.com"
+        # Google's Client ID - Lese aus Umgebungsvariable
+        google_client_id = os.getenv("FIREBASE_CLIENT_ID")
+        if not google_client_id:
+            logger.error("UTILS.AUTH: FIREBASE_CLIENT_ID ist nicht in den Umgebungsvariablen gesetzt.")
+            return None
         
         # Verifiziere das Token direkt mit Google
         decoded_token = google_id_token.verify_oauth2_token(
