@@ -12,6 +12,8 @@ export interface NewsCardProps { // Exportiere das Interface
   animationDelay?: string;
 }
 
+const placeholderImage = "/images/news_placeholder.png";
+
 const NewsCard: React.FC<NewsCardProps> = ({
   headline,
   category,
@@ -22,8 +24,6 @@ const NewsCard: React.FC<NewsCardProps> = ({
   dateTime,
   animationDelay,
 }) => {
-  const placeholderImage = "/images/news_placeholder.png"; // Pfad zum Placeholder-Bild anpassen
-
   const content = (
     <>
       <div className="news-image-container rounded-t-2xl bg-gray-200 dark:bg-gray-700">
