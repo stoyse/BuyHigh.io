@@ -11,9 +11,12 @@ from ..pydantic_models import LoginRequest, RegisterRequest, UserResponse
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+logger.info(f"Auth_router: APIRouter instance created: {id(router)}")
+
 @router.post("/login")
 async def api_login(login_data: LoginRequest):
     """API route for user login"""
+    logger.info(f"Auth_router: /login endpoint called.")
     logger.info(f"Login attempt for email: {login_data.email}")
     try:
         firebase_uid, id_token = auth_module.login_firebase_user_rest(login_data.email, login_data.password)
@@ -67,6 +70,7 @@ async def api_login(login_data: LoginRequest):
 @router.post("/logout")
 async def api_logout():
     """API route for user logout"""
+    logger.info(f"Auth_router: /logout endpoint called.")
     logger.info("Logout request received")
     try:
         # In a complete implementation, the following actions could be performed here:
@@ -88,6 +92,7 @@ async def api_logout():
 @router.post("/register", response_model=UserResponse)
 async def api_register(register_data: RegisterRequest):
     """API route for user registration"""
+    logger.info(f"Auth_router: /register endpoint called for email: {register_data.email}")
     logger.info(f"Registration attempt for email: {register_data.email}")
     try:
         # Step 1: Create user in Firebase Authentication

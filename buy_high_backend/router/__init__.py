@@ -33,6 +33,8 @@ file_handler = logging.FileHandler(DEBUG_LOG_FILE)
 file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
 debug_logger.addHandler(file_handler)
 
+debug_logger.info("Initializing router package (buy_high_backend.router.__init__)")
+
 # Debug-Funktion für die Anwendung
 def log_request_response(request: Request, message: str):
     """Loggt Anfrage- und Antwortdetails"""
@@ -40,17 +42,29 @@ def log_request_response(request: Request, message: str):
 
 # Hauptrouter, der alle Sub-Router kombiniert
 router = APIRouter()
+debug_logger.info(f"Created main APIRouter instance in router.__init__: {id(router)}")
 
 # Sub-Router einbinden
+debug_logger.info(f"Including auth_router ({id(auth_router)}) into main router ({id(router)}) without prefix.")
 router.include_router(auth_router)
+debug_logger.info(f"Including stock_router ({id(stock_router)}) into main router ({id(router)}) without prefix.")
 router.include_router(stock_router)
+debug_logger.info(f"Including trade_router ({id(trade_router)}) into main router ({id(router)}) without prefix.")
 router.include_router(trade_router)
+debug_logger.info(f"Including asset_router ({id(asset_router)}) into main router ({id(router)}) without prefix.")
 router.include_router(asset_router)
+debug_logger.info(f"Including user_router ({id(user_router)}) into main router ({id(router)}) without prefix.")
 router.include_router(user_router)
+debug_logger.info(f"Including education_router ({id(education_router)}) into main router ({id(router)}) without prefix.")
 router.include_router(education_router)
+debug_logger.info(f"Including misc_router ({id(misc_router)}) into main router ({id(router)}) without prefix.")
 router.include_router(misc_router)
+debug_logger.info(f"Including easter_egg_router ({id(easter_egg_router)}) into main router ({id(router)}) without prefix.")
 router.include_router(easter_egg_router)
+debug_logger.info(f"Including news_router ({id(news_router)}) into main router ({id(router)}) without prefix.")
 router.include_router(news_router)  # Include news_router
+
+debug_logger.info(f"Finished including sub-routers into main router ({id(router)}) in router.__init__.")
 
 # Middleware-Klasse (wird in main.py verwendet)
 class RequestLoggingMiddleware(BaseHTTPMiddleware):

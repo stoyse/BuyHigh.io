@@ -51,6 +51,8 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+_setup_logger.info(f"MAIN.PY: FastAPI app instance created: {id(app)}")
+
 # Define allowed origins
 allowed_origins = [
     "https://buy-high-io.vercel.app/"
@@ -73,8 +75,10 @@ allowed_origins = [
 # Add the request logging middleware
 #app.add_middleware(RequestLoggingMiddleware)
 
+_setup_logger.info(f"MAIN.PY: Attempting to include api_router (id: {id(api_router)}) from buy_high_backend.router into app (id: {id(app)}) with prefix=''.")
 # Include API routes without prefix (empty string instead of "")
 app.include_router(api_router, prefix="")
+_setup_logger.info(f"MAIN.PY: Successfully included api_router into app.")
 
 # Static files for profile pictures, etc.
 static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
