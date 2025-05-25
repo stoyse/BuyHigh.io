@@ -51,11 +51,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await loginUser(email, password);
       
       if (response.success && response.id_token) {
-        // Ensure user data is structured consistently, prefer backend-provided details
+        let emailFromToken = email; // Fallback to input email
+        try {
+          const payloadBase64Url = response.id_token.split('.')[1];
+          if (payloadBase64Url) {
+            let payloadBase64 = payloadBase64Url.replace(/-/g, '+').replace(/_/g, '/');
+            // Add padding if necessary
+            switch (payloadBase64.length % 4) {
+              case 2: payloadBase64 += '=='; break;
+              case 3: payloadBase64 += '='; break;
+            }
+            const decodedPayload = JSON.parse(atob(payloadBase64));
+            emailFromToken = decodedPayload.email || email;
+          }
+        } catch (e) {
+          console.error("Failed to decode token or get email from token:", e);
+          // Keep using the input email as a fallback
+        }
+
         const userData = { 
           id: response.userId, // local DB ID
           firebase_uid: response.firebase_uid, // Firebase UID
-          email: JSON.parse(atob(response.id_token.split('.')[1])).email || email // email from token or input
+          email: emailFromToken
         };
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('authToken', response.id_token);
