@@ -31,6 +31,8 @@ export interface LoginResponse {
   userId: string | number; // Assuming local DB ID can be number
   firebase_uid: string;
   id_token: string;
+  email?: string; // Optional, da es möglicherweise nicht immer vorhanden ist (z.B. beim Standard-Login)
+  username?: string; // Optional
 }
 
 export interface RegisterRequestData {
@@ -41,10 +43,36 @@ export interface RegisterRequestData {
 
 export interface RegisterResponse {
   id: string; // Firebase UID
-  email: string;
+  email: string
   username: string;
   message: string;
   success?: boolean; // Optional, depending on backend consistency
+}
+
+export interface GoogleLoginRequest {
+  id_token: string;
+}
+
+// Die Backend-Antwort für Google-Login ist ähnlich wie die normale LoginResponse
+// Daher können wir LoginResponse wiederverwenden oder eine spezifischere erstellen, falls nötig.
+// Fürs Erste verwenden wir LoginResponse.
+
+export const loginWithGoogleToken = async (idToken: string): Promise<LoginResponse> => {
+  logApiCall('POST', '/auth/google-login', { id_token_length: idToken.length }); // Loggen, aber nicht das Token selbst
+  try {
+    const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/google-login`, { id_token: idToken }, {
+      withCredentials: true,
+    });
+    logDebug('Google Login Response:', response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error during Google login:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error during Google login:', error);
+    }
+    throw error;
+  }
 }
 
 export const loginUser = async (email: string, password: string): Promise<LoginResponse> => {

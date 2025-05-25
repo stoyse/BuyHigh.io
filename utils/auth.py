@@ -204,10 +204,34 @@ def verify_firebase_id_token(id_token):
         return decoded_token
     except firebase_auth.FirebaseError as e:
         logger.error(f"Error verifying Firebase ID token: {e}")
-        raise ValueError(f"Invalid Firebase ID token: {e}")
+        return None
+
+def verify_google_id_token(id_token: str):
+    """Verifies a Google ID token using Firebase Admin SDK.
+
+    Args:
+        id_token: The Google ID token to verify.
+
+    Returns:
+        The decoded token (Firebase UserRecord like object) if verification is successful, otherwise None.
+    """
+    try:
+        # Firebase Admin SDK can verify ID tokens issued by Google Sign-In
+        decoded_token = firebase_auth.verify_id_token(id_token, check_revoked=True)
+        logger.info(f"Google ID token verified successfully for UID: {decoded_token.get('uid')}")
+        return decoded_token
+    except firebase_auth.RevokedIdTokenError:
+        logger.warning("Google ID token has been revoked.")
+        raise ValueError("ID token has been revoked.")
+    except firebase_auth.UserDisabledError:
+        logger.warning("User account corresponding to the Google ID token has been disabled.")
+        raise ValueError("User account has been disabled.")
+    except firebase_auth.InvalidIdTokenError as e:
+        logger.warning(f"Google ID token is invalid: {e}")
+        raise ValueError("ID token is invalid.")
     except Exception as e:
-        logger.error(f"Unexpected error verifying Firebase ID token: {e}")
-        raise ValueError(f"Could not verify ID token: {e}")
+        logger.error(f"Unexpected error verifying Google ID token: {e}", exc_info=True)
+        raise ValueError("An unexpected error occurred during token verification.")
 
 def get_or_create_local_user_from_firebase(decoded_token, db):
     """

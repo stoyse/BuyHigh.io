@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 import logging
 import utils.auth as auth_module
 import database.handler.postgres.postgres_db_handler as db_handler
-from ..pydantic_models import LoginRequest, RegisterRequest, UserResponse
+from ..pydantic_models import LoginRequest, RegisterRequest, UserResponse, GoogleLoginRequest
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -146,3 +146,72 @@ async def api_register(register_data: RegisterRequest):
         # if 'firebase_user' in locals() and firebase_user and firebase_user.uid:
         #    auth_module.delete_firebase_user(firebase_user.uid) # Requires implementation
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An unexpected error occurred during registration.")
+
+@router.post("/google-login")
+async def api_google_login(request_data: GoogleLoginRequest):
+    logger.info(f"Auth_router: /google-login endpoint called.")
+    try:
+        id_token = request_data.id_token
+        logger.debug(f"Received Google ID token: {id_token[:30]}...") # Log only a part of the token
+
+        decoded_token = auth_module.verify_google_id_token(id_token)
+        if not decoded_token:
+            logger.warning("Google ID token verification failed.")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google ID token.")
+
+        firebase_uid = decoded_token.get('uid')
+        email = decoded_token.get('email')
+        username = decoded_token.get('name') or email.split('@')[0]
+        # email_verified = decoded_token.get('email_verified')
+        # picture = decoded_token.get('picture')
+
+        logger.info(f"Google token verified. Firebase UID: {firebase_uid}, Email: {email}")
+
+        local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
+        if not local_user:
+            logger.info(f"No local user for Firebase UID {firebase_uid}. Checking by email: {email}")
+            local_user_by_email = db_handler.get_user_by_email(email)
+            if local_user_by_email:
+                logger.info(f"Local user found by email {email}. Updating Firebase UID from {local_user_by_email.get('firebase_uid')} to {firebase_uid}")
+                db_handler.update_firebase_uid(local_user_by_email['id'], firebase_uid)
+                local_user = db_handler.get_user_by_firebase_uid(firebase_uid) # Re-fetch user with updated UID
+            else:
+                logger.info(f"No user found by email {email}. Creating new local user for Firebase UID: {firebase_uid}")
+                if db_handler.add_user(username=username, email=email, firebase_uid=firebase_uid, provider='google.com'):
+                    local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
+                    logger.info(f"New local user created with ID: {local_user['id']} for Firebase UID: {firebase_uid}")
+                else:
+                    logger.error(f"Failed to create local user for Firebase UID: {firebase_uid} after Google login.")
+                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user account locally.")
+        
+        if not local_user:
+            logger.error(f"Critical: Could not find or create local user for Firebase UID {firebase_uid} after Google login.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found or could not be created locally.")
+
+        try:
+            db_handler.update_last_login(local_user['id'])
+            logger.info(f"Updated last login for user ID: {local_user['id']}")
+        except Exception as e:
+            logger.warning(f"Failed to update last login for user ID {local_user['id']}: {e}")
+
+        # The client already has the ID token from Google Sign-In.
+        # This token can be used to authenticate with Firebase client-side services.
+        # We return local user details and the Firebase UID.
+        return {
+            "success": True,
+            "message": "Google login successful.",
+            "userId": local_user['id'], # Local DB user ID
+            "firebase_uid": firebase_uid,
+            "email": local_user['email'],
+            "username": local_user['username'],
+            "id_token": id_token # Return the original Google ID token, client can use this with Firebase
+        }
+
+    except ValueError as ve:
+        logger.warning(f"Google login value error: {ve}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(ve))
+    except HTTPException:
+        raise # Re-raise HTTPException directly
+    except Exception as e:
+        logger.error(f"Error during Google login: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An unexpected error occurred during Google login.")

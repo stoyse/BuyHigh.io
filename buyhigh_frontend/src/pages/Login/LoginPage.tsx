@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { frontendLogger } from '../../frontendLogger';
 import BaseLayout from '../../components/Layout/BaseLayout';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, loading } = useAuth();
+  const { login, loginWithGoogle, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -41,6 +42,35 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const handleGoogleLoginSuccess = async (credentialResponse: CredentialResponse) => {
+    setError('');
+    frontendLogger.info('Google login attempt');
+    if (credentialResponse.credential) {
+      try {
+        const success = await loginWithGoogle(credentialResponse.credential);
+        if (success) {
+          frontendLogger.info('Google login successful');
+          navigate(from, { replace: true });
+        } else {
+          setError('Google login failed. Please try again.');
+          frontendLogger.warn('Google login failed: backend or token issue');
+        }
+      } catch (err) {
+        setError('An error occurred during Google login. Please try again.');
+        frontendLogger.error('Google login error', { error: err instanceof Error ? err.message : String(err) });
+        console.error('Google login error:', err);
+      }
+    } else {
+      setError('Google login failed: No credential received.');
+      frontendLogger.warn('Google login failed: no credential');
+    }
+  };
+
+  const handleGoogleLoginError = () => {
+    setError('Google login failed. Please ensure pop-ups are enabled and try again.');
+    frontendLogger.error('Google login error: onError callback triggered');
+  };
+
   return (
     <BaseLayout title="Login - BuyHigh.io">
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background-light via-background-light to-background-accent-light dark:from-background-dark dark:via-background-dark dark:to-background-accent-dark py-12 px-4 sm:px-6 lg:px-8">
@@ -50,13 +80,13 @@ const LoginPage: React.FC = () => {
               Sign in to your Account
             </h2>
           </div>
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+              <strong className="font-bold">Error: </strong>
+              <span className="block sm:inline">{error}</span>
+            </div>
+          )}
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <strong className="font-bold">Error: </strong>
-                <span className="block sm:inline">{error}</span>
-              </div>
-            )}
             <div className="rounded-md shadow-sm -space-y-px">
               <div>
                 <label htmlFor="email-address" className="sr-only">
@@ -111,7 +141,35 @@ const LoginPage: React.FC = () => {
               </button>
             </div>
           </form>
-          <div className="text-sm text-center">
+
+          <div className="mt-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-background-light dark:bg-background-dark text-gray-500 dark:text-gray-400">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-3">
+              <div>
+                <GoogleLogin
+                  onSuccess={handleGoogleLoginSuccess}
+                  onError={handleGoogleLoginError}
+                  useOneTap
+                  theme="outline"
+                  size="large"
+                  width="100%"
+                  containerProps={{ style: { width: '100%' } }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="text-sm text-center mt-6">
             <p className="text-gray-600 dark:text-gray-400">
               Don't have an account yet?{' '}
               <button 
