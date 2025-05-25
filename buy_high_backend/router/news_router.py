@@ -40,20 +40,53 @@ async def api_news():
     transformed_assets = []
     if isinstance(news_data, list): # Sicherstellen, dass news_data eine Liste ist
         for index, item in enumerate(news_data):
-            if isinstance(item, dict): # Sicherstellen, dass jedes Element ein Dictionary ist
-                # Passe die folgenden .get()-Aufrufe an die tatsächlichen Schlüssel in deinen News-Daten an
-                # Es ist unwahrscheinlich, dass allgemeine Nachrichten eine 'id' oder einen 'symbol' im Sinne eines Assets haben.
-                # Du musst entscheiden, welche Werte hier sinnvoll sind.
+            if not isinstance(item, dict): # Sicherstellen, dass jedes Element ein Dictionary ist
+                logger.warning(f"Item in news_data is not a dictionary and will be skipped: {item}")
+                continue
+
+            # ID - Finnhub 'id' ist normalerweise ein Integer. Fallback auf Index.
+            asset_id_val = item.get("id")
+            asset_id = asset_id_val if isinstance(asset_id_val, int) else index
+
+            # Symbol - aus 'source' von Finnhub, da 'symbol' für allgemeine Nachrichten unwahrscheinlich ist.
+            # Sicherstellen, dass es ein String ist und einen robusten Fallback bieten.
+            source_val = item.get("source")
+            asset_symbol = str(source_val) if source_val is not None and source_val != "" else f"NEWS_SRC_{asset_id}"
+
+            # Name - aus 'headline' von Finnhub.
+            # Sicherstellen, dass es ein String ist und einen robusten Fallback bieten.
+            headline_val = item.get("headline")
+            asset_name = str(headline_val) if headline_val is not None and headline_val != "" else f"Untitled News {asset_id}"
+
+            # Asset Type - aus 'category' von Finnhub.
+            # Frontend erwartet Kleinschreibung. Sicherstellen, dass es ein String ist.
+            category_val = item.get("category")
+            asset_category = str(category_val).lower() if category_val is not None and category_val != "" else "general"
+            
+            # Default Price (Optional[float])
+            price_val = item.get("price") # 'price' ist kein Standardfeld in Finnhub general_news
+            asset_default_price = None
+            if price_val is not None:
+                try:
+                    asset_default_price = float(price_val)
+                except (ValueError, TypeError):
+                    logger.warning(f"Could not convert price '{price_val}' to float for item id {asset_id}.")
+                    asset_default_price = None
+            
+            try:
                 asset = Asset(
-                    id=item.get("id", index),  # Verwende Index als Fallback-ID oder einen eindeutigen Schlüssel aus item
-                    symbol=item.get("symbol", item.get("source", "GENERAL")), # Beispiel: 'source' oder ein Standardwert
-                    name=item.get("headline", item.get("title", "General News")), # Beispiel: 'headline' oder 'title'
-                    asset_type=item.get("category", "news"), # Beispiel: 'category' oder ein Standardwert
-                    default_price=item.get("price") # Falls vorhanden
+                    id=asset_id,
+                    symbol=asset_symbol,
+                    name=asset_name,
+                    asset_type=asset_category,
+                    default_price=asset_default_price
                 )
                 transformed_assets.append(asset)
-            else:
-                logger.warning(f"Item in news_data is not a dictionary: {item}")
+            except Exception as e: # Fängt Pydantic ValidationErrors und andere Fehler bei der Instanzerstellung ab
+                logger.error(f"Failed to create Asset instance for item (id/index {asset_id}). Error: {e}")
+                logger.error(f"Data used: id={asset_id}, symbol='{asset_symbol}', name='{asset_name}', asset_type='{asset_category}', default_price={asset_default_price}")
+                logger.error(f"Original item from Finnhub: {item}")
+                # Hier könnten Sie entscheiden, das fehlerhafte Element zu überspringen oder einen Platzhalter hinzuzufügen
     else:
         logger.error(f"news_data is not a list as expected: {type(news_data)}")
         # Du könntest hier auch eine HTTPException auslösen, wenn das Format unerwartet ist
