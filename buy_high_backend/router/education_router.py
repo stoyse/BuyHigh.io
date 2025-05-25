@@ -25,11 +25,15 @@ async def api_submit_daily_quiz_attempt(
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
     user_id = current_user.id
-
-    result = education_handler.submit_daily_quiz_attempt(
+    possible_answers = education_handler.get_daily_quiz(date=datetime.today().strftime('%Y-%m-%d'))
+    possible_answers = possible_answers.get('possible_answers', [])
+    if payload.selected_answer in possible_answers:
+        is_correct = payload.selected_answer == possible_answers[0]
+    result = education_handler.insert_daily_quiz_attempt(
         user_id=user_id,
         quiz_id=payload.quiz_id,
-        selected_answer=payload.selected_answer
+        selected_answer=payload.selected_answer,
+        is_correct=is_correct
     )
     return result
 
