@@ -109,3 +109,51 @@ def verify_firebase_id_token(id_token: str):
     except Exception as e:
         logger.error(f"UTILS.AUTH: Fehler bei der Überprüfung des Firebase ID-Tokens: {e}", exc_info=True)
         return None
+
+def verify_google_id_token(id_token: str):
+    """
+    Verifiziert ein Google OAuth ID-Token direkt ohne Firebase.
+    Dies ist notwendig für Tokens, die vom Google OAuth-Flow kommen.
+    """
+    try:
+        from google.oauth2 import id_token as google_id_token
+        from google.auth.transport import requests
+        
+        # Google's Client ID - dies sollte aus einer Umgebungsvariable kommen
+        google_client_id = "947345312696-clbipulo67p0advaj5tmch1pnj5vb7kk.apps.googleusercontent.com"
+        
+        # Verifiziere das Token direkt mit Google
+        decoded_token = google_id_token.verify_oauth2_token(
+            id_token, 
+            requests.Request(), 
+            google_client_id
+        )
+        
+        # Überprüfe, ob der Issuer korrekt ist
+        if decoded_token['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+            logger.warning(f"UTILS.AUTH: Ungültiger Issuer: {decoded_token['iss']}")
+            return None
+            
+        logger.info(f"UTILS.AUTH: Google OAuth Token erfolgreich verifiziert für: {decoded_token.get('email')}")
+        
+        # Erstelle Firebase-ähnliche Token-Struktur für Kompatibilität
+        firebase_compatible_token = {
+            'uid': decoded_token.get('sub'),  # Google's unique user ID
+            'email': decoded_token.get('email'),
+            'name': decoded_token.get('name'),
+            'picture': decoded_token.get('picture'),
+            'email_verified': decoded_token.get('email_verified'),
+            'iss': 'google.com'  # Markiere als Google Token
+        }
+        
+        return firebase_compatible_token
+        
+    except ValueError as e:
+        logger.warning(f"UTILS.AUTH: Google ID-Token Verifikation fehlgeschlagen: {e}")
+        return None
+    except ImportError as e:
+        logger.error(f"UTILS.AUTH: Google Auth Library nicht verfügbar: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"UTILS.AUTH: Fehler bei der Google Token-Verifikation: {e}", exc_info=True)
+        return None
