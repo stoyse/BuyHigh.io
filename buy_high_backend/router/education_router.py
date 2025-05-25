@@ -43,23 +43,26 @@ async def api_submit_daily_quiz_attempt(
     found_todays_attempt = None
     if all_user_attempts:
         for attempt in all_user_attempts:
+            # Ensure IDs are of the same type for comparison, e.g., both int or both str.
+            # Assuming actual_quiz_id_from_db is an int, and attempt.get('quiz_id') might also be.
             if attempt.get('quiz_id') == actual_quiz_id_from_db:
                 found_todays_attempt = attempt
                 break
     
     if found_todays_attempt:
-        # Use todays_quiz_details for correct_answer and explanation
-        # found_todays_attempt contains is_correct and selected_answer
+        # If an attempt for today's quiz_id is found, return its details.
+        # The correct_answer and explanation should come from the definitive quiz data (todays_quiz_details).
         return DailyQuizAttemptResponse(
             success=True,
             is_correct=found_todays_attempt['is_correct'],
             correct_answer=todays_quiz_details.get('correct_answer', ""), 
             explanation=todays_quiz_details.get('explanation', ""),
-            xp_gained=0,
+            xp_gained=0, # No XP for re-fetching an already submitted attempt
             message="Quiz already attempted today.",
             selected_answer=found_todays_attempt['selected_answer']
         )
 
+    # If no attempt for today's quiz_id was found, proceed to record the new attempt.
     db_correct_answer = todays_quiz_details.get('correct_answer', "")
     db_explanation = todays_quiz_details.get('explanation', "")
     
