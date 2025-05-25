@@ -76,6 +76,17 @@ const LoginPage: React.FC = () => {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Don't have an account yet?{' '}
+            <button 
+              onClick={() => navigate('/register')} 
+              className="font-medium text-neo-amber hover:text-neo-amber-dark"
+            >
+              Sign up
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );

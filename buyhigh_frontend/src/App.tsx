@@ -4,12 +4,14 @@ import './App.css';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/Login/LoginPage';
+import LoginPAge2 from './pages/Auth/LoginPage'; // Import LoginPage
+import RegisterPage from './pages/Auth/RegisterPage'; // Import RegisterPage
 import Dashboard from './pages/Dashboard/Dashboard';
 import TestPage from './pages/TestPage/TestPage';
 import Home from './pages/Home/Home';
 import Casino from './pages/Casino';
 import Trade from './pages/Trade/Trade';
-import NewsPage from './pages/News/NewsPage'; // Import der NewsPage Komponente
+import NewsPage from './pages/News/NewsPage';
 import { frontendLogger } from './frontendLogger';
 // Import other pages as needed
 
@@ -19,6 +21,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} /> {/* Add RegisterPage route */}
           <Route 
             path="/dashboard" 
             element={

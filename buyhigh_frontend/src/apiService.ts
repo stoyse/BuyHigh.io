@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const rawApiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:9876'; // Fallback if the environment variable is missing
+const rawApiBaseUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000'; // Updated port
 const API_BASE_URL = rawApiBaseUrl.replace(/\/$/, ""); // Remove trailing slash if present
 const DEBUG = true; // Enable/disable debug mode
 
@@ -16,17 +16,27 @@ const logDebug = (message: string, data: any = null) => {
 const logApiCall = (method: string, endpoint: string, params?: any) => {
   const url = `${API_BASE_URL}${endpoint}`;
 
-  if (params) {
-    logDebug(`${method} Request: ${url}`, params);
-  } else {
-    logDebug(`${method} Request: ${url}`);
+  if (DEBUG || (params && params.logOverride)) { // Example condition
+    if (params) {
+      logDebug(`${method} Request: ${url}`, params);
+    } else {
+      logDebug(`${method} Request: ${url}`);
+    }
   }
 };
 
-export const loginUser = async (email: string, password: string) => {
-  logApiCall('POST', '/login', { email });
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  userId: string | number; // Assuming local DB ID can be number
+  firebase_uid: string;
+  id_token: string;
+}
+
+export const loginUser = async (email: string, password: string): Promise<LoginResponse> => {
+  logApiCall('POST', '/auth/login', { email }); // Updated endpoint
   try {
-    const response = await axios.post(`${API_BASE_URL}/login`, { email, password }, {
+    const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/login`, { email, password }, {
       withCredentials: true, // Sends cookies for authentication
     });
     logDebug('Login Response:', response.data);
@@ -400,13 +410,13 @@ export interface RegisterResponse {
   email: string;
   username?: string;
   message?: string;
-  success?: boolean; // Manchmal senden APIs einen allgemeinen Erfolgsstatus
+  success?: boolean; // Keep this, might be inferred or added by a wrapper
 }
 
 export const registerUser = async (payload: RegisterPayload): Promise<RegisterResponse> => {
-  logApiCall('POST', '/register', payload);
+  logApiCall('POST', '/auth/register', payload); // Updated endpoint
   try {
-    const response = await axios.post<RegisterResponse>(`${API_BASE_URL}/register`, payload, {
+    const response = await axios.post<RegisterResponse>(`${API_BASE_URL}/auth/register`, payload, {
       withCredentials: true, 
     });
     logDebug('Register Response:', response.data);
