@@ -35,6 +35,7 @@ async def api_submit_daily_quiz_attempt(
         selected_answer=payload.selected_answer,
         is_correct=is_correct
     )
+    print(f"[bold blue]Daily Quiz Attempt Result: {result}[/bold blue]")
     return result
 
 @router.get("/roadmap", response_model=RoadmapListResponse)
