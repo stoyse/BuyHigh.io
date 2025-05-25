@@ -192,6 +192,7 @@ export interface DailyQuizAttemptResponse {
   xp_gained?: number;
   message?: string;
   selected_answer?: string; // Ensure this field is part of the interface if not already
+  quiz_id?: string; // Added quiz_id as an optional field
 }
 
 export const SubmitDailyQuizAnswer = async (payload: DailyQuizAttemptPayload): Promise<DailyQuizAttemptResponse> => {

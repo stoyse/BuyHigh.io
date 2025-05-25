@@ -146,40 +146,21 @@ const Dashboard: React.FC = () => {
             const userXP = finalUserData.xp;
 
             const currentLevelData = levels.find(l => l.level === userLvl);
-            // XP required to *reach* userLvl (i.e., XP at the start of userLvl)
-            // This is the xp_required of the (userLvl - 1). For L1, this is 0.
             const xpFromPreviousLevels = (userLvl === 1) ? 0 : (levels.find(l => l.level === userLvl - 1)?.xp_required || 0);
 
             if (currentLevelData) {
-                // xp_required for currentLevelData.level is the total XP needed to *complete* this level.
-                const xpToCompleteCurrentLevel = currentLevelData.xp_required; 
-                
-                const xpSpanOfCurrentLevel = xpToCompleteCurrentLevel - xpFromPreviousLevels;
+                const xpForCurrentLevel = currentLevelData.xp_required - xpFromPreviousLevels;
                 const xpEarnedInCurrentLevel = userXP - xpFromPreviousLevels;
-
-                if (xpSpanOfCurrentLevel > 0) {
-                    let percent = (xpEarnedInCurrentLevel / xpSpanOfCurrentLevel) * 100;
-                    percent = Math.max(0, Math.min(percent, 100)); // Clamp percentage
-                    console.log(`[Dashboard] XP Calc: UserLvl=${userLvl}, UserXP=${userXP}, PrevLvlXP=${xpFromPreviousLevels}, CurrLvlTargetXP=${xpToCompleteCurrentLevel}, Span=${xpSpanOfCurrentLevel}, EarnedInCurrLvl=${xpEarnedInCurrentLevel}, Percent=${percent}`);
-                    setXpPercentage(percent);
-                } else {
-                    // This handles cases like max level (if currentLevelData is the last level and xp_required is its end)
-                    // or if data is such that span is 0 (e.g. first level starts at 0, and its xp_required is also 0, which is unlikely for good data)
-                    // If userXP is at or beyond the requirement for this level, it's 100%.
-                    setXpPercentage(userXP >= xpToCompleteCurrentLevel ? 100 : 0);
-                    console.log(`[Dashboard] XP Calc: Span is 0 or less. UserXP=${userXP}, CurrLvlTargetXP=${xpToCompleteCurrentLevel}. Setting percentage based on completion.`);
-                }
+                const percentage = xpForCurrentLevel > 0 ? (xpEarnedInCurrentLevel / xpForCurrentLevel) * 100 : 0;
+                setXpPercentage(Math.min(100, Math.max(0, percentage))); // Clamp between 0 and 100
             } else {
-                console.error(`[Dashboard] XP Calc: Could not find level data for level ${userLvl}.`);
-                setXpPercentage(0); // Reset if level data is missing
+                setXpPercentage(0); // Default if level data not found
             }
         } else {
-            // Error or no valid user data from API
             setUser(null);
-            setCurrentUserLevel(1); // Reset to default
-            setCurrentUserXp(0);   // Reset to default
-            setXpPercentage(0);    // Reset XP percentage
-            console.warn("[Dashboard] User data processing failed. States reset, XP percentage set to 0.");
+            setCurrentUserLevel(1); 
+            setCurrentUserXp(0); 
+            setXpPercentage(0); 
         }
 
         // Portfolio
@@ -189,57 +170,75 @@ const Dashboard: React.FC = () => {
         setPortfolioData(portfolio);
         if (portfolio && portfolio.success) {
           const totalValue = portfolio.portfolio.reduce((sum: number, item: PortfolioItem) => {
-            const value = item.quantity * 100; // Placeholder
-            console.log(`[Dashboard] Portfolio item:`, item, "Value:", value);
+            const value = item.quantity * 100; // Placeholder - replace with actual price logic
             return sum + value;
           }, 0);
           setPortfolioTotalValue(totalValue);
-          console.log(`[Dashboard] Portfolio total value: ${totalValue}`);
 
           const totalQuantity = portfolio.portfolio.reduce((sum: number, item: PortfolioItem) => sum + item.quantity, 0);
           const allocation = portfolio.portfolio.map((item: PortfolioItem) => ({
             symbol: item.symbol,
-            name: item.symbol,
+            name: item.symbol, // Assuming name is same as symbol for now
             percentage: totalQuantity > 0 ? (item.quantity / totalQuantity) * 100 : 0
           }));
           setAssetAllocation(allocation);
-          console.log("[Dashboard] Asset allocation:", allocation);
         }
 
         // Transactions
         console.log("[Dashboard] Calling GetRecentTransactions...");
-        const transactions = await GetRecentTransactions(userId);
-        console.log("[Dashboard] GetRecentTransactions result:", transactions);
-        setRecentTransactions(transactions);
-
-        // Quiz
-        console.log("[Dashboard] Calling GetDailyQuiz...");
-        if (token) {
-          const quizData = await GetDailyQuiz();
-          if (quizData && quizData.id) { // Check if quizData and its id is not null
-            // Fetch today's attempt status
-            const attemptToday = await GetDailyQuizAttemptToday();
-            setDailyQuizAttempt(attemptToday);
-
-            if (attemptToday && attemptToday.success && attemptToday.selected_answer) {
-              // If an attempt was made today, update quiz state accordingly
-              setQuiz({
-                ...quizData,
-                attempted: true,
-                selected_answer: attemptToday.selected_answer,
-                is_correct: attemptToday.is_correct,
-                correct_answer_text: attemptToday.correct_answer, // Populate correct answer text
-                explanation: attemptToday.explanation || quizData.explanation, // Use explanation from attempt if available
-              });
-            } else {
-              // No attempt made today or attempt fetch failed (treat as not attempted)
-              setQuiz({ ...quizData, attempted: false });
-            }
-          } else {
-            setQuiz(null); // No quiz available for today
-          }
+        const transactionsResponse = await GetRecentTransactions(userId);
+        console.log("[Dashboard] GetRecentTransactions result:", transactionsResponse);
+        if (transactionsResponse && transactionsResponse.success && Array.isArray(transactionsResponse.transactions)) {
+          setRecentTransactions(transactionsResponse.transactions);
+        } else if (Array.isArray(transactionsResponse)) { 
+            setRecentTransactions(transactionsResponse);
         } else {
-          console.warn("[Dashboard] No token available for GetDailyQuiz");
+          console.warn("[Dashboard] GetRecentTransactions did not return a successful response or transactions array:", transactionsResponse);
+          setRecentTransactions([]); 
+        }
+
+        // Quiz: Check for today's attempt first
+        console.log("[Dashboard] Calling GetDailyQuizAttemptToday...");
+        const attemptTodayResponse = await GetDailyQuizAttemptToday();
+        console.log("[Dashboard] GetDailyQuizAttemptToday result:", attemptTodayResponse);
+        setDailyQuizAttempt(attemptTodayResponse); // Store the attempt response
+
+        if (attemptTodayResponse && attemptTodayResponse.success && attemptTodayResponse.selected_answer) {
+          // User has already attempted today's quiz
+          setQuiz({
+            id: attemptTodayResponse.quiz_id ?? '', // Use quiz_id from attempt, fallback to empty string if null/undefined
+            question: "You have already attempted today's quiz.",
+            possible_answer_1: '', 
+            possible_answer_2: '', 
+            possible_answer_3: '', 
+            attempted: true,
+            selected_answer: attemptTodayResponse.selected_answer,
+            is_correct: attemptTodayResponse.is_correct,
+            correct_answer_text: attemptTodayResponse.correct_answer,
+            explanation: attemptTodayResponse.explanation,
+          });
+        } else {
+          // No attempt today, or attempt fetch failed (e.g. success:false from API)
+          console.log("[Dashboard] No attempt for today or fetch failed, calling GetDailyQuiz...");
+          const quizData = await GetDailyQuiz();
+          console.log("[Dashboard] GetDailyQuiz result:", quizData);
+          if (quizData && quizData.success && quizData.quiz) {
+            setQuiz({
+              id: quizData.quiz.id,
+              question: quizData.quiz.question,
+              possible_answer_1: quizData.quiz.possible_answer_1,
+              possible_answer_2: quizData.quiz.possible_answer_2,
+              possible_answer_3: quizData.quiz.possible_answer_3,
+              attempted: false, 
+              explanation: quizData.quiz.explanation, // Pre-populate explanation if available
+            });
+          } else if (quizData && !quizData.success && quizData.message) {
+             setQuiz(null); 
+             console.warn("[Dashboard] No daily quiz available today:", quizData.message);
+          } else {
+            console.warn("[Dashboard] GetDailyQuiz call failed or data was not in expected format:", quizData);
+            setQuiz(null); 
+          }
         }
 
         setLoading(false);
@@ -247,7 +246,6 @@ const Dashboard: React.FC = () => {
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
-        // Ensure quiz state is reset or handled in case of error during its fetch
         setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, attempted: false } : null);
         setLoading(false);
       }
@@ -255,7 +253,7 @@ const Dashboard: React.FC = () => {
     if (!authLoading) {
       fetchAllData();
     }
-  }, [authUser, authLoading, token]);
+  }, [authUser, authLoading, token, levels]); // Added levels to dependency array
 
   // Logging for render phases
   useEffect(() => {
