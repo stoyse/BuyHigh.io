@@ -170,10 +170,8 @@ const LoginPage: React.FC = () => {
                 <GoogleLogin
                   onSuccess={handleGoogleLoginSuccess}
                   onError={handleGoogleLoginError}
-                  useOneTap
                   theme="outline"
                   size="large"
-                  width="100%"
                   containerProps={{ style: { width: '100%' } }}
                 />
               </div>
