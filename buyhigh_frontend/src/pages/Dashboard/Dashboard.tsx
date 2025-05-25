@@ -18,16 +18,18 @@ interface User {
 
 interface PortfolioItem {
   symbol: string;
-  type: string;
   quantity: number;
-  performance?: number;
+  type: string; // Hinzugefügt
+  performance: number; // Hinzugefügt
+  // Füge hier weitere Eigenschaften hinzu, falls vorhanden
 }
 
 interface PortfolioData {
   success: boolean;
   portfolio: PortfolioItem[];
-  best_performer?: string;
-  best_performer_pct?: number;
+  best_performer: string; // Hinzugefügt
+  best_performer_pct: number; // Hinzugefügt
+  // Füge hier weitere Eigenschaften hinzu, falls vorhanden
 }
 
 interface AssetAllocation {
@@ -130,7 +132,7 @@ const Dashboard: React.FC = () => {
         console.log("[Dashboard] GetPortfolioData result:", portfolio);
         setPortfolioData(portfolio);
         if (portfolio && portfolio.success) {
-          const totalValue = portfolio.portfolio.reduce((sum, item) => {
+          const totalValue = portfolio.portfolio.reduce((sum: number, item: PortfolioItem) => {
             const value = item.quantity * 100; // Placeholder
             console.log(`[Dashboard] Portfolio item:`, item, "Value:", value);
             return sum + value;
@@ -138,8 +140,8 @@ const Dashboard: React.FC = () => {
           setPortfolioTotalValue(totalValue);
           console.log(`[Dashboard] Portfolio total value: ${totalValue}`);
 
-          const totalQuantity = portfolio.portfolio.reduce((sum, item) => sum + item.quantity, 0);
-          const allocation = portfolio.portfolio.map((item) => ({
+          const totalQuantity = portfolio.portfolio.reduce((sum: number, item: PortfolioItem) => sum + item.quantity, 0);
+          const allocation = portfolio.portfolio.map((item: PortfolioItem) => ({
             symbol: item.symbol,
             name: item.symbol,
             percentage: totalQuantity > 0 ? (item.quantity / totalQuantity) * 100 : 0
