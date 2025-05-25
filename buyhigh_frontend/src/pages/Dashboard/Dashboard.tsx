@@ -213,95 +213,39 @@ const Dashboard: React.FC = () => {
         if (transactionsResponse && transactionsResponse.success && Array.isArray(transactionsResponse.transactions)) {
           setRecentTransactions(transactionsResponse.transactions);
         } else if (Array.isArray(transactionsResponse)) { 
-            console.warn("[Dashboard] GetRecentTransactions returned a direct array. Assuming it's the transaction list.");
             setRecentTransactions(transactionsResponse);
         } else {
           console.warn("[Dashboard] GetRecentTransactions did not return a successful response or transactions array:", transactionsResponse);
           setRecentTransactions([]); 
         }
-
         // Quiz
-        console.log("[Dashboard] Initiating Quiz Logic...");
+        console.log("[Dashboard] Calling GetDailyQuiz...");
         if (token) {
-          console.log("[Dashboard] Token found, proceeding to fetch daily quiz.");
-          const dailyQuizResponse = await GetDailyQuiz();
-          console.log("[Dashboard] GetDailyQuiz (for structure and content) result:", dailyQuizResponse);
+          const quizData = await GetDailyQuiz();
+          if (quizData && quizData.id) { // Check if quizData and its id is not null
+            // Fetch today's attempt status
+            const attemptToday = await GetDailyQuizAttemptToday();
+            setDailyQuizAttempt(attemptToday);
 
-          let parsedQuizStructure: Quiz | null = null;
-
-          if (dailyQuizResponse) {
-            if (dailyQuizResponse.success === true && dailyQuizResponse.quiz) {
-              // Handles { success: true, quiz: { ... } }
-              parsedQuizStructure = dailyQuizResponse.quiz as Quiz;
-              console.log("[Dashboard] Successfully fetched quiz structure (nested in .quiz property):", parsedQuizStructure);
-            } else if (typeof dailyQuizResponse.id !== 'undefined' && typeof dailyQuizResponse.question !== 'undefined') {
-              // Handles if dailyQuizResponse itself is the quiz object { id: ..., question: ... }
-              // And it's not an error object like { success: false, ... }
-              if (dailyQuizResponse.success !== false) { // Allows success to be true or undefined (for direct quiz object)
-                parsedQuizStructure = dailyQuizResponse as Quiz;
-                console.log("[Dashboard] Successfully fetched quiz structure (direct object):", parsedQuizStructure);
-              }
-            }
-          }
-
-          if (parsedQuizStructure) {
-            const todaysQuizStructure = parsedQuizStructure; // Use this variable for the rest of the logic
-
-            // Ensure todaysQuizStructure.id is a string for consistent comparison and state setting
-            const quizIdAsString = String(todaysQuizStructure.id);
-
-            console.log("[Dashboard] Calling GetDailyQuizAttemptToday...");
-            const attemptTodayResponse = await GetDailyQuizAttemptToday();
-            console.log("[Dashboard] GetDailyQuizAttemptToday result:", attemptTodayResponse);
-            setDailyQuizAttempt(attemptTodayResponse); // Store the raw attempt response
-
-            if (attemptTodayResponse && attemptTodayResponse.success &&
-                typeof attemptTodayResponse.selected_answer !== 'undefined' && 
-                attemptTodayResponse.quiz_id === quizIdAsString) { // Compare with string version of ID
-              console.log("[Dashboard] User has an attempt for today's quiz. Setting quiz state as attempted.");
+            if (attemptToday && attemptToday.success && attemptToday.selected_answer) {
+              // If an attempt was made today, update quiz state accordingly
               setQuiz({
-                id: quizIdAsString, // Use string version for the state
-                question: todaysQuizStructure.question,
-                possible_answer_1: todaysQuizStructure.possible_answer_1,
-                possible_answer_2: todaysQuizStructure.possible_answer_2,
-                possible_answer_3: todaysQuizStructure.possible_answer_3,
+                ...quizData,
                 attempted: true,
-                selected_answer: attemptTodayResponse.selected_answer,
-                is_correct: attemptTodayResponse.is_correct,
-                correct_answer_text: attemptTodayResponse.correct_answer,
-                explanation: attemptTodayResponse.explanation || todaysQuizStructure.explanation,
+                selected_answer: attemptToday.selected_answer,
+                is_correct: attemptToday.is_correct,
+                correct_answer_text: attemptToday.correct_answer, // Populate correct answer text
+                explanation: attemptToday.explanation || quizData.explanation, // Use explanation from attempt if available
               });
             } else {
-              console.log("[Dashboard] No valid attempt for today's quiz, or attempt is for a different quiz. Setting quiz as fresh.");
-              setQuiz({
-                id: quizIdAsString, // Use string version for the state
-                question: todaysQuizStructure.question,
-                possible_answer_1: todaysQuizStructure.possible_answer_1,
-                possible_answer_2: todaysQuizStructure.possible_answer_2,
-                possible_answer_3: todaysQuizStructure.possible_answer_3,
-                attempted: false,
-                explanation: todaysQuizStructure.explanation,
-                selected_answer: undefined,
-                is_correct: undefined,
-                correct_answer_text: undefined,
-              });
+              // No attempt made today or attempt fetch failed (treat as not attempted)
+              setQuiz({ ...quizData, attempted: false });
             }
           } else {
-            // This 'else' means parsedQuizStructure is null (fetch failed or no quiz in expected format).
-            let warningMessage = "[Dashboard] No daily quiz available or fetch failed. ";
-            if (!dailyQuizResponse) {
-              warningMessage += "The response from GetDailyQuiz was null or undefined.";
-            } else if (dailyQuizResponse.success === false) {
-              warningMessage += `API call GetDailyQuiz explicitly failed. Message: ${dailyQuizResponse.message || 'No specific error message provided by API.'}`;
-            } else {
-              warningMessage += "The response from GetDailyQuiz was not in a recognized format.";
-            }
-            console.warn(warningMessage, "Full response for GetDailyQuiz:", dailyQuizResponse);
             setQuiz(null); // No quiz available for today
           }
         } else {
-          console.warn("[Dashboard] No token available. Quiz will not be fetched.");
-          setQuiz(null); 
+          console.warn("[Dashboard] No token available for GetDailyQuiz");
         }
 
         setLoading(false);
@@ -309,6 +253,7 @@ const Dashboard: React.FC = () => {
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
+        // Ensure quiz state is reset or handled in case of error during its fetch
         setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, attempted: false } : null);
         setLoading(false);
       }
@@ -316,7 +261,7 @@ const Dashboard: React.FC = () => {
     if (!authLoading) {
       fetchAllData();
     }
-  }, [authUser, authLoading, token, levels]); 
+  }, [authUser, authLoading, token]);
 
   // Logging for render phases
   useEffect(() => {
@@ -324,7 +269,7 @@ const Dashboard: React.FC = () => {
     console.log("[Dashboard] Render: portfolioData=", portfolioData);
     console.log("[Dashboard] Render: recentTransactions=", recentTransactions);
     console.log("[Dashboard] Render: quiz=", quiz);
-    console.log("[Dashboard] Render: dailyQuizAttempt=", dailyQuizAttempt); 
+    console.log("[Dashboard] Render: dailyQuizAttempt=", dailyQuizAttempt); // Log new state
     console.log("[Dashboard] Render: error=", error);
     console.log("[Dashboard] Render: loading=", loading);
   }, [user, portfolioData, recentTransactions, quiz, dailyQuizAttempt, error, loading]);
@@ -350,17 +295,19 @@ const Dashboard: React.FC = () => {
             explanation: result.explanation || prevQuiz.explanation,
           };
         });
+        // Optionally, update user XP here if not handled by a global state update or re-fetch
         if (result.xp_gained && result.xp_gained > 0 && user) {
           setUser(prevUser => prevUser ? { ...prevUser, xp: prevUser.xp + (result.xp_gained || 0) } : null);
         }
       } else {
         setError(result.message || 'Failed to submit quiz answer.');
+        // Keep UI interactive but show it's attempted with the user's pick
         setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, attempted: true, selected_answer: answer, is_correct: false } : null);
       }
     } catch (err: any) {
       console.error('Error submitting quiz answer:', err);
       setError(err.message || 'An unexpected error occurred while submitting your answer.');
-      setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, selected_answer: answer, attempted: false } : null); 
+      setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, selected_answer: answer, attempted: false } : null); // Reset on error
     } finally {
       setQuizSubmitting(false);
     }
@@ -370,6 +317,9 @@ const Dashboard: React.FC = () => {
     if (!user) return;
     
     try {
+      // Call API to toggle meme mode
+      // await ToggleMemeMode(!user.is_meme_mode);
+      // Update local state
       setUser({ ...user, is_meme_mode: !user.is_meme_mode });
     } catch (err) {
       console.error('Error toggling meme mode:', err);
@@ -695,6 +645,7 @@ const Dashboard: React.FC = () => {
                 {recentTransactions && recentTransactions.length > 0 ? (
                   <div className="max-h-[300px] overflow-y-auto pr-1 space-y-3">
                     {recentTransactions.map((tx, index) => {
+                      // Format the timestamp (assuming it's a string from API)
                       const txDate = new Date(tx.timestamp);
                       const formattedDate = `${txDate.toLocaleString('en', { month: 'short' })} ${txDate.getDate()}, ${txDate.getHours()}:${String(txDate.getMinutes()).padStart(2, '0')}`;
                       
@@ -923,19 +874,20 @@ const Dashboard: React.FC = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-300">{quiz.question}</p>
                     <div className="space-y-2">
                       {([quiz.possible_answer_1, quiz.possible_answer_2, quiz.possible_answer_3]).map((answer, index) => {
-                        if (!answer) return null; 
+                        if (!answer) return null; // Skip if an answer is not defined
                         
+                        // Determine button style based on quiz state
                         let buttonClass = "w-full text-left px-4 py-2 rounded-lg border transition-all duration-150 text-sm ";
                         if (quiz.attempted) {
                           if (answer === quiz.correct_answer_text) {
-                            buttonClass += "bg-neo-emerald/30 border-neo-emerald text-neo-emerald dark:text-white"; 
+                            buttonClass += "bg-neo-emerald/30 border-neo-emerald text-neo-emerald dark:text-white"; // Correct answer
                           } else if (answer === quiz.selected_answer) {
-                            buttonClass += "bg-neo-red/30 border-neo-red text-neo-red dark:text-white"; 
+                            buttonClass += "bg-neo-red/30 border-neo-red text-neo-red dark:text-white"; // Incorrect selected answer
                           } else {
-                            buttonClass += "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"; 
+                            buttonClass += "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"; // Other answers (disabled)
                           }
                         } else {
-                          buttonClass += "bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 hover:bg-neo-blue/10 hover:border-neo-blue dark:hover:bg-neo-blue/20"; 
+                          buttonClass += "bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 hover:bg-neo-blue/10 hover:border-neo-blue dark:hover:bg-neo-blue/20"; // Default, hoverable
                         }
 
                         return (
@@ -961,6 +913,7 @@ const Dashboard: React.FC = () => {
                   <div className="text-center py-6">
                     <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4c-1.742 0-3.223-.835-3.772-2H1v-4h7.228zM19 11H12M12 11V4M12 11v7"></path></svg>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Daily quiz not available or already completed.</p>
+                    {/* You could add a button to manually refresh or check again */}
                   </div>
                 )}
               </div>
@@ -1081,4 +1034,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-
