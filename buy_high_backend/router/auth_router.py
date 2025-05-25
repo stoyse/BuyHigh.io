@@ -4,7 +4,7 @@ Router for authentication functions.
 
 from fastapi import APIRouter, HTTPException, status
 import logging
-import utils.auth as auth_module
+from ..utils import auth as auth_module
 import database.handler.postgres.postgres_db_handler as db_handler
 from ..pydantic_models import LoginRequest, RegisterRequest, UserResponse, GoogleLoginRequest
 
