@@ -16,6 +16,7 @@ from .user_router import router as user_router
 from .education_router import router as education_router
 from .misc_router import router as misc_router
 from .easter_egg_router import router as easter_egg_router
+from .news_router import router as news_router  # Import news_router
 
 # Umgebungsvariablen laden
 load_dotenv()
@@ -49,6 +50,7 @@ router.include_router(user_router)
 router.include_router(education_router)
 router.include_router(misc_router)
 router.include_router(easter_egg_router)
+router.include_router(news_router)  # Include news_router
 
 # Middleware-Klasse (wird in main.py verwendet)
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
