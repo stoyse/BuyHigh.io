@@ -107,19 +107,35 @@ const Dashboard: React.FC = () => {
 
         // User Info
         console.log("[Dashboard] Calling GetUserInfo...");
-        const userData = await GetUserInfo(userId);
-        console.log("[Dashboard] GetUserInfo result:", userData);
-        setUser(userData);
-        setCurrentUserLevel(userData.level);
-        setCurrentUserXp(userData.xp);
+        const userInfoResponse = await GetUserInfo(userId); // Renamed for clarity
+        console.log("[Dashboard] GetUserInfo result:", userInfoResponse);
+
+        if (userInfoResponse && userInfoResponse.success && userInfoResponse.user) {
+            setUser(userInfoResponse.user);
+            setCurrentUserLevel(userInfoResponse.user.level);
+            setCurrentUserXp(userInfoResponse.user.xp);
+        } else if (userInfoResponse && userInfoResponse.success && userInfoResponse.data) { // Fallback for .data key
+            setUser(userInfoResponse.data);
+            setCurrentUserLevel(userInfoResponse.data.level);
+            setCurrentUserXp(userInfoResponse.data.xp);
+        } else if (userInfoResponse && typeof userInfoResponse.balance !== 'undefined' && typeof userInfoResponse.level !== 'undefined') {
+            // Fallback for when the response is already the flat user object
+            setUser(userInfoResponse);
+            setCurrentUserLevel(userInfoResponse.level);
+            setCurrentUserXp(userInfoResponse.xp);
+        } else {
+            console.error("[Dashboard] GetUserInfo call failed, returned unsuccessful status, or data was not in expected format:", userInfoResponse);
+            setError(userInfoResponse?.message || "Failed to fetch user information.");
+            setUser(null); // Ensure user state is cleared on error/unexpected format
+        }
 
         // XP calculation
-        const currentLevel = levels.find(l => l.level === userData.level);
-        const nextLevel = levels.find(l => l.level === userData.level + 1);
+        const currentLevel = levels.find(l => l.level === userInfoResponse?.level);
+        const nextLevel = levels.find(l => l.level === userInfoResponse?.level + 1);
         if (currentLevel && nextLevel) {
           const xpForCurrentLevel = currentLevel.xp_required;
           const xpForNextLevel = nextLevel.xp_required;
-          const xpProgress = userData.xp - xpForCurrentLevel;
+          const xpProgress = userInfoResponse?.xp - xpForCurrentLevel;
           const xpNeeded = xpForNextLevel - xpForCurrentLevel;
           const percent = (xpProgress / xpNeeded) * 100;
           console.log(`[Dashboard] XP percent: ${percent}`);
