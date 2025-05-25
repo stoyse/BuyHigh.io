@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import BaseLayout from '../../components/Layout/BaseLayout';
-import { GetUserInfo, GetPortfolioData, GetRecentTransactions, GetDailyQuiz } from '../../apiService';
+import { GetUserInfo, GetPortfolioData, GetRecentTransactions, GetDailyQuiz, SubmitDailyQuizAnswer } from '../../apiService';
 import './Dashboard.css';
 import { useAuth } from '../../contexts/AuthContext'; // Import useAuth
 
@@ -54,6 +54,10 @@ interface Quiz {
   possible_answer_2: string;
   possible_answer_3: string;
   attempted: boolean;
+  // New fields to handle quiz state after an attempt
+  selected_answer?: string; // Store which answer the user selected
+  is_correct?: boolean;     // Was the selected answer correct?
+  correct_answer_text?: string; // The text of the correct answer from backend
 }
 
 interface Level {
@@ -82,8 +86,9 @@ const Dashboard: React.FC = () => {
   const [dogMessage, setDogMessage] = useState<string>('Hello trader! Remember: Buy high, sell higher! Diamond hands only! 💎🙌');
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [quizSubmitting, setQuizSubmitting] = useState<boolean>(false); // To disable buttons during submission
 
-  const { user: authUser, loading: authLoading } = useAuth(); // Get user from AuthContext
+  const { user: authUser, loading: authLoading, token } = useAuth(); // Get user and token from AuthContext
 
   useEffect(() => {
     console.log("[Dashboard] useEffect triggered");
@@ -210,9 +215,27 @@ const Dashboard: React.FC = () => {
 
         // Quiz
         console.log("[Dashboard] Calling GetDailyQuiz...");
-        const dailyQuiz = await GetDailyQuiz();
-        console.log("[Dashboard] GetDailyQuiz result:", dailyQuiz);
-        setQuiz(dailyQuiz);
+        if (token) {
+          const dailyQuizData = await GetDailyQuiz(); // Assuming GetDailyQuiz is updated to use token if needed by apiService
+          console.log("[Dashboard] GetDailyQuiz result:", dailyQuizData);
+          // Ensure the quiz data structure matches the Quiz interface
+          if (dailyQuizData && typeof dailyQuizData.id !== 'undefined') { // Basic check
+            setQuiz(dailyQuizData);
+          } else if (dailyQuizData && dailyQuizData.success === false && dailyQuizData.message) {
+            console.warn("[Dashboard] Failed to get daily quiz:", dailyQuizData.message);
+            setQuiz(null); // Or handle as an error
+          } else if (dailyQuizData && Array.isArray(dailyQuizData) && dailyQuizData.length > 0 && typeof dailyQuizData[0].id !== 'undefined') {
+            // If API returns an array of quizzes, take the first one
+            console.log("[Dashboard] GetDailyQuiz returned an array, taking the first element.");
+            setQuiz(dailyQuizData[0]);
+          }
+          else {
+            console.warn("[Dashboard] GetDailyQuiz result was not in the expected format or was empty:", dailyQuizData);
+            setQuiz(null);
+          }
+        } else {
+          console.warn("[Dashboard] No token available for GetDailyQuiz");
+        }
 
         setLoading(false);
         console.log("[Dashboard] All data loaded!");
@@ -225,7 +248,7 @@ const Dashboard: React.FC = () => {
     if (!authLoading) {
       fetchAllData();
     }
-  }, [authUser, authLoading, levels]);
+  }, [authUser, authLoading, levels, token]);
 
   // Logging for render phases
   useEffect(() => {
@@ -238,17 +261,63 @@ const Dashboard: React.FC = () => {
   }, [user, portfolioData, recentTransactions, quiz, error, loading]);
 
   const handleQuizSubmit = async (quizId: string, answer: string) => {
+    if (!token || quizSubmitting || quiz?.attempted) return; // Prevent multiple submissions or if already attempted
+
+    setQuizSubmitting(true);
+    setError(null); // Clear previous errors
+
     try {
-      // Implement quiz submission logic
-      // const result = await SubmitQuizAnswer(quizId, answer);
-      // Update quiz state to show it's been attempted
-      if (quiz) {
-        setQuiz({ ...quiz, attempted: true });
+      const payload = { quiz_id: quizId, selected_answer: answer };
+      const result = await SubmitDailyQuizAnswer(payload); // Assuming SubmitDailyQuizAnswer uses token if needed
+
+      if (result.success) {
+        setQuiz(prevQuiz => {
+          if (!prevQuiz) return null;
+          return {
+            ...prevQuiz,
+            attempted: true,
+            selected_answer: answer,
+            is_correct: result.is_correct,
+            correct_answer_text: result.correct_answer, // Store the correct answer text
+            explanation: result.explanation || prevQuiz.explanation, // Update explanation if backend provides a new one
+          };
+        });
+
+        // Update user's XP if it changed
+        if (result.xp_gained && result.xp_gained > 0 && user) {
+          const newXp = user.xp + result.xp_gained;
+          setUser(prevUser => prevUser ? { ...prevUser, xp: newXp } : null);
+          // Optionally, re-calculate level and XP percentage here or let the main useEffect handle it if `user` is a dependency
+          setCurrentUserXp(newXp); // Update current user XP state
+          // Recalculate XP percentage (copied and adapted from main useEffect)
+          const userLvl = user.level; // Assuming level doesn't change instantly from one quiz
+          const currentLevelData = levels.find(l => l.level === userLvl);
+          const xpFromPreviousLevels = (userLvl === 1) ? 0 : (levels.find(l => l.level === userLvl - 1)?.xp_required || 0);
+          if (currentLevelData) {
+            const xpToCompleteCurrentLevel = currentLevelData.xp_required;
+            const xpSpanOfCurrentLevel = xpToCompleteCurrentLevel - xpFromPreviousLevels;
+            const xpEarnedInCurrentLevel = newXp - xpFromPreviousLevels;
+            if (xpSpanOfCurrentLevel > 0) {
+              let percent = (xpEarnedInCurrentLevel / xpSpanOfCurrentLevel) * 100;
+              percent = Math.max(0, Math.min(percent, 100));
+              setXpPercentage(percent);
+            } else {
+              setXpPercentage(newXp >= xpToCompleteCurrentLevel ? 100 : 0);
+            }
+          }
+        }
+        // Potentially show a success message to the user
+      } else {
+        setError(result.message || 'Failed to submit quiz answer.');
+        // Optionally, allow retry or show specific error feedback
+        setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, selected_answer: answer, attempted: false } : null); // Reset attempted state on failure to allow retry
       }
-      // Could show a success message or update XP if the answer was correct
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error submitting quiz answer:', err);
-      setError('Failed to submit quiz answer. Please try again.');
+      setError(err.message || 'An unexpected error occurred while submitting your answer.');
+      setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, selected_answer: answer, attempted: false } : null); // Reset on error
+    } finally {
+      setQuizSubmitting(false);
     }
   };
 
@@ -794,64 +863,65 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Daily Quiz Card */}
-            <div className="glass-card rounded-2xl overflow-hidden border border-gray-200/10 dark:border-gray-700/20 transition-all duration-300 hover:shadow-neo">
-              <div className="p-6 relative">
-                {/* Ambient Background Effect */}
-                <div className="absolute -top-20 -right-20 w-40 h-40 bg-neo-purple/10 rounded-full blur-3xl"></div>
-                
+            <div className="glass-card rounded-2xl overflow-hidden border border-gray-200/10 dark:border-gray-700/20 glow-effect">
+              <div className="p-6">
                 <div className="flex justify-between items-center mb-5">
                   <h2 className="text-xl font-semibold flex items-center text-gray-800 dark:text-gray-100">
-                    <svg className="w-6 h-6 mr-2 text-neo-purple animate-pulse-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
+                    <svg className="w-6 h-6 mr-2 text-neo-amber" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4c-1.742 0-3.223-.835-3.772-2H1v-4h7.228zM19 11H12M12 11V4M12 11v7"></path></svg>
                     Daily Quiz
                   </h2>
-                  <span className="text-xs font-medium text-neo-purple bg-neo-purple/10 px-2 py-0.5 rounded-full">XP +50</span>
+                  {quiz?.attempted && (
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${quiz.is_correct ? 'bg-neo-emerald/20 text-neo-emerald' : 'bg-neo-red/20 text-neo-red'}`}>
+                      {quiz.is_correct ? 'Correct!' : 'Incorrect'}
+                    </span>
+                  )}
                 </div>
-                
-                {quiz && !quiz.attempted ? (
-                  <>
-                    {/* Quiz display */}
-                    <div className="mb-4">
-                      <p className="text-base font-semibold text-gray-800 dark:text-gray-100">
-                        {quiz.question}
-                      </p>
-                      {quiz.explanation && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {quiz.explanation}
-                        </p>
-                      )}
+
+                {quiz ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-300">{quiz.question}</p>
+                    <div className="space-y-2">
+                      {([quiz.possible_answer_1, quiz.possible_answer_2, quiz.possible_answer_3]).map((answer, index) => {
+                        if (!answer) return null; // Skip if an answer is not defined
+                        
+                        // Determine button style based on quiz state
+                        let buttonClass = "w-full text-left px-4 py-2 rounded-lg border transition-all duration-150 text-sm ";
+                        if (quiz.attempted) {
+                          if (answer === quiz.correct_answer_text) {
+                            buttonClass += "bg-neo-emerald/30 border-neo-emerald text-neo-emerald dark:text-white"; // Correct answer
+                          } else if (answer === quiz.selected_answer) {
+                            buttonClass += "bg-neo-red/30 border-neo-red text-neo-red dark:text-white"; // Incorrect selected answer
+                          } else {
+                            buttonClass += "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"; // Other answers (disabled)
+                          }
+                        } else {
+                          buttonClass += "bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 hover:bg-neo-blue/10 hover:border-neo-blue dark:hover:bg-neo-blue/20"; // Default, hoverable
+                        }
+
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => handleQuizSubmit(quiz.id, answer)}
+                            disabled={quiz.attempted || quizSubmitting}
+                            className={buttonClass}
+                          >
+                            {answer}
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="flex flex-col space-y-2.5">
-                      <button 
-                        onClick={() => handleQuizSubmit(quiz.id, quiz.possible_answer_1)}
-                        className="quiz-btn neo-button"
-                      >
-                        {quiz.possible_answer_1}
-                      </button>
-                      <button 
-                        onClick={() => handleQuizSubmit(quiz.id, quiz.possible_answer_2)}
-                        className="quiz-btn neo-button"
-                      >
-                        {quiz.possible_answer_2}
-                      </button>
-                      <button 
-                        onClick={() => handleQuizSubmit(quiz.id, quiz.possible_answer_3)}
-                        className="quiz-btn neo-button"
-                      >
-                        {quiz.possible_answer_3}
-                      </button>
-                    </div>
-                  </>
-                ) : quiz && quiz.attempted ? (
-                  /* Already completed notice */
-                  <div className="glass-card p-4 rounded-xl backdrop-blur-sm border border-neo-emerald/30 bg-neo-emerald/5 text-neo-emerald text-center font-semibold">
-                    You have already completed today's quiz! 🎉
+                    {quiz.attempted && quiz.explanation && (
+                      <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-xs text-gray-600 dark:text-gray-300">
+                        <strong>Explanation:</strong> {quiz.explanation}
+                      </div>
+                    )}
+                    {error && quizSubmitting === false && <p className="text-xs text-neo-red mt-2">{error}</p>}
                   </div>
                 ) : (
-                  /* No quiz available */
-                  <div className="glass-card p-4 rounded-xl backdrop-blur-sm border border-gray-300/30 bg-gray-100/5 text-gray-500 text-center">
-                    No quiz available today. Check back tomorrow!
+                  <div className="text-center py-6">
+                    <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4c-1.742 0-3.223-.835-3.772-2H1v-4h7.228zM19 11H12M12 11V4M12 11v7"></path></svg>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Daily quiz not available or already completed.</p>
+                    {/* You could add a button to manually refresh or check again */}
                   </div>
                 )}
               </div>

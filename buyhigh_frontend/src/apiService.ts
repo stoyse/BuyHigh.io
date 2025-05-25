@@ -178,6 +178,39 @@ export const GetDailyQuiz = async () => {
   }
 };
 
+// Add new types and function for submitting daily quiz answer
+export interface DailyQuizAttemptPayload {
+  quiz_id: string;
+  selected_answer: string;
+}
+
+export interface DailyQuizAttemptResponse {
+  success: boolean;
+  is_correct: boolean;
+  correct_answer: string;
+  explanation?: string;
+  xp_gained?: number;
+  message?: string;
+}
+
+export const SubmitDailyQuizAnswer = async (payload: DailyQuizAttemptPayload): Promise<DailyQuizAttemptResponse> => {
+  logApiCall('POST', '/education/daily-quiz/attempt', payload);
+  try {
+    const response = await axios.post(`${API_BASE_URL}/education/daily-quiz/attempt`, payload, {
+      withCredentials: true,
+    });
+    logDebug('Submit Daily Quiz Answer Response:', response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error submitting daily quiz answer:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error submitting daily quiz answer:', error);
+    }
+    throw error; // Rethrow to be handled by the caller
+  }
+};
+
 export const GetAssets = async (type?: string, activeOnly: boolean = true) => {
   const queryParams = new URLSearchParams();
   if (type) queryParams.append('type', type);

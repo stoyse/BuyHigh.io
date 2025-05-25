@@ -5,6 +5,7 @@ import axios from 'axios';
 interface AuthContextType {
   isAuthenticated: boolean;
   user: any | null;
+  token: string | null; // Added token
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   loading: boolean;
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<any | null>(null);
+  const [token, setToken] = useState<string | null>(null); // Added token state
   const [loading, setLoading] = useState<boolean>(true);
 
   // Check if user is authenticated on mount
@@ -24,6 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const storedToken = localStorage.getItem('authToken');
       if (storedUser && storedToken) {
         setUser(JSON.parse(storedUser));
+        setToken(storedToken); // Set token state
         axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         setIsAuthenticated(true);
       }
@@ -45,14 +48,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.id_token}`;
         
         setUser(userData);
+        setToken(response.id_token); // Set token state
         setIsAuthenticated(true);
         return true;
       }
       if (response.success) {
         console.warn("Login successful but no id_token received.");
+        // Assuming if login is successful but no id_token, we might not have a token
+        // or it's handled differently. For now, set token to null or handle as per app logic.
         const userData = { email, id: response.userId };
         localStorage.setItem('user', JSON.stringify(userData));
+        // If there's no token, ensure it's cleared or handled
+        localStorage.removeItem('authToken'); 
+        delete axios.defaults.headers.common['Authorization'];
+        
         setUser(userData);
+        setToken(null); // Explicitly set token to null if not present
         setIsAuthenticated(true);
         return true;
       }
@@ -64,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       delete axios.defaults.headers.common['Authorization'];
       setIsAuthenticated(false);
       setUser(null);
+      setToken(null); // Clear token state on error
       return false;
     } finally {
       setLoading(false);
@@ -80,12 +92,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('authToken');
       delete axios.defaults.headers.common['Authorization'];
       setUser(null);
+      setToken(null); // Clear token state on logout
       setIsAuthenticated(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
