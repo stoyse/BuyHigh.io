@@ -1,0 +1,188 @@
+/* News.css */
+
+/* Stile für die NewsPage-Komponente */
+.news-page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.news-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.news-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #333;
+  /* Weitere Stile für den Titel */
+}
+
+.news-filters {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category-buttons button {
+  margin-right: 10px;
+  padding: 8px 15px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.category-buttons button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.search-input {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.loading-indicator, .error-message, .no-news-message {
+  text-align: center;
+  padding: 20px;
+  font-size: 1.2rem;
+  color: #555;
+}
+
+.load-more-button {
+  display: block;
+  margin: 30px auto;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.load-more-button:hover {
+  background-color: #0056b3;
+}
+
+/* Stile für die NewsCard-Komponente - diese sind spezifischer und können in NewsCard.css bleiben oder hier zentralisiert werden */
+.news-item {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.news-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.news-image-container {
+  width: 100%;
+  height: 200px; /* Feste Höhe für das Bild */
+  overflow: hidden;
+}
+
+.news-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Stellt sicher, dass das Bild den Container ausfüllt, ohne das Seitenverhältnis zu verzerren */
+  transition: transform 0.3s ease;
+}
+
+.news-item:hover .news-image {
+  transform: scale(1.05); /* Leichter Zoom-Effekt beim Hovern */
+}
+
+.news-content {
+  padding: 15px;
+}
+
+.news-headline {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.news-summary {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.news-meta {
+  font-size: 0.8rem;
+  color: #888;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Dark Mode Anpassungen (Beispiel) */
+.dark .news-item {
+  background-color: #2d3748; /* Dunkler Hintergrund für Karten */
+  border-color: #4a5568; /* Dunklere Ränder */
+}
+
+.dark .news-headline {
+  color: #e2e8f0; /* Hellerer Text für Überschriften */
+}
+
+.dark .news-summary,
+.dark .news-meta {
+  color: #a0aec0; /* Hellerer Text für Zusammenfassung und Metadaten */
+}
+
+.dark .category-buttons button {
+  background-color: #4a5568;
+  color: #e2e8f0;
+  border-color: #718096;
+}
+
+.dark .category-buttons button.active {
+  background-color: #667eea; /* Angepasste Akzentfarbe für Dark Mode */
+  color: white;
+  border-color: #667eea;
+}
+
+.dark .search-input {
+  background-color: #2d3748;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+/* Animationen für das Erscheinen der Karten */
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.news-item.animate-float {
+  animation: floatIn 0.5s ease-out forwards;
+}
+
+/* Anpassung für die glass-card Stile, falls diese global definiert sind und hier überschrieben werden sollen */
+.glass-card.news-item {
+  /* Spezifische Anpassungen für News-Karten, die auch glass-cards sind */
+  /* z.B. Hintergrund, Schatten, etc. anpassen, falls nötig */
+}

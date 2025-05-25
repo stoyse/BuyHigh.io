@@ -347,3 +347,28 @@ export const SellStock = async (symbol: string, quantity: number, price: number)
     throw error;
   }
 };
+
+export const getNews = async () => {
+  logApiCall('GET', '/news/');
+  try {
+    const response = await axios.get(`${API_BASE_URL}/news/`, {
+      withCredentials: true,
+    });
+    logDebug('News Response:', response.data);
+    // Die API gibt {success: boolean, assets: Asset[]} zurück
+    // NewsPage.tsx erwartet ein Array von News-Objekten
+    if (response.data && response.data.success && Array.isArray(response.data.assets)) {
+      return response.data.assets;
+    } else {
+      console.error('Invalid news data structure:', response.data);
+      return []; // Leeres Array bei unerwarteter Struktur
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error fetching news:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error fetching news:', error);
+    }
+    return []; // Leeres Array im Fehlerfall
+  }
+};

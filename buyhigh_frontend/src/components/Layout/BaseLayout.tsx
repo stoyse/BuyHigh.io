@@ -120,12 +120,15 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
                       </svg>
                       Trade
                     </Link>
-                    <Link to="/news" className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/news' ? 'bg-neo-amber/10 text-neo-amber' : 'text-gray-700 dark:text-gray-300 hover:bg-neo-amber/10 hover:text-neo-amber dark:hover:text-neo-amber'} transition-all duration-200 flex items-center group`}>
+                    <button
+                      onClick={() => navigate('/news')}
+                      className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/news' ? 'bg-neo-amber/10 text-neo-amber' : 'text-gray-700 dark:text-gray-300 hover:bg-neo-amber/10 hover:text-neo-amber dark:hover:text-neo-amber'} transition-all duration-200 flex items-center group`}
+                    >
                       <svg className="w-5 h-5 mr-1.5 text-neo-amber/70 group-hover:text-neo-amber transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
                       </svg>
                       News
-                    </Link>
+                    </button>
                     <Link to="/casino" className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/casino' ? 'bg-pink-500/10 text-pink-500' : 'text-gray-700 dark:text-gray-300 hover:bg-pink-500/10 hover:text-pink-500 dark:hover:text-pink-400'} transition-all duration-200 flex items-center group`}>
                       <svg className="w-5 h-5 mr-1.5 text-pink-500/70 group-hover:text-pink-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
