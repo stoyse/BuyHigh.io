@@ -21,31 +21,56 @@ async def api_get_daily_quiz(current_user: AuthenticatedUser = Depends(get_curre
 
 @router.post("/daily-quiz/attempt") # Adjust response model
 async def api_submit_daily_quiz_attempt(
-    payload: DailyQuizAttemptRequest, # Pydantic model for the request
+    payload: DailyQuizAttemptRequest, 
     current_user: AuthenticatedUser = Depends(get_current_user)
 ):
     user_id = current_user.id
-    quiz_data = education_handler.get_daily_quiz(date=datetime.today().strftime('%Y-%m-%d')) # Renamed for clarity
+    today_str = datetime.today().strftime('%Y-%m-%d')
     
-    is_correct = False # Initialize is_correct
+    # Fetch today's quiz data from the database
+    todays_quiz_details = education_handler.get_daily_quiz(date=today_str)
+
+    if not todays_quiz_details:
+        raise HTTPException(status_code=404, detail="Daily quiz not found for today.")
+
+    actual_quiz_id_from_db = todays_quiz_details.get('id')
+    if actual_quiz_id_from_db is None:
+        logger.error(f"Quiz data for date {today_str} is missing 'id' field.")
+        raise HTTPException(status_code=500, detail="Quiz data is incomplete (missing ID).")
+
+    db_correct_answer = todays_quiz_details.get('correct_answer', "")
+    db_explanation = todays_quiz_details.get('explanation', "") # Assuming 'explanation' field exists
     
-    if quiz_data and 'correct_answer' in quiz_data: # Check if quiz_data and correct_answer exist
-        correct_answer = quiz_data.get('correct_answer')
-        # Assuming selected_answer is the direct value to compare
-        if payload.selected_answer == correct_answer:
-            is_correct = True
+    is_correct = False
+    if payload.selected_answer == db_correct_answer:
+        is_correct = True
     
-    # It's good practice to ensure quiz_id is valid or handle if not
-    # For example, check if payload.quiz_id matches quiz_data.get('id') if available
-    
-    result = education_handler.insert_daily_quiz_attempt(
-        user_id=user_id,
-        quiz_id=payload.quiz_id, # Ensure this quiz_id is relevant/validated
-        selected_answer=payload.selected_answer,
-        is_correct=is_correct
-    )
-    print(f"[bold blue]Daily Quiz Attempt Result: {result}[/bold blue]")
-    return result
+    xp_gained = 50 if is_correct else 0 # Example XP logic
+
+    try:
+        # Insert the attempt using the actual quiz ID from the database
+        education_handler.insert_daily_quiz_attempt(
+            user_id=user_id,
+            quiz_id=actual_quiz_id_from_db, # Use the ID from the fetched quiz data
+            selected_answer=payload.selected_answer,
+            is_correct=is_correct
+        )
+        
+        # Construct the response expected by the frontend
+        response_data = {
+            "success": True,
+            "is_correct": is_correct,
+            "correct_answer": db_correct_answer,
+            "explanation": db_explanation,
+            "xp_gained": xp_gained,
+            "message": "Attempt recorded successfully."
+        }
+        # logger.info(f"Daily Quiz Attempt Response for user {user_id}: {response_data}")
+        return response_data
+
+    except Exception as e:
+        logger.error(f"Failed to insert daily quiz attempt for user {user_id}, quiz {actual_quiz_id_from_db}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="An error occurred while recording your quiz attempt.")
 
 @router.get("/roadmap", response_model=RoadmapListResponse)
 async def api_get_roadmaps(current_user: AuthenticatedUser = Depends(get_current_user)):
