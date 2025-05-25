@@ -146,21 +146,40 @@ const Dashboard: React.FC = () => {
             const userXP = finalUserData.xp;
 
             const currentLevelData = levels.find(l => l.level === userLvl);
+            // XP required to *reach* userLvl (i.e., XP at the start of userLvl)
+            // This is the xp_required of the (userLvl - 1). For L1, this is 0.
             const xpFromPreviousLevels = (userLvl === 1) ? 0 : (levels.find(l => l.level === userLvl - 1)?.xp_required || 0);
 
             if (currentLevelData) {
-                const xpForCurrentLevel = currentLevelData.xp_required - xpFromPreviousLevels;
+                // xp_required for currentLevelData.level is the total XP needed to *complete* this level.
+                const xpToCompleteCurrentLevel = currentLevelData.xp_required; 
+                
+                const xpSpanOfCurrentLevel = xpToCompleteCurrentLevel - xpFromPreviousLevels;
                 const xpEarnedInCurrentLevel = userXP - xpFromPreviousLevels;
-                const percentage = xpForCurrentLevel > 0 ? (xpEarnedInCurrentLevel / xpForCurrentLevel) * 100 : 0;
-                setXpPercentage(Math.min(100, Math.max(0, percentage))); // Clamp between 0 and 100
+
+                if (xpSpanOfCurrentLevel > 0) {
+                    let percent = (xpEarnedInCurrentLevel / xpSpanOfCurrentLevel) * 100;
+                    percent = Math.max(0, Math.min(percent, 100)); // Clamp percentage
+                    console.log(`[Dashboard] XP Calc: UserLvl=${userLvl}, UserXP=${userXP}, PrevLvlXP=${xpFromPreviousLevels}, CurrLvlTargetXP=${xpToCompleteCurrentLevel}, Span=${xpSpanOfCurrentLevel}, EarnedInCurrLvl=${xpEarnedInCurrentLevel}, Percent=${percent}`);
+                    setXpPercentage(percent);
+                } else {
+                    // This handles cases like max level (if currentLevelData is the last level and xp_required is its end)
+                    // or if data is such that span is 0 (e.g. first level starts at 0, and its xp_required is also 0, which is unlikely for good data)
+                    // If userXP is at or beyond the requirement for this level, it's 100%.
+                    setXpPercentage(userXP >= xpToCompleteCurrentLevel ? 100 : 0);
+                    console.log(`[Dashboard] XP Calc: Span is 0 or less. UserXP=${userXP}, CurrLvlTargetXP=${xpToCompleteCurrentLevel}. Setting percentage based on completion.`);
+                }
             } else {
-                setXpPercentage(0); // Default if level data not found
+                console.error(`[Dashboard] XP Calc: Could not find level data for level ${userLvl}.`);
+                setXpPercentage(0); // Reset if level data is missing
             }
         } else {
+            // Error or no valid user data from API
             setUser(null);
-            setCurrentUserLevel(1); 
-            setCurrentUserXp(0); 
-            setXpPercentage(0); 
+            setCurrentUserLevel(1); // Reset to default
+            setCurrentUserXp(0);   // Reset to default
+            setXpPercentage(0);    // Reset XP percentage
+            console.warn("[Dashboard] User data processing failed. States reset, XP percentage set to 0.");
         }
 
         // Portfolio
@@ -170,18 +189,21 @@ const Dashboard: React.FC = () => {
         setPortfolioData(portfolio);
         if (portfolio && portfolio.success) {
           const totalValue = portfolio.portfolio.reduce((sum: number, item: PortfolioItem) => {
-            const value = item.quantity * 100; // Placeholder - replace with actual price logic
+            const value = item.quantity * 100; // Placeholder
+            console.log(`[Dashboard] Portfolio item:`, item, "Value:", value);
             return sum + value;
           }, 0);
           setPortfolioTotalValue(totalValue);
+          console.log(`[Dashboard] Portfolio total value: ${totalValue}`);
 
           const totalQuantity = portfolio.portfolio.reduce((sum: number, item: PortfolioItem) => sum + item.quantity, 0);
           const allocation = portfolio.portfolio.map((item: PortfolioItem) => ({
             symbol: item.symbol,
-            name: item.symbol, // Assuming name is same as symbol for now
+            name: item.symbol,
             percentage: totalQuantity > 0 ? (item.quantity / totalQuantity) * 100 : 0
           }));
           setAssetAllocation(allocation);
+          console.log("[Dashboard] Asset allocation:", allocation);
         }
 
         // Transactions
@@ -191,61 +213,67 @@ const Dashboard: React.FC = () => {
         if (transactionsResponse && transactionsResponse.success && Array.isArray(transactionsResponse.transactions)) {
           setRecentTransactions(transactionsResponse.transactions);
         } else if (Array.isArray(transactionsResponse)) { 
+            console.warn("[Dashboard] GetRecentTransactions returned a direct array. Assuming it's the transaction list.");
             setRecentTransactions(transactionsResponse);
         } else {
           console.warn("[Dashboard] GetRecentTransactions did not return a successful response or transactions array:", transactionsResponse);
           setRecentTransactions([]); 
         }
 
-        // Quiz Logic
-        // 1. Fetch today's quiz details (question, options, id)
-        console.log("[Dashboard] Calling GetDailyQuiz to get today's quiz structure...");
-        const todaysQuizDetails = await GetDailyQuiz();
-        console.log("[Dashboard] GetDailyQuiz (for structure) result:", todaysQuizDetails);
+        // Quiz
+        console.log("[Dashboard] Initiating Quiz Logic...");
+        if (token) {
+          console.log("[Dashboard] Token found, proceeding to fetch daily quiz.");
+          const dailyQuizResponse = await GetDailyQuiz();
+          console.log("[Dashboard] GetDailyQuiz (for structure and content) result:", dailyQuizResponse);
 
-        if (!todaysQuizDetails || !todaysQuizDetails.success || !todaysQuizDetails.quiz) {
-          console.warn("[Dashboard] No daily quiz available today or fetch failed:", todaysQuizDetails?.message);
-          setQuiz(null);
-        } else {
-          const { quiz: currentQuizInfo } = todaysQuizDetails; // Contains id, question, options, base explanation
+          if (dailyQuizResponse && dailyQuizResponse.success && dailyQuizResponse.quiz) {
+            const todaysQuizStructure = dailyQuizResponse.quiz;
+            console.log("[Dashboard] Successfully fetched quiz structure:", todaysQuizStructure);
 
-          // 2. Fetch today's attempt status for this user
-          console.log("[Dashboard] Calling GetDailyQuizAttemptToday...");
-          const attemptResponse = await GetDailyQuizAttemptToday();
-          console.log("[Dashboard] GetDailyQuizAttemptToday result:", attemptResponse);
-          setDailyQuizAttempt(attemptResponse); // Store the raw attempt response, might be useful
+            console.log("[Dashboard] Calling GetDailyQuizAttemptToday...");
+            const attemptTodayResponse = await GetDailyQuizAttemptToday();
+            console.log("[Dashboard] GetDailyQuizAttemptToday result:", attemptTodayResponse);
+            setDailyQuizAttempt(attemptTodayResponse); // Store the raw attempt response
 
-          // 3. Determine quiz state based on attempt
-          if (attemptResponse && attemptResponse.success && attemptResponse.selected_answer && attemptResponse.quiz_id === currentQuizInfo.id) {
-            // User has already attempted THIS specific quiz today
-            console.log("[Dashboard] User has attempted today's quiz. Displaying attempt details with original question.");
-            setQuiz({
-              id: currentQuizInfo.id,
-              question: currentQuizInfo.question, // Original question
-              possible_answer_1: currentQuizInfo.possible_answer_1, // Original options
-              possible_answer_2: currentQuizInfo.possible_answer_2,
-              possible_answer_3: currentQuizInfo.possible_answer_3,
-              attempted: true,
-              selected_answer: attemptResponse.selected_answer,
-              is_correct: attemptResponse.is_correct,
-              correct_answer_text: attemptResponse.correct_answer, // Actual correct answer string
-              explanation: attemptResponse.explanation || currentQuizInfo.explanation, // Prefer attempt's explanation
-            });
+            if (attemptTodayResponse && attemptTodayResponse.success && 
+                typeof attemptTodayResponse.selected_answer !== 'undefined' && 
+                attemptTodayResponse.quiz_id === todaysQuizStructure.id) {
+              console.log("[Dashboard] User has an attempt for today's quiz. Setting quiz state as attempted.");
+              setQuiz({
+                id: todaysQuizStructure.id,
+                question: todaysQuizStructure.question,
+                possible_answer_1: todaysQuizStructure.possible_answer_1,
+                possible_answer_2: todaysQuizStructure.possible_answer_2,
+                possible_answer_3: todaysQuizStructure.possible_answer_3,
+                attempted: true,
+                selected_answer: attemptTodayResponse.selected_answer,
+                is_correct: attemptTodayResponse.is_correct,
+                correct_answer_text: attemptTodayResponse.correct_answer,
+                explanation: attemptTodayResponse.explanation || todaysQuizStructure.explanation,
+              });
+            } else {
+              console.log("[Dashboard] No valid attempt for today's quiz, or attempt is for a different quiz. Setting quiz as fresh.");
+              setQuiz({
+                id: todaysQuizStructure.id,
+                question: todaysQuizStructure.question,
+                possible_answer_1: todaysQuizStructure.possible_answer_1,
+                possible_answer_2: todaysQuizStructure.possible_answer_2,
+                possible_answer_3: todaysQuizStructure.possible_answer_3,
+                attempted: false,
+                explanation: todaysQuizStructure.explanation,
+                selected_answer: undefined,
+                is_correct: undefined,
+                correct_answer_text: undefined,
+              });
+            }
           } else {
-            // No attempt for today's specific quiz, or attempt fetch failed/irrelevant
-            // Show a fresh quiz using currentQuizInfo
-            console.log("[Dashboard] No relevant attempt for today's quiz. Displaying fresh quiz.");
-            setQuiz({
-              id: currentQuizInfo.id,
-              question: currentQuizInfo.question,
-              possible_answer_1: currentQuizInfo.possible_answer_1,
-              possible_answer_2: currentQuizInfo.possible_answer_2,
-              possible_answer_3: currentQuizInfo.possible_answer_3,
-              attempted: false,
-              explanation: currentQuizInfo.explanation, // Base explanation from GetDailyQuiz
-              // selected_answer, is_correct, correct_answer_text will be populated on submission
-            });
+            console.warn("[Dashboard] No daily quiz available today or fetch failed:", dailyQuizResponse?.message);
+            setQuiz(null); 
           }
+        } else {
+          console.warn("[Dashboard] No token available. Quiz will not be fetched.");
+          setQuiz(null); 
         }
 
         setLoading(false);
@@ -253,7 +281,6 @@ const Dashboard: React.FC = () => {
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
-        // Ensure quiz state is reset or handled in case of error during its fetch
         setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, attempted: false } : null);
         setLoading(false);
       }
@@ -261,7 +288,7 @@ const Dashboard: React.FC = () => {
     if (!authLoading) {
       fetchAllData();
     }
-  }, [authUser, authLoading, token, levels]); // Added levels to dependency array
+  }, [authUser, authLoading, token, levels]); 
 
   // Logging for render phases
   useEffect(() => {
@@ -269,7 +296,7 @@ const Dashboard: React.FC = () => {
     console.log("[Dashboard] Render: portfolioData=", portfolioData);
     console.log("[Dashboard] Render: recentTransactions=", recentTransactions);
     console.log("[Dashboard] Render: quiz=", quiz);
-    console.log("[Dashboard] Render: dailyQuizAttempt=", dailyQuizAttempt); // Log new state
+    console.log("[Dashboard] Render: dailyQuizAttempt=", dailyQuizAttempt); 
     console.log("[Dashboard] Render: error=", error);
     console.log("[Dashboard] Render: loading=", loading);
   }, [user, portfolioData, recentTransactions, quiz, dailyQuizAttempt, error, loading]);
@@ -295,19 +322,17 @@ const Dashboard: React.FC = () => {
             explanation: result.explanation || prevQuiz.explanation,
           };
         });
-        // Optionally, update user XP here if not handled by a global state update or re-fetch
         if (result.xp_gained && result.xp_gained > 0 && user) {
           setUser(prevUser => prevUser ? { ...prevUser, xp: prevUser.xp + (result.xp_gained || 0) } : null);
         }
       } else {
         setError(result.message || 'Failed to submit quiz answer.');
-        // Keep UI interactive but show it's attempted with the user's pick
         setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, attempted: true, selected_answer: answer, is_correct: false } : null);
       }
     } catch (err: any) {
       console.error('Error submitting quiz answer:', err);
       setError(err.message || 'An unexpected error occurred while submitting your answer.');
-      setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, selected_answer: answer, attempted: false } : null); // Reset on error
+      setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, selected_answer: answer, attempted: false } : null); 
     } finally {
       setQuizSubmitting(false);
     }
@@ -317,9 +342,6 @@ const Dashboard: React.FC = () => {
     if (!user) return;
     
     try {
-      // Call API to toggle meme mode
-      // await ToggleMemeMode(!user.is_meme_mode);
-      // Update local state
       setUser({ ...user, is_meme_mode: !user.is_meme_mode });
     } catch (err) {
       console.error('Error toggling meme mode:', err);
@@ -645,7 +667,6 @@ const Dashboard: React.FC = () => {
                 {recentTransactions && recentTransactions.length > 0 ? (
                   <div className="max-h-[300px] overflow-y-auto pr-1 space-y-3">
                     {recentTransactions.map((tx, index) => {
-                      // Format the timestamp (assuming it's a string from API)
                       const txDate = new Date(tx.timestamp);
                       const formattedDate = `${txDate.toLocaleString('en', { month: 'short' })} ${txDate.getDate()}, ${txDate.getHours()}:${String(txDate.getMinutes()).padStart(2, '0')}`;
                       
@@ -874,20 +895,19 @@ const Dashboard: React.FC = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-300">{quiz.question}</p>
                     <div className="space-y-2">
                       {([quiz.possible_answer_1, quiz.possible_answer_2, quiz.possible_answer_3]).map((answer, index) => {
-                        if (!answer) return null; // Skip if an answer is not defined
+                        if (!answer) return null; 
                         
-                        // Determine button style based on quiz state
                         let buttonClass = "w-full text-left px-4 py-2 rounded-lg border transition-all duration-150 text-sm ";
                         if (quiz.attempted) {
                           if (answer === quiz.correct_answer_text) {
-                            buttonClass += "bg-neo-emerald/30 border-neo-emerald text-neo-emerald dark:text-white"; // Correct answer
+                            buttonClass += "bg-neo-emerald/30 border-neo-emerald text-neo-emerald dark:text-white"; 
                           } else if (answer === quiz.selected_answer) {
-                            buttonClass += "bg-neo-red/30 border-neo-red text-neo-red dark:text-white"; // Incorrect selected answer
+                            buttonClass += "bg-neo-red/30 border-neo-red text-neo-red dark:text-white"; 
                           } else {
-                            buttonClass += "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"; // Other answers (disabled)
+                            buttonClass += "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"; 
                           }
                         } else {
-                          buttonClass += "bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 hover:bg-neo-blue/10 hover:border-neo-blue dark:hover:bg-neo-blue/20"; // Default, hoverable
+                          buttonClass += "bg-gray-50 dark:bg-gray-700/50 border-gray-300 dark:border-gray-600 hover:bg-neo-blue/10 hover:border-neo-blue dark:hover:bg-neo-blue/20"; 
                         }
 
                         return (
@@ -913,7 +933,6 @@ const Dashboard: React.FC = () => {
                   <div className="text-center py-6">
                     <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4c-1.742 0-3.223-.835-3.772-2H1v-4h7.228zM19 11H12M12 11V4M12 11v7"></path></svg>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Daily quiz not available or already completed.</p>
-                    {/* You could add a button to manually refresh or check again */}
                   </div>
                 )}
               </div>
