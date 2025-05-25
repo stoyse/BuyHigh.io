@@ -201,14 +201,20 @@ export const SubmitDailyQuizAnswer = async (payload: DailyQuizAttemptPayload): P
       withCredentials: true,
     });
     logDebug('Submit Daily Quiz Answer Response:', response.data);
-    return response.data;
+    return response.data; // Ensure this matches DailyQuizAttemptResponse
   } catch (error) {
     if (axios.isAxiosError(error)) {
       console.error('Error submitting daily quiz answer:', error.response?.data || error.message);
     } else {
       console.error('Unexpected error submitting daily quiz answer:', error);
     }
-    throw error; // Rethrow to be handled by the caller
+    // Return a default error response object
+    return {
+      success: false,
+      is_correct: false,
+      correct_answer: '',
+      message: 'Failed to submit quiz answer.',
+    };
   }
 };
 
