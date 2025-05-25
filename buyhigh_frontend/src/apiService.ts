@@ -191,6 +191,7 @@ export interface DailyQuizAttemptResponse {
   explanation?: string;
   xp_gained?: number;
   message?: string;
+  selected_answer?: string; // Ensure this field is part of the interface if not already
 }
 
 export const SubmitDailyQuizAnswer = async (payload: DailyQuizAttemptPayload): Promise<DailyQuizAttemptResponse> => {
@@ -214,6 +215,33 @@ export const SubmitDailyQuizAnswer = async (payload: DailyQuizAttemptPayload): P
       is_correct: false,
       correct_answer: '',
       message: 'Failed to submit quiz answer.',
+    };
+  }
+};
+
+export const GetDailyQuizAttemptToday = async (): Promise<DailyQuizAttemptResponse> => {
+  logApiCall('GET', '/daily-quiz/attempt/today');
+  try {
+    const response = await axios.get(`${API_BASE_URL}/daily-quiz/attempt/today`, {
+      withCredentials: true,
+    });
+    logDebug('Get Daily Quiz Attempt Today Response:', response.data);
+    // The backend returns success: false if no attempt is found, which is a valid scenario.
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error fetching daily quiz attempt for today:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error fetching daily quiz attempt for today:', error);
+    }
+    // Return a default error-like response to indicate failure in fetching
+    return {
+      success: false, // Explicitly false to indicate an issue with the fetch itself
+      is_correct: false,
+      correct_answer: '',
+      message: 'Failed to fetch today\'s quiz attempt status.',
+      xp_gained: 0,
+      // selected_answer will be undefined by default if not set
     };
   }
 };
