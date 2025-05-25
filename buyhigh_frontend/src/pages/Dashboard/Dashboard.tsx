@@ -105,41 +105,77 @@ const Dashboard: React.FC = () => {
         const userId = authUser.id.toString();
         console.log(`[Dashboard] Starting API calls for userId: ${userId}`);
 
-        // User Info
+        // User Info & XP Calculation
         console.log("[Dashboard] Calling GetUserInfo...");
-        const userInfoResponse = await GetUserInfo(userId); // Renamed for clarity
+        const userInfoResponse = await GetUserInfo(userId);
         console.log("[Dashboard] GetUserInfo result:", userInfoResponse);
 
+        let finalUserData: User | null = null;
+
         if (userInfoResponse && userInfoResponse.success && userInfoResponse.user) {
-            setUser(userInfoResponse.user);
-            setCurrentUserLevel(userInfoResponse.user.level);
-            setCurrentUserXp(userInfoResponse.user.xp);
-        } else if (userInfoResponse && userInfoResponse.success && userInfoResponse.data) { // Fallback for .data key
-            setUser(userInfoResponse.data);
-            setCurrentUserLevel(userInfoResponse.data.level);
-            setCurrentUserXp(userInfoResponse.data.xp);
-        } else if (userInfoResponse && typeof userInfoResponse.balance !== 'undefined' && typeof userInfoResponse.level !== 'undefined') {
+            finalUserData = userInfoResponse.user;
+        } else if (userInfoResponse && userInfoResponse.success && userInfoResponse.data) {
+            finalUserData = userInfoResponse.data;
+        } else if (userInfoResponse && 
+                   typeof userInfoResponse.balance !== 'undefined' &&
+                   typeof userInfoResponse.profit_loss !== 'undefined' &&
+                   typeof userInfoResponse.total_trades !== 'undefined' &&
+                   typeof userInfoResponse.pet_energy !== 'undefined' &&
+                   typeof userInfoResponse.is_meme_mode !== 'undefined' &&
+                   typeof userInfoResponse.xp !== 'undefined' &&
+                   typeof userInfoResponse.level !== 'undefined') {
             // Fallback for when the response is already the flat user object
-            setUser(userInfoResponse);
-            setCurrentUserLevel(userInfoResponse.level);
-            setCurrentUserXp(userInfoResponse.xp);
+            finalUserData = userInfoResponse as User;
         } else {
             console.error("[Dashboard] GetUserInfo call failed, returned unsuccessful status, or data was not in expected format:", userInfoResponse);
             setError(userInfoResponse?.message || "Failed to fetch user information.");
-            setUser(null); // Ensure user state is cleared on error/unexpected format
+            // finalUserData remains null
         }
 
-        // XP calculation
-        const currentLevel = levels.find(l => l.level === userInfoResponse?.level);
-        const nextLevel = levels.find(l => l.level === userInfoResponse?.level + 1);
-        if (currentLevel && nextLevel) {
-          const xpForCurrentLevel = currentLevel.xp_required;
-          const xpForNextLevel = nextLevel.xp_required;
-          const xpProgress = userInfoResponse?.xp - xpForCurrentLevel;
-          const xpNeeded = xpForNextLevel - xpForCurrentLevel;
-          const percent = (xpProgress / xpNeeded) * 100;
-          console.log(`[Dashboard] XP percent: ${percent}`);
-          setXpPercentage(percent);
+        if (finalUserData) {
+            setUser(finalUserData);
+            setCurrentUserLevel(finalUserData.level);
+            setCurrentUserXp(finalUserData.xp);
+
+            // XP calculation logic using finalUserData
+            const userLvl = finalUserData.level;
+            const userXP = finalUserData.xp;
+
+            const currentLevelData = levels.find(l => l.level === userLvl);
+            // XP required to *reach* userLvl (i.e., XP at the start of userLvl)
+            // This is the xp_required of the (userLvl - 1). For L1, this is 0.
+            const xpFromPreviousLevels = (userLvl === 1) ? 0 : (levels.find(l => l.level === userLvl - 1)?.xp_required || 0);
+
+            if (currentLevelData) {
+                // xp_required for currentLevelData.level is the total XP needed to *complete* this level.
+                const xpToCompleteCurrentLevel = currentLevelData.xp_required; 
+                
+                const xpSpanOfCurrentLevel = xpToCompleteCurrentLevel - xpFromPreviousLevels;
+                const xpEarnedInCurrentLevel = userXP - xpFromPreviousLevels;
+
+                if (xpSpanOfCurrentLevel > 0) {
+                    let percent = (xpEarnedInCurrentLevel / xpSpanOfCurrentLevel) * 100;
+                    percent = Math.max(0, Math.min(percent, 100)); // Clamp percentage
+                    console.log(`[Dashboard] XP Calc: UserLvl=${userLvl}, UserXP=${userXP}, PrevLvlXP=${xpFromPreviousLevels}, CurrLvlTargetXP=${xpToCompleteCurrentLevel}, Span=${xpSpanOfCurrentLevel}, EarnedInCurrLvl=${xpEarnedInCurrentLevel}, Percent=${percent}`);
+                    setXpPercentage(percent);
+                } else {
+                    // This handles cases like max level (if currentLevelData is the last level and xp_required is its end)
+                    // or if data is such that span is 0 (e.g. first level starts at 0, and its xp_required is also 0, which is unlikely for good data)
+                    // If userXP is at or beyond the requirement for this level, it's 100%.
+                    setXpPercentage(userXP >= xpToCompleteCurrentLevel ? 100 : 0);
+                    console.log(`[Dashboard] XP Calc: Span is 0 or less. UserXP=${userXP}, CurrLvlTargetXP=${xpToCompleteCurrentLevel}. Setting percentage based on completion.`);
+                }
+            } else {
+                console.error(`[Dashboard] XP Calc: Could not find level data for level ${userLvl}.`);
+                setXpPercentage(0); // Reset if level data is missing
+            }
+        } else {
+            // Error or no valid user data from API
+            setUser(null);
+            setCurrentUserLevel(1); // Reset to default
+            setCurrentUserXp(0);   // Reset to default
+            setXpPercentage(0);    // Reset XP percentage
+            console.warn("[Dashboard] User data processing failed. States reset, XP percentage set to 0.");
         }
 
         // Portfolio
