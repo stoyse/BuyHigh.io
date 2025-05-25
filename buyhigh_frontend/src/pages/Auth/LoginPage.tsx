@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginUser } from '../../services/api'; // Pfad anpassen, falls nötig
+import { loginUser } from '../../apiService'; // Korrigierter Importpfad
 import BaseLayout from '../../components/Layout/BaseLayout'; // Pfad anpassen
 // import { useAuth } from '../../context/AuthContext'; // Optional: Wenn AuthContext verwendet wird
 
@@ -17,11 +17,13 @@ const LoginPage: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await loginUser({ email, password });
+      const data = await loginUser(email, password); // Changed this line
       if (data.success && data.id_token) {
         // Optional: Speichere Token oder Benutzerinfos im LocalStorage/Context
         localStorage.setItem('token', data.id_token);
-        localStorage.setItem('userId', data.userId || data.firebase_uid || '');
+        // Ensure userId is a string for localStorage
+        const userIdToStore = data.userId !== undefined ? String(data.userId) : (data.firebase_uid || '');
+        localStorage.setItem('userId', userIdToStore);
         // login(data.id_token, data.userId || data.firebase_uid); // Optional: AuthContext
         navigate('/dashboard'); // Weiterleitung zum Dashboard oder einer anderen geschützten Seite
       } else {

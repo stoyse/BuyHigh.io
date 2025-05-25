@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { registerUser } from '../../services/api'; // Pfad anpassen, falls nötig
+import { registerUser } from '../../apiService'; // Korrigierter Importpfad
 import BaseLayout from '../../components/Layout/BaseLayout'; // Pfad anpassen
 
 const RegisterPage: React.FC = () => {
