@@ -79,11 +79,8 @@ class DailyQuizResponse(BaseModel): # Assuming structure from education_handler
     data: Any # Replace Any with a more specific model if possible
 
 class DailyQuizAttemptRequest(BaseModel):
-    user_id: int
-    quiz_id: int
+    quiz_id: int  # Kept as str to align with frontend, assuming quiz IDs can be strings
     selected_answer: str
-    is_correct: bool
-    attempted_at: Optional[datetime] = None
 
 class RoadmapListResponse(BaseModel):
     success: bool
