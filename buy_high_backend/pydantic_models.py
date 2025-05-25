@@ -82,6 +82,15 @@ class DailyQuizAttemptRequest(BaseModel):
     quiz_id: int  # Geändert von int zu str, um mit dem Frontend übereinzustimmen
     selected_answer: str
 
+class DailyQuizAttemptResponse(BaseModel):
+    success: bool
+    is_correct: bool
+    correct_answer: str
+    explanation: Optional[str] = None
+    xp_gained: int
+    message: Optional[str] = None
+    selected_answer: Optional[str] = None # Added selected_answer
+
 class RoadmapListResponse(BaseModel):
     success: bool
     roadmaps: List[Any] # Replace Any with a more specific Roadmap model if available

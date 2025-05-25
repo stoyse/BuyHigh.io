@@ -108,16 +108,20 @@ def get_dayly_quiz_attempt_day(user_id, date):
     try:
         conn = get_db_connection(None)
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            # Assuming 'attempted_at' is a timestamp or date column in daily_quiz_attempts
+            # and 'quiz_id' in daily_quiz_attempts refers to 'id' in daily_quiz
             cursor.execute("""
-                SELECT * FROM daily_quiz_attempts 
-                WHERE user_id = %s AND DATE(attempted_at) = %s
+                SELECT dqa.*, dq.question, dq.possible_answers, dq.correct_answer, dq.explanation, dq.category
+                FROM daily_quiz_attempts dqa
+                JOIN daily_quiz dq ON dqa.quiz_id = dq.id
+                WHERE dqa.user_id = %s AND DATE(dq.date) = %s
+                ORDER BY dqa.attempted_at DESC
+                LIMIT 1
             """, (user_id, date))
-            attempts = cursor.fetchall()
-            if not attempts:
-                return None
-            return [dict(attempt) for attempt in attempts]
+            attempt = cursor.fetchone()
+            return dict(attempt) if attempt else None
     except psycopg2.Error as e:
-        logger.error(f"Fehler beim Abrufen der täglichen Quizversuche für Benutzer {user_id} am Datum {date}: {e}", exc_info=True)
+        logger.error(f"Fehler beim Abrufen des täglichen Quizversuchs für Benutzer {user_id} am Datum {date}: {e}", exc_info=True)
         raise
     finally:
         if conn:
