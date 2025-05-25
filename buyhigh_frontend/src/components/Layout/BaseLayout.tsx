@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './BaseLayout.css';
 import { GetUserInfo, logoutUser } from '../../apiService';
+import axios from 'axios';
 
 interface BaseLayoutProps {
   children: React.ReactNode;
@@ -34,17 +35,41 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
   // Fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userId');
+
+      if (!token || !userId) {
+        // If no token or userId, don't attempt to fetch user data
+        // and ensure user state is null (or handle as unauthenticated)
+        setUser(null);
+        // Optionally, redirect to login if not on a public page like /login or /register
+        if (!["/login", "/register"].includes(location.pathname)) {
+          navigate('/login');
+        }
+        return;
+      }
+
       try {
-        const data = await GetUserInfo('1'); // Example user ID
+        // Ensure Axios sends the token with future requests
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        const data = await GetUserInfo(userId); // Use stored userId
         setUser(data);
-      } catch (err) {
+      } catch (err: any) {
         setError('Error fetching user data.');
-        console.error('BaseLayout - Error fetching user data:', err); // Enhanced error logging
+        console.error('BaseLayout - Error fetching user data:', err);
+        // If fetching user data fails (e.g., token expired), clear stored auth data and redirect to login
+        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        delete axios.defaults.headers.common['Authorization'];
+        setUser(null);
+        if (err.response?.status === 401 && !["/login", "/register"].includes(location.pathname)) {
+          navigate('/login');
+        }
       }
     };
 
     fetchUserData();
-  }, []);
+  }, [location.pathname, navigate]); // Re-run on location change to handle auth status
 
   // Diagnostic useEffect to log user state
   useEffect(() => {

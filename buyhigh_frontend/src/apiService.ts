@@ -122,10 +122,6 @@ export const GetUserInfo = async (userId: string) => {
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      if (error.response?.status === 401) {
-        console.error('User is not authenticated. Redirecting to login.');
-        window.location.href = '/login';
-      }
       console.error('Error fetching user info:', error.response?.data || error.message);
     } else {
       console.error('Unexpected error:', error);
