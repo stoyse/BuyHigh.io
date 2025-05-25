@@ -1,6 +1,15 @@
 import os
+import sys # Add sys import
 import logging
 
+# Calculate project_root_dir
+# This should be /Users/julianstosse/Developer/BuyHigh.io
+project_root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Add project_root_dir to sys.path if it's not already there
+# This should be done before other project-specific imports if they rely on this path
+if project_root_dir not in sys.path:
+    sys.path.insert(0, project_root_dir)
 
 _setup_logger = logging.getLogger("buyhigh_setup")
 if not _setup_logger.hasHandlers(): # Only add handler once
@@ -12,7 +21,6 @@ if not _setup_logger.hasHandlers(): # Only add handler once
 
 # Correct path to Firebase config file
 # Assumption: main.py is in buy_high_backend, utils folder is at the same level as buy_high_backend
-project_root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # BuyHigh.io directory
 firebase_config_path = os.path.join(project_root_dir, "utils", "buyhighio-firebase-adminsdk-fbsvc-df9d657bec.json")
 
 _setup_logger.info(f"MAIN.PY: Attempted path for Firebase config: {firebase_config_path}")

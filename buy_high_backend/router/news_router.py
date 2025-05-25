@@ -1,11 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Optional
 import logging
-import database.handler.postgres.postgre_transactions_handler as transactions_handler
 from ..auth_utils import get_current_user, AuthenticatedUser
 from ..pydantic_models import AssetResponse, AssetsListResponse
-from ...utils.stock_news import fetch_company_news, fetch_general_news
-
+from utils.stock_news import fetch_company_news, fetch_general_news
 
 
 logger = logging.getLogger(__name__)
