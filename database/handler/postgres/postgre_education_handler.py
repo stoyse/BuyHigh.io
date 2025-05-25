@@ -153,3 +153,30 @@ def delete_daily_quiz(quiz_id):
     finally:
         if conn:
             connection_pool.putconn(conn)
+
+def get_dayly_quiz_attempt_day(user_id, date):
+    """
+    Lädt den täglichen Quizversuch eines Benutzers für ein bestimmtes Datum aus der PostgreSQL-Datenbank.
+    """
+    try:
+        conn = get_db_connection(None)
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            # Assuming 'attempted_at' is a timestamp or date column in daily_quiz_attempts
+            # and 'quiz_id' in daily_quiz_attempts refers to 'id' in daily_quiz
+            # Removed dq.possible_answers from the SELECT statement
+            cursor.execute("""
+                SELECT dqa.*, dq.question, dq.correct_answer, dq.explanation, dq.category
+                FROM daily_quiz_attempts dqa
+                JOIN daily_quiz dq ON dqa.quiz_id = dq.id
+                WHERE dqa.user_id = %s AND DATE(dq.date) = %s
+                ORDER BY dqa.attempted_at DESC
+                LIMIT 1
+            """, (user_id, date))
+            attempt = cursor.fetchone()
+            return dict(attempt) if attempt else None
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen des täglichen Quizversuchs für Benutzer {user_id} am Datum {date}: {e}", exc_info=True)
+        raise
+    finally:
+        if conn:
+            connection_pool.putconn(conn)
