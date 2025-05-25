@@ -197,47 +197,54 @@ const Dashboard: React.FC = () => {
           setRecentTransactions([]); 
         }
 
-        // Quiz: Check for today's attempt first
-        console.log("[Dashboard] Calling GetDailyQuizAttemptToday...");
-        const attemptTodayResponse = await GetDailyQuizAttemptToday();
-        console.log("[Dashboard] GetDailyQuizAttemptToday result:", attemptTodayResponse);
-        setDailyQuizAttempt(attemptTodayResponse); // Store the attempt response
+        // Quiz Logic
+        // 1. Fetch today's quiz details (question, options, id)
+        console.log("[Dashboard] Calling GetDailyQuiz to get today's quiz structure...");
+        const todaysQuizDetails = await GetDailyQuiz();
+        console.log("[Dashboard] GetDailyQuiz (for structure) result:", todaysQuizDetails);
 
-        if (attemptTodayResponse && attemptTodayResponse.success && attemptTodayResponse.selected_answer) {
-          // User has already attempted today's quiz
-          setQuiz({
-            id: attemptTodayResponse.quiz_id ?? '', // Use quiz_id from attempt, fallback to empty string if null/undefined
-            question: "You have already attempted today's quiz.",
-            possible_answer_1: '', 
-            possible_answer_2: '', 
-            possible_answer_3: '', 
-            attempted: true,
-            selected_answer: attemptTodayResponse.selected_answer,
-            is_correct: attemptTodayResponse.is_correct,
-            correct_answer_text: attemptTodayResponse.correct_answer,
-            explanation: attemptTodayResponse.explanation,
-          });
+        if (!todaysQuizDetails || !todaysQuizDetails.success || !todaysQuizDetails.quiz) {
+          console.warn("[Dashboard] No daily quiz available today or fetch failed:", todaysQuizDetails?.message);
+          setQuiz(null);
         } else {
-          // No attempt today, or attempt fetch failed (e.g. success:false from API)
-          console.log("[Dashboard] No attempt for today or fetch failed, calling GetDailyQuiz...");
-          const quizData = await GetDailyQuiz();
-          console.log("[Dashboard] GetDailyQuiz result:", quizData);
-          if (quizData && quizData.success && quizData.quiz) {
+          const { quiz: currentQuizInfo } = todaysQuizDetails; // Contains id, question, options, base explanation
+
+          // 2. Fetch today's attempt status for this user
+          console.log("[Dashboard] Calling GetDailyQuizAttemptToday...");
+          const attemptResponse = await GetDailyQuizAttemptToday();
+          console.log("[Dashboard] GetDailyQuizAttemptToday result:", attemptResponse);
+          setDailyQuizAttempt(attemptResponse); // Store the raw attempt response, might be useful
+
+          // 3. Determine quiz state based on attempt
+          if (attemptResponse && attemptResponse.success && attemptResponse.selected_answer && attemptResponse.quiz_id === currentQuizInfo.id) {
+            // User has already attempted THIS specific quiz today
+            console.log("[Dashboard] User has attempted today's quiz. Displaying attempt details with original question.");
             setQuiz({
-              id: quizData.quiz.id,
-              question: quizData.quiz.question,
-              possible_answer_1: quizData.quiz.possible_answer_1,
-              possible_answer_2: quizData.quiz.possible_answer_2,
-              possible_answer_3: quizData.quiz.possible_answer_3,
-              attempted: false, 
-              explanation: quizData.quiz.explanation, // Pre-populate explanation if available
+              id: currentQuizInfo.id,
+              question: currentQuizInfo.question, // Original question
+              possible_answer_1: currentQuizInfo.possible_answer_1, // Original options
+              possible_answer_2: currentQuizInfo.possible_answer_2,
+              possible_answer_3: currentQuizInfo.possible_answer_3,
+              attempted: true,
+              selected_answer: attemptResponse.selected_answer,
+              is_correct: attemptResponse.is_correct,
+              correct_answer_text: attemptResponse.correct_answer, // Actual correct answer string
+              explanation: attemptResponse.explanation || currentQuizInfo.explanation, // Prefer attempt's explanation
             });
-          } else if (quizData && !quizData.success && quizData.message) {
-             setQuiz(null); 
-             console.warn("[Dashboard] No daily quiz available today:", quizData.message);
           } else {
-            console.warn("[Dashboard] GetDailyQuiz call failed or data was not in expected format:", quizData);
-            setQuiz(null); 
+            // No attempt for today's specific quiz, or attempt fetch failed/irrelevant
+            // Show a fresh quiz using currentQuizInfo
+            console.log("[Dashboard] No relevant attempt for today's quiz. Displaying fresh quiz.");
+            setQuiz({
+              id: currentQuizInfo.id,
+              question: currentQuizInfo.question,
+              possible_answer_1: currentQuizInfo.possible_answer_1,
+              possible_answer_2: currentQuizInfo.possible_answer_2,
+              possible_answer_3: currentQuizInfo.possible_answer_3,
+              attempted: false,
+              explanation: currentQuizInfo.explanation, // Base explanation from GetDailyQuiz
+              // selected_answer, is_correct, correct_answer_text will be populated on submission
+            });
           }
         }
 
@@ -246,6 +253,7 @@ const Dashboard: React.FC = () => {
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
+        // Ensure quiz state is reset or handled in case of error during its fetch
         setQuiz(prevQuiz => prevQuiz ? { ...prevQuiz, attempted: false } : null);
         setLoading(false);
       }
