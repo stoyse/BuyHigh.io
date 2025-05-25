@@ -17,7 +17,8 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
   const [user, setUser] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
-  
+  const [error, setError] = React.useState<string | null>(null);
+
   const location = useLocation();
 
   // Darkmode toggle handler
@@ -30,47 +31,11 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
     localStorage.setItem('darkMode', darkMode.toString());
   }, [darkMode]);
 
-  // Simulate user fetch
-  useEffect(() => {
-    // Placeholder for user authentication
-    // In a real app, you'd fetch user data from an API or context
-    const checkAuth = async () => {
-      // Mock user data for demonstration
-      const mockUser = {
-        username: 'TraderJoe',
-        email: 'trader@buyhigh.io',
-        isAuthenticated: true,
-        is_dev: true
-      };
-      
-      // Simulating authenticated user
-      setUser(mockUser);
-    };
-    
-    checkAuth();
-  }, []);
-
-  const [userData, setUserData] = React.useState<any>(null);
-  const [error, setError] = React.useState<string | null>(null);
-
+  // Fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const data = await GetUserInfo('1'); // Example user ID
-        setUserData(data);
-      } catch (err) {
-        setError('Error fetching user data.');
-        console.error(err);
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const data = await GetUserInfo('1');
         setUser(data);
       } catch (err) {
         setError('Error fetching user data.');
@@ -183,7 +148,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
                     </div>
                     
                     {/* Dropdown Menu */}
-                    {dropdownOpen && (
+                    {dropdownOpen && user && (
                       <div className="dropdown-content glass-card rounded-xl shadow-neo-lg overflow-hidden border border-gray-200/20 dark:border-gray-700/30 block opacity-100 transform-none">
                         <div className="p-4 border-b border-gray-200/20 dark:border-gray-700/30">
                           <p className="font-medium text-sm text-gray-800 dark:text-gray-200">{user.username}</p>
