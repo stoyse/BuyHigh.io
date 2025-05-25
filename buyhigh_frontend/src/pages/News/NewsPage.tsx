@@ -149,7 +149,7 @@ const NewsPage: React.FC = () => {
         </header>
 
         {/* Filter Section */}
-        <div className="mb-6 glass-card shadow-neo border border-gray-200/10 dark:border-gray-700/20 rounded-2xl p-5 relative overflow-hidden animate-float glow-effect" style={{ animationDelay: '0.1s' }}>
+        <div className="mb-6 glass-card shadow-neo border border-gray-200/10 dark:border-gray-700/20 rounded-2xl p-5 relative overflow-hidden glow-effect">
           <div className="absolute -top-16 -right-16 w-32 h-32 bg-neo-amber rounded-full opacity-20 blur-3xl"></div>
           <div className="flex flex-col md:flex-row flex-wrap justify-between items-center relative z-10 gap-4">
             <div className="flex flex-wrap gap-2">
