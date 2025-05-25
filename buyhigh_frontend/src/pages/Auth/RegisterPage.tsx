@@ -8,6 +8,7 @@ const RegisterPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState(''); // Optional
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null); // Added success message state
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -15,6 +16,7 @@ const RegisterPage: React.FC = () => {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
+    setSuccessMessage(null); // Reset success message on new submission
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters long.');
@@ -25,10 +27,13 @@ const RegisterPage: React.FC = () => {
     try {
       const data = await registerUser({ email, password, username });
       if (data.success) {
+        setSuccessMessage('Registration successful! Redirecting to login...');
         // Optional: Speichere Token oder Benutzerinfos im LocalStorage/Context
         // z.B. localStorage.setItem('token', data.id_token);
         // localStorage.setItem('userId', data.id); // oder data.firebase_uid
-        navigate('/login'); // Oder direkt zum Dashboard, falls Registrierung automatisch einloggt
+        setTimeout(() => {
+          navigate('/login'); // Oder direkt zum Dashboard, falls Registrierung automatisch einloggt
+        }, 2000); // Navigate after 2 seconds
       } else {
         setError(data.message || 'Registration failed. Please try again.');
       }
@@ -52,6 +57,12 @@ const RegisterPage: React.FC = () => {
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
                 <strong className="font-bold">Error: </strong>
                 <span className="block sm:inline">{error}</span>
+              </div>
+            )}
+            {successMessage && ( // Added success message display
+              <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong className="font-bold">Success: </strong>
+                <span className="block sm:inline">{successMessage}</span>
               </div>
             )}
             <div className="rounded-md shadow-sm -space-y-px">

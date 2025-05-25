@@ -33,6 +33,20 @@ export interface LoginResponse {
   id_token: string;
 }
 
+export interface RegisterRequestData {
+  email: string;
+  password: string;
+  username?: string; 
+}
+
+export interface RegisterResponse {
+  id: string; // Firebase UID
+  email: string;
+  username: string;
+  message: string;
+  success?: boolean; // Optional, depending on backend consistency
+}
+
 export const loginUser = async (email: string, password: string): Promise<LoginResponse> => {
   logApiCall('POST', '/auth/login', { email }); // Updated endpoint
   try {
@@ -48,6 +62,34 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
       console.error('Unexpected error during login:', error);
     }
     throw error;
+  }
+};
+
+export const registerUser = async (userData: RegisterRequestData): Promise<RegisterResponse> => {
+  logApiCall('POST', '/auth/register', userData);
+  try {
+    const response = await axios.post<RegisterResponse>(`${API_BASE_URL}/auth/register`, userData, {
+      withCredentials: true,
+    });
+    logDebug('Register Response:', response.data);
+    // Ensure the response has a 'success' field, or derive it.
+    // For now, we assume the backend might not always send 'success' but a message indicates it.
+    // A more robust way is to ensure backend sends a consistent 'success: true/false'.
+    return { ...response.data, success: response.status === 200 || response.status === 201 };
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('Error during registration:', error.response.data);
+      // Return the error response from the backend, which should include a message
+      // and potentially a success = false field or rely on status code.
+      return { 
+        ...(error.response.data as any), 
+        success: false, 
+        message: (error.response.data as any).detail || (error.response.data as any).message || 'Registration failed due to server error.' 
+      };
+    } else {
+      console.error('Unexpected error during registration:', error);
+      throw error; // Or return a generic error object
+    }
   }
 };
 
@@ -392,40 +434,5 @@ export const getNews = async (): Promise<ApiNewsAsset[]> => {
       console.error('Unexpected error fetching news:', error);
     }
     return []; // Leeres Array im Fehlerfall
-  }
-};
-
-export interface RegisterPayload {
-  email: string;
-  password: string;
-  username?: string;
-}
-
-export interface RegisterResponse {
-  id?: string; // Firebase UID
-  email: string;
-  username?: string;
-  message?: string;
-  success?: boolean; // Keep this, might be inferred or added by a wrapper
-}
-
-export const registerUser = async (payload: RegisterPayload): Promise<RegisterResponse> => {
-  logApiCall('POST', '/auth/register', payload); // Updated endpoint
-  try {
-    const response = await axios.post<RegisterResponse>(`${API_BASE_URL}/auth/register`, payload, {
-      withCredentials: true, 
-    });
-    logDebug('Register Response:', response.data);
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response) {
-      logDebug('Register Error Response:', error.response.data);
-      // Wirf den Fehler weiter, damit die aufrufende Komponente ihn behandeln kann
-      // Die Fehlerdetails sollten in error.response.data.detail oder ähnlich sein
-      throw error.response.data; 
-    } else {
-      logDebug('Register Generic Error:', error);
-      throw { message: 'An unexpected error occurred during registration.' };
-    }
   }
 };
