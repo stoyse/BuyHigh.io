@@ -274,6 +274,10 @@ const Dashboard: React.FC = () => {
     console.log("[Dashboard] Render: loading=", loading);
   }, [user, portfolioData, recentTransactions, quiz, dailyQuizAttempt, error, loading]);
 
+  // Füge Debugging-Logs hinzu, um den Benutzerzustand zu überprüfen
+  console.log('User state:', user);
+  console.log('Loading state:', loading);
+
   const handleQuizSubmit = async (quizId: string, answer: string) => {
     if (!token || quizSubmitting || quiz?.attempted) return;
 

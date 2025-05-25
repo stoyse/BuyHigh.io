@@ -24,6 +24,9 @@ const Home: React.FC = () => {
   useEffect(() => {
     const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
     let konamiIndex = 0;
+
+    // Füge Debugging-Logs hinzu, um die Konami-Code-Logik zu überprüfen
+    console.log('Konami code initialized');
     
     const checkKonami = (e: KeyboardEvent) => {
       if (e.key === konamiCode[konamiIndex]) {
