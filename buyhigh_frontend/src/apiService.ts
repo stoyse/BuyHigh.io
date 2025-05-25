@@ -356,6 +356,7 @@ interface ApiNewsAsset {
   name: string;        // Wird als Überschrift verwendet
   asset_type: string;  // Wird als Kategorie verwendet
   default_price?: number | null;
+  url?: string;         // Hinzugefügtes Feld für die Artikel-URL
 }
 
 // Definition für die gesamte Antwortstruktur des /news/-Endpunkts

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Union
 from datetime import datetime
 
 class LoginRequest(BaseModel):
@@ -40,12 +40,12 @@ class StockDataPoint(BaseModel):
     currency: Optional[str] = 'USD'
 
 class Asset(BaseModel):
-    id: int
+    id: Union[int, str]
     symbol: str
     name: str
     asset_type: str
     default_price: Optional[float] = None
-    # Removed last_price and last_price_updated as per original logic for /assets/<symbol>
+    url: Optional[str] = None  # Hinzugefügtes Feld für die Artikel-URL
 
 class AssetResponse(BaseModel):
     success: bool
