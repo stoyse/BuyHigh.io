@@ -14,13 +14,6 @@ import { frontendLogger } from './frontendLogger';
 // Import other pages as needed
 
 function App() {
-  useEffect(() => {
-    frontendLogger.info('Frontend-App gestartet', {
-      time: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-    });
-  }, []);
-
   return (
     <AuthProvider>
       <Router>

@@ -348,20 +348,35 @@ export const SellStock = async (symbol: string, quantity: number, price: number)
   }
 };
 
-export const getNews = async () => {
+// Definition für die Struktur der einzelnen Nachrichten-Assets, wie sie von der API erwartet/geliefert werden.
+// Idealerweise würde dies aus einer gemeinsamen Typendatei importiert, wenn sie auch in NewsPage.tsx verwendet wird.
+interface ApiNewsAsset {
+  id: number | string;
+  symbol: string;      // Wird als Quelle verwendet
+  name: string;        // Wird als Überschrift verwendet
+  asset_type: string;  // Wird als Kategorie verwendet
+  default_price?: number | null;
+}
+
+// Definition für die gesamte Antwortstruktur des /news/-Endpunkts
+interface NewsApiResponseData {
+    success: boolean;
+    assets: ApiNewsAsset[];
+    message?: string;
+}
+
+export const getNews = async (): Promise<ApiNewsAsset[]> => {
   logApiCall('GET', '/news/');
   try {
-    const response = await axios.get(`${API_BASE_URL}/news/`, {
+    const response = await axios.get<NewsApiResponseData>(`${API_BASE_URL}/news/`, {
       withCredentials: true,
     });
     logDebug('News Response:', response.data);
-    // Die API gibt {success: boolean, assets: Asset[]} zurück
-    // NewsPage.tsx erwartet ein Array von News-Objekten
     if (response.data && response.data.success && Array.isArray(response.data.assets)) {
       return response.data.assets;
     } else {
-      console.error('Invalid news data structure:', response.data);
-      return []; // Leeres Array bei unerwarteter Struktur
+      console.error('Invalid news data structure from API:', response.data);
+      return []; 
     }
   } catch (error) {
     if (axios.isAxiosError(error)) {
