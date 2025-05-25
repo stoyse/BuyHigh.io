@@ -173,7 +173,7 @@ async def api_google_login(request_data: GoogleLoginRequest):
             local_user_by_email = db_handler.get_user_by_email(email)
             if local_user_by_email:
                 logger.info(f"Local user found by email {email}. Updating Firebase UID from {local_user_by_email.get('firebase_uid')} to {firebase_uid}")
-                db_handler.update_firebase_uid(local_user_by_email['id'], firebase_uid)
+                db_handler.update_user_firebase_uid(local_user_by_email['id'], firebase_uid) # Korrigierter Funktionsname
                 local_user = db_handler.get_user_by_firebase_uid(firebase_uid) # Re-fetch user with updated UID
             else:
                 logger.info(f"No user found by email {email}. Creating new local user for Firebase UID: {firebase_uid}")
