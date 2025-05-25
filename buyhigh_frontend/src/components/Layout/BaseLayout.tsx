@@ -35,8 +35,18 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
   // Fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
-      const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
+      const token = localStorage.getItem('authToken'); // Corrected: Use 'authToken'
+      const storedUser = localStorage.getItem('user'); // Corrected: Get 'user' object string
+
+      let userId = null;
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          userId = parsedUser?.id; // Corrected: Get id from parsedUser
+        } catch (e) {
+          console.error("BaseLayout - Failed to parse stored user:", e);
+        }
+      }
 
       if (!token || !userId) {
         // If no token or userId, don't attempt to fetch user data
@@ -52,14 +62,16 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
       try {
         // Ensure Axios sends the token with future requests
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        const data = await GetUserInfo(userId); // Use stored userId
+        // The GetUserInfo function in apiService likely expects the user's local DB ID.
+        // The 'user' object stored by AuthContext contains 'id' which is the local DB ID.
+        const data = await GetUserInfo(String(userId)); // Use stored userId (ensure it's a string if needed by API)
         setUser(data);
       } catch (err: any) {
         setError('Error fetching user data.');
         console.error('BaseLayout - Error fetching user data:', err);
         // If fetching user data fails (e.g., token expired), clear stored auth data and redirect to login
-        localStorage.removeItem('token');
-        localStorage.removeItem('userId');
+        localStorage.removeItem('authToken'); // Corrected
+        localStorage.removeItem('user'); // Corrected
         delete axios.defaults.headers.common['Authorization'];
         setUser(null);
         if (err.response?.status === 401 && !["/login", "/register"].includes(location.pathname)) {
@@ -98,12 +110,19 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
     try {
       await logoutUser();
       setUser(null);
+      // Clear local storage on logout
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      delete axios.defaults.headers.common['Authorization'];
       // Redirect to login page after successful logout
       navigate('/login');
     } catch (err) {
       console.error('Error during logout:', err);
-      // Still clear the user state even if the API call fails
+      // Still clear the user state and local storage even if the API call fails
       setUser(null);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      delete axios.defaults.headers.common['Authorization'];
       navigate('/login');
     }
   };
