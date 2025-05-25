@@ -247,6 +247,9 @@ const Dashboard: React.FC = () => {
           if (parsedQuizStructure) {
             const todaysQuizStructure = parsedQuizStructure; // Use this variable for the rest of the logic
 
+            // Ensure todaysQuizStructure.id is a string for consistent comparison and state setting
+            const quizIdAsString = String(todaysQuizStructure.id);
+
             console.log("[Dashboard] Calling GetDailyQuizAttemptToday...");
             const attemptTodayResponse = await GetDailyQuizAttemptToday();
             console.log("[Dashboard] GetDailyQuizAttemptToday result:", attemptTodayResponse);
@@ -254,10 +257,10 @@ const Dashboard: React.FC = () => {
 
             if (attemptTodayResponse && attemptTodayResponse.success &&
                 typeof attemptTodayResponse.selected_answer !== 'undefined' && 
-                attemptTodayResponse.quiz_id === todaysQuizStructure.id) {
+                attemptTodayResponse.quiz_id === quizIdAsString) { // Compare with string version of ID
               console.log("[Dashboard] User has an attempt for today's quiz. Setting quiz state as attempted.");
               setQuiz({
-                id: todaysQuizStructure.id,
+                id: quizIdAsString, // Use string version for the state
                 question: todaysQuizStructure.question,
                 possible_answer_1: todaysQuizStructure.possible_answer_1,
                 possible_answer_2: todaysQuizStructure.possible_answer_2,
@@ -271,7 +274,7 @@ const Dashboard: React.FC = () => {
             } else {
               console.log("[Dashboard] No valid attempt for today's quiz, or attempt is for a different quiz. Setting quiz as fresh.");
               setQuiz({
-                id: todaysQuizStructure.id,
+                id: quizIdAsString, // Use string version for the state
                 question: todaysQuizStructure.question,
                 possible_answer_1: todaysQuizStructure.possible_answer_1,
                 possible_answer_2: todaysQuizStructure.possible_answer_2,
