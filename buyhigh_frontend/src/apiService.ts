@@ -388,3 +388,38 @@ export const getNews = async (): Promise<ApiNewsAsset[]> => {
     return []; // Leeres Array im Fehlerfall
   }
 };
+
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  username?: string;
+}
+
+export interface RegisterResponse {
+  id?: string; // Firebase UID
+  email: string;
+  username?: string;
+  message?: string;
+  success?: boolean; // Manchmal senden APIs einen allgemeinen Erfolgsstatus
+}
+
+export const registerUser = async (payload: RegisterPayload): Promise<RegisterResponse> => {
+  logApiCall('POST', '/register', payload);
+  try {
+    const response = await axios.post<RegisterResponse>(`${API_BASE_URL}/register`, payload, {
+      withCredentials: true, 
+    });
+    logDebug('Register Response:', response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response) {
+      logDebug('Register Error Response:', error.response.data);
+      // Wirf den Fehler weiter, damit die aufrufende Komponente ihn behandeln kann
+      // Die Fehlerdetails sollten in error.response.data.detail oder ähnlich sein
+      throw error.response.data; 
+    } else {
+      logDebug('Register Generic Error:', error);
+      throw { message: 'An unexpected error occurred during registration.' };
+    }
+  }
+};

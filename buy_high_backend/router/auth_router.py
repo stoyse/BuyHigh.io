@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 import logging
 import utils.auth as auth_module
 import database.handler.postgres.postgres_db_handler as db_handler
-from ..pydantic_models import LoginRequest
+from ..pydantic_models import LoginRequest, RegisterRequest, UserResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -84,3 +84,60 @@ async def api_logout():
         logger.error(f"Error during logout: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                            detail="An error occurred during logout.")
+
+@router.post("/register", response_model=UserResponse)
+async def api_register(register_data: RegisterRequest):
+    """API route for user registration"""
+    logger.info(f"Registration attempt for email: {register_data.email}")
+    try:
+        # Step 1: Create user in Firebase Authentication
+        firebase_user = auth_module.create_firebase_user(register_data.email, register_data.password, register_data.username)
+        if not firebase_user or not firebase_user.uid:
+            logger.error(f"Firebase user creation failed for email: {register_data.email}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user in Firebase.")
+        
+        logger.info(f"Firebase user created successfully: {firebase_user.uid} for email: {register_data.email}")
+
+        # Step 2: Create user in local PostgreSQL database
+        # Use email to derive a username if not provided, or use the provided one
+        username_to_db = register_data.username if register_data.username else register_data.email.split('@')[0]
+        
+        # Check if user already exists by Firebase UID or email to prevent duplicates before adding
+        existing_user_by_uid = db_handler.get_user_by_firebase_uid(firebase_user.uid)
+        if existing_user_by_uid:
+            logger.warning(f"User with Firebase UID {firebase_user.uid} already exists in local DB.")
+            # Optionally, could update existing user or handle as an error/conflict
+            return UserResponse(id=firebase_user.uid, email=firebase_user.email, username=existing_user_by_uid.get('username'), message="User already registered and linked.")
+
+        existing_user_by_email = db_handler.get_user_by_email(register_data.email)
+        if existing_user_by_email:
+            logger.warning(f"User with email {register_data.email} already exists. Attempting to link Firebase UID.")
+            db_handler.update_firebase_uid(existing_user_by_email['id'], firebase_user.uid)
+            return UserResponse(id=firebase_user.uid, email=firebase_user.email, username=existing_user_by_email.get('username'), message="Existing user linked to Firebase account.")
+
+        # Add new user to local DB
+        if db_handler.add_user(username=username_to_db, email=register_data.email, firebase_uid=firebase_user.uid):
+            logger.info(f"User {username_to_db} ({register_data.email}) added to local database with Firebase UID: {firebase_user.uid}")
+            return UserResponse(id=firebase_user.uid, email=firebase_user.email, username=username_to_db, message="User registered successfully.")
+        else:
+            logger.error(f"Failed to add user {username_to_db} to local database for Firebase UID: {firebase_user.uid}")
+            # Potentially, here you might want to delete the Firebase user if local DB registration fails to keep things consistent
+            # auth_module.delete_firebase_user(firebase_user.uid) # Requires implementation in auth_module
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to save user information locally.")
+
+    except ValueError as ve: # Catch specific errors from create_firebase_user (e.g., email already exists)
+        logger.warning(f"Firebase registration failed for {register_data.email}: {ve}")
+        detail = str(ve)
+        if "EMAIL_EXISTS" in detail:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists.")
+        elif "WEAK_PASSWORD" in detail:
+             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password is too weak. It must be at least 6 characters long.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
+    except HTTPException: # Re-raise HTTPExceptions directly
+        raise
+    except Exception as e:
+        logger.error(f"Error during user registration for {register_data.email}: {e}", exc_info=True)
+        # Potentially, if firebase_user was created, try to delete it to avoid orphaned Firebase accounts
+        # if 'firebase_user' in locals() and firebase_user and firebase_user.uid:
+        #    auth_module.delete_firebase_user(firebase_user.uid) # Requires implementation
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An unexpected error occurred during registration.")

@@ -6,6 +6,22 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    username: Optional[str] = None # Optional username
+
+class UserCreateRequest(BaseModel): # For internal use, if creating in local DB
+    email: EmailStr
+    firebase_uid: str
+    username: Optional[str] = None
+
+class UserResponse(BaseModel):
+    id: Optional[str] = None # Firebase UID
+    email: EmailStr
+    username: Optional[str] = None
+    message: Optional[str] = None
+
 class User(BaseModel):
     id: int
     username: Optional[str] = None

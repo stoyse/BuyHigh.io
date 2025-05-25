@@ -97,20 +97,30 @@ if not FIREBASE_WEB_API_KEY:
     """
     print(error_message)
 
-def create_firebase_user(email, password, username):
+def create_firebase_user(email, password, username=None):
     """Creates a new user in Firebase Authentication."""
     try:
         user_record = firebase_auth.create_user(
             email=email,
             password=password,
-            display_name=username
+            display_name=username  # display_name kann None sein
         )
-        return user_record.uid
+        # Rückgabe des UserRecord-Objekts, da es mehr Infos enthält (z.B. .uid, .email)
+        return user_record 
     except firebase_auth.EmailAlreadyExistsError:
-        raise ValueError(f"Email {email} is already registered with Firebase.")
+        # Diese Exception enthält bereits nützliche Informationen
+        logger.warning(f"Attempt to create user with existing email: {email}")
+        raise ValueError(f"EMAIL_EXISTS: The email address {email} is already in use by another account.")
+    except firebase_auth.FirebaseAuthException as e:
+        # Allgemeine Firebase Auth Exception fangen
+        logger.error(f"Firebase user creation failed for {email}: {e.strerror if hasattr(e, 'strerror') else str(e)}")
+        # Hier könnten spezifischere Fehlercodes von Firebase geprüft werden, z.B. für schwache Passwörter
+        if "WEAK_PASSWORD" in str(e):
+             raise ValueError("WEAK_PASSWORD: The password must be a string with at least 6 characters.")
+        raise ValueError(f"Firebase Auth Exception: {e.strerror if hasattr(e, 'strerror') else str(e)}")
     except Exception as e:
-        logger.error(f"Firebase user creation error: {e}")
-        raise ValueError(f"Could not create user in Firebase: {e}")
+        logger.error(f"Unexpected error during Firebase user creation for {email}: {e}", exc_info=True)
+        raise ValueError(f"An unexpected error occurred while creating the user in Firebase: {str(e)}")
 
 def login_firebase_user_rest(email, password):
     """
