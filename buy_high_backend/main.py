@@ -114,9 +114,10 @@ async def root():
         "version": "1.0.0"
     }
 
+# Temporarily commented out for debugging POST 405 issue
+# @app.options("/{rest_of_path:path}")
+# async def preflight_handler(rest_of_path: str):
+#     return Response(status_code=200)
 
-@app.options("/{rest_of_path:path}")
-async def preflight_handler(rest_of_path: str):
-    return Response(status_code=200)
 # To start the app with uvicorn:
 # uvicorn buy_high_backend.main:app --reload

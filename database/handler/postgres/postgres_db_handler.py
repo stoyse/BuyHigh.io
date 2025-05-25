@@ -182,6 +182,30 @@ def get_user_by_username(username):
         cur.close()
         conn.close()
 
+def get_user_by_email(email: str):
+    # add_analytics(event_type="get_user_by_email_call", details={"email": email, "source": "postgres_db_handler:get_user_by_email"})
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    try:
+        cur.execute("SELECT * FROM users WHERE email = %s", (email,))
+        user_row = cur.fetchone()
+        if user_row:
+            user = _parse_user_timestamps(user_row)
+            # add_analytics(user_id=user['id'], event_type="get_user_by_email_success", details={"email": email, "user_id": user['id'], "source": "postgres_db_handler:get_user_by_email"})
+            return user
+        else:
+            # add_analytics(event_type="get_user_by_email_not_found", details={"email": email, "source": "postgres_db_handler:get_user_by_email"})
+            return None
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Suchen nach E-Mail '{email}': {e}", exc_info=True)
+        # add_analytics(event_type="get_user_by_email_error", details={"email": email, "error": str(e), "source": "postgres_db_handler:get_user_by_email"})
+        return None
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
 def update_last_login(user_id_param):
     # add_analytics(user_id=user_id_param, event_type="update_last_login_call", details={"user_id_to_update": user_id_param, "source": "postgres_db_handler:update_last_login"})
     conn = get_db_connection()

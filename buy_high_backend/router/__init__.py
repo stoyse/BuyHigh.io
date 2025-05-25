@@ -35,6 +35,11 @@ debug_logger.addHandler(file_handler)
 
 debug_logger.info("Initializing router package (buy_high_backend.router.__init__)")
 
+# Log routes of auth_router before inclusion
+debug_logger.info(f"Routes on auth_router (id: {id(auth_router)}) BEFORE inclusion:")
+for route in auth_router.routes:
+    debug_logger.info(f"  Path: {route.path}, Name: {route.name}, Methods: {getattr(route, 'methods', 'N/A')}")
+
 # Debug-Funktion für die Anwendung
 def log_request_response(request: Request, message: str):
     """Loggt Anfrage- und Antwortdetails"""
@@ -45,8 +50,8 @@ router = APIRouter()
 debug_logger.info(f"Created main APIRouter instance in router.__init__: {id(router)}")
 
 # Sub-Router einbinden
-debug_logger.info(f"Including auth_router ({id(auth_router)}) into main router ({id(router)}) without prefix.")
-router.include_router(auth_router)
+debug_logger.info(f"Including auth_router ({id(auth_router)}) into main router ({id(router)}) WITH prefix '/auth'.")
+router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 debug_logger.info(f"Including stock_router ({id(stock_router)}) into main router ({id(router)}) without prefix.")
 router.include_router(stock_router)
 debug_logger.info(f"Including trade_router ({id(trade_router)}) into main router ({id(router)}) without prefix.")
@@ -65,6 +70,11 @@ debug_logger.info(f"Including news_router ({id(news_router)}) into main router (
 router.include_router(news_router)  # Include news_router
 
 debug_logger.info(f"Finished including sub-routers into main router ({id(router)}) in router.__init__.")
+
+# Log routes of the main combined router (api_router)
+debug_logger.info(f"Routes on main api_router (id: {id(router)}) AFTER all inclusions:")
+for route in router.routes:
+    debug_logger.info(f"  Path: {route.path}, Name: {route.name}, Methods: {getattr(route, 'methods', 'N/A')}")
 
 # Middleware-Klasse (wird in main.py verwendet)
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
