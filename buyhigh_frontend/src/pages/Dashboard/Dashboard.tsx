@@ -268,8 +268,19 @@ const Dashboard: React.FC = () => {
               });
             }
           } else {
-            console.warn("[Dashboard] No daily quiz available today or fetch failed:", dailyQuizResponse?.message);
-            setQuiz(null); 
+            let warningMessage = "[Dashboard] No daily quiz available or fetch failed. ";
+            if (!dailyQuizResponse) {
+              warningMessage += "The response from GetDailyQuiz was null or undefined.";
+            } else if (!dailyQuizResponse.success) {
+              warningMessage += `API call GetDailyQuiz was not successful. Message: ${dailyQuizResponse.message || 'No specific error message provided by API.'}`;
+            } else if (!dailyQuizResponse.quiz) {
+              warningMessage += "API call GetDailyQuiz was successful, but no quiz data was included in the response.";
+            } else {
+              // This case should ideally not be reached if the main if condition is structured correctly
+              warningMessage += "Unexpected issue with the daily quiz response structure.";
+            }
+            console.warn(warningMessage, "Full response for GetDailyQuiz:", dailyQuizResponse);
+            setQuiz(null); // No quiz available for today
           }
         } else {
           console.warn("[Dashboard] No token available. Quiz will not be fetched.");
