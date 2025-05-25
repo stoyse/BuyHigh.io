@@ -39,12 +39,32 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
         setUser(data);
       } catch (err) {
         setError('Error fetching user data.');
-        console.error(err);
+        console.error('BaseLayout - Error fetching user data:', err); // Enhanced error logging
       }
     };
 
     fetchUserData();
   }, []);
+
+  // Diagnostic useEffect to log user state
+  useEffect(() => {
+    if (user) {
+      console.log("BaseLayout - User state updated:", JSON.stringify(user, null, 2));
+      if (typeof user !== 'object' || user === null) {
+        console.warn("BaseLayout - User state is not a valid object.");
+      } else {
+        // Check for presence of username and email properties
+        if (!('username' in user)) {
+          console.warn("BaseLayout - User object is missing 'username' property. Available keys:", Object.keys(user));
+        }
+        if (!('email' in user)) {
+          console.warn("BaseLayout - User object is missing 'email' property. Available keys:", Object.keys(user));
+        }
+      }
+    } else {
+      console.log("BaseLayout - User state is null or undefined after fetch attempt.");
+    }
+  }, [user]);
 
   // Logout function
   const handleLogout = async () => {
