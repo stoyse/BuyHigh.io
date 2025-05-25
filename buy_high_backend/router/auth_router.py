@@ -39,7 +39,8 @@ async def api_login(login_data: LoginRequest):
                     logger.error(f"Failed to create local user for email: {login_data.email}")
                     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user account.")
             else:
-                db_handler.update_firebase_uid(local_user['id'], firebase_uid)
+                logger.info(f"Local user found by email {login_data.email}. Updating Firebase UID to {firebase_uid}")
+                db_handler.update_user_firebase_uid(local_user['id'], firebase_uid)
                 local_user['firebase_uid'] = firebase_uid
         
         if not local_user:
@@ -117,7 +118,7 @@ async def api_register(register_data: RegisterRequest):
         existing_user_by_email = db_handler.get_user_by_email(register_data.email)
         if existing_user_by_email:
             logger.warning(f"User with email {register_data.email} already exists. Attempting to link Firebase UID.")
-            db_handler.update_firebase_uid(existing_user_by_email['id'], firebase_user.uid)
+            db_handler.update_user_firebase_uid(existing_user_by_email['id'], firebase_user.uid)
             return UserResponse(id=firebase_user.uid, email=firebase_user.email, username=existing_user_by_email.get('username'), message="Existing user linked to Firebase account.")
 
         # Add new user to local DB
