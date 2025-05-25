@@ -38,17 +38,26 @@ async def api_submit_daily_quiz_attempt(
         logger.error(f"Quiz data for date {today_str} is missing 'id' field.")
         raise HTTPException(status_code=500, detail="Quiz data is incomplete (missing ID).")
 
-    # Check if user already attempted today's quiz
-    existing_attempt = education_handler.get_dayly_quiz_attempt_day(user_id, today_str)
-    if existing_attempt:
+    # Check if user already attempted today's quiz using get_daily_quiz_attempts
+    all_user_attempts = education_handler.get_daily_quiz_attempts(user_id)
+    found_todays_attempt = None
+    if all_user_attempts:
+        for attempt in all_user_attempts:
+            if attempt.get('quiz_id') == actual_quiz_id_from_db:
+                found_todays_attempt = attempt
+                break
+    
+    if found_todays_attempt:
+        # Use todays_quiz_details for correct_answer and explanation
+        # found_todays_attempt contains is_correct and selected_answer
         return DailyQuizAttemptResponse(
             success=True,
-            is_correct=existing_attempt['is_correct'],
-            correct_answer=existing_attempt['correct_answer'],
-            explanation=existing_attempt['explanation'],
+            is_correct=found_todays_attempt['is_correct'],
+            correct_answer=todays_quiz_details.get('correct_answer', ""), 
+            explanation=todays_quiz_details.get('explanation', ""),
             xp_gained=0,
             message="Quiz already attempted today.",
-            selected_answer=existing_attempt['selected_answer']
+            selected_answer=found_todays_attempt['selected_answer']
         )
 
     db_correct_answer = todays_quiz_details.get('correct_answer', "")
