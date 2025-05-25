@@ -206,6 +206,34 @@ def get_user_by_email(email: str):
         if conn:
             conn.close()
 
+def update_user_firebase_uid(user_id: int, new_firebase_uid: str):
+    """Updates the Firebase UID for a given user ID."""
+    # add_analytics(user_id=user_id, event_type="update_firebase_uid_attempt", details={"target_user_id": user_id, "new_uid": new_firebase_uid, "source": "postgres_db_handler:update_user_firebase_uid"})
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "UPDATE users SET firebase_uid = %s WHERE id = %s",
+            (new_firebase_uid, user_id)
+        )
+        conn.commit()
+        if cur.rowcount > 0:
+            logger.info(f"Firebase UID for user ID {user_id} updated to {new_firebase_uid}.")
+            # add_analytics(user_id=user_id, event_type="update_firebase_uid_success", details={"target_user_id": user_id, "new_uid": new_firebase_uid, "source": "postgres_db_handler:update_user_firebase_uid"})
+            return True
+        else:
+            logger.warning(f"No user found with ID {user_id} to update Firebase UID.")
+            # add_analytics(user_id=user_id, event_type="update_firebase_uid_failed_not_found", details={"target_user_id": user_id, "source": "postgres_db_handler:update_user_firebase_uid"})
+            return False
+    except psycopg2.Error as e:
+        conn.rollback()
+        logger.error(f"DB error updating Firebase UID for user ID {user_id}: {e}", exc_info=True)
+        # add_analytics(user_id=user_id, event_type="update_firebase_uid_db_error", details={"target_user_id": user_id, "error": str(e), "source": "postgres_db_handler:update_user_firebase_uid"})
+        return False
+    finally:
+        cur.close()
+        conn.close()
+
 def update_last_login(user_id_param):
     # add_analytics(user_id=user_id_param, event_type="update_last_login_call", details={"user_id_to_update": user_id_param, "source": "postgres_db_handler:update_last_login"})
     conn = get_db_connection()
