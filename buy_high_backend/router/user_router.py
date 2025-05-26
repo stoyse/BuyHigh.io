@@ -6,10 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import FileResponse
 import os
 import logging
+from typing import List, Optional
+
 import database.handler.postgres.postgre_transactions_handler as transactions_handler
 import database.handler.postgres.postgres_db_handler as db_handler
 from ..auth_utils import get_current_user, AuthenticatedUser
-from ..pydantic_models import ProfilePictureUploadResponse, UserDataResponse, TransactionsListResponse, PortfolioResponse
+from ..pydantic_models import ProfilePictureUploadResponse, UserDataResponse, TransactionsListResponse, PortfolioResponse, BasicUser, AllUsersResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -92,3 +94,20 @@ async def api_get_portfolio(user_id_param: int, current_user: AuthenticatedUser 
         if portfolio_data:
             return portfolio_data 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+
+@router.get("/users/all", response_model=AllUsersResponse)
+async def api_get_all_users(current_user: AuthenticatedUser = Depends(get_current_user)):
+    """
+    Retrieves a list of all users with basic information.
+    """
+    try:
+        users_data = db_handler.get_all_users_basic_info() 
+        
+        if users_data is None:
+            logger.warning("No users found or error in fetching from DB.")
+            return AllUsersResponse(success=True, users=[], message="No users found.")
+
+        return AllUsersResponse(success=True, users=users_data)
+    except Exception as e:
+        logger.error(f"Error retrieving all users: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error retrieving users: {str(e)}")

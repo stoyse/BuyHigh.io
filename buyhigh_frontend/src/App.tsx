@@ -16,6 +16,7 @@ import CoinFlipGame from './pages/CoinFlip/CoinFlipGame';
 import SlotsGame from './pages/Slots/SlotsGame';
 import { frontendLogger } from './frontendLogger';
 // Import other pages as needed
+import SocialPage from './pages/SocialPage'; // Import SocialPage
 
 function App() {
   return (
@@ -68,6 +69,11 @@ function App() {
           <Route path="/slots" element={
             <ProtectedRoute>
               <SlotsGame />
+            </ProtectedRoute>
+          } />
+          <Route path="/social" element={
+            <ProtectedRoute>
+              <SocialPage />
             </ProtectedRoute>
           } />
           {/* Add more routes as needed */}

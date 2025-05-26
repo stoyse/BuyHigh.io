@@ -150,49 +150,11 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
               </Link>
               
               <div className="hidden sm:ml-10 sm:flex items-baseline space-x-4">
-                {user && user.user && (
-                  <>
-                    <Link to="/dashboard" className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/dashboard' ? 'bg-neo-purple/10 text-neo-purple' : 'text-gray-700 dark:text-gray-300 hover:bg-neo-purple/10 hover:text-neo-purple dark:hover:text-neo-purple'} transition-all duration-200 flex items-center group`}>
-                      <svg className="w-5 h-5 mr-1.5 text-neo-purple/70 group-hover:text-neo-purple transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                      </svg>
-                      Dashboard
-                    </Link>
-                    <Link to="/trade" className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/trade' ? 'bg-neo-blue/10 text-neo-blue' : 'text-gray-700 dark:text-gray-300 hover:bg-neo-blue/10 hover:text-neo-blue dark:hover:text-neo-blue'} transition-all duration-200 flex items-center group`}>
-                      <svg className="w-5 h-5 mr-1.5 text-neo-blue/70 group-hover:text-neo-blue transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                      </svg>
-                      Trade
-                    </Link>
-                    <button
-                      onClick={() => navigate('/news')}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/news' ? 'bg-neo-amber/10 text-neo-amber' : 'text-gray-700 dark:text-gray-300 hover:bg-neo-amber/10 hover:text-neo-amber dark:hover:text-neo-amber'} transition-all duration-200 flex items-center group`}
-                    >
-                      <svg className="w-5 h-5 mr-1.5 text-neo-amber/70 group-hover:text-neo-amber transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
-                      </svg>
-                      News
-                    </button>
-                    <Link to="/casino" className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/casino' ? 'bg-pink-500/10 text-pink-500' : 'text-gray-700 dark:text-gray-300 hover:bg-pink-500/10 hover:text-pink-500 dark:hover:text-pink-400'} transition-all duration-200 flex items-center group`}>
-                      <svg className="w-5 h-5 mr-1.5 text-pink-500/70 group-hover:text-pink-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                      </svg>
-                      Casino
-                    </Link>
-                    <Link to="/roadmap" className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/roadmap' ? 'bg-neo-cyan/10 text-neo-cyan' : 'text-gray-700 dark:text-gray-300 hover:bg-neo-cyan/10 hover:text-neo-cyan dark:hover:text-neo-cyan'} transition-all duration-200 flex items-center group`}>
-                      <svg className="w-5 h-5 mr-1.5 text-neo-cyan/70 group-hover:text-neo-cyan transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                      </svg>
-                      Roadmap
-                    </Link>
-                    <Link to="/social" className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/social' ? 'bg-neo-emerald/10 text-neo-emerald' : 'text-gray-700 dark:text-gray-300 hover:bg-neo-emerald/10 hover:text-neo-emerald dark:hover:text-neo-emerald'} transition-all duration-200 flex items-center group`}>
-                      <svg className="w-5 h-5 mr-1.5 text-neo-emerald/70 group-hover:text-neo-emerald transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                      </svg>
-                      Social
-                    </Link>
-                  </>
-                )}
+                <Link to="/dashboard" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Dashboard</Link>
+                <Link to="/trade" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Trade</Link>
+                <Link to="/casino" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Casino</Link>
+                <Link to="/news" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">News</Link>
+                <Link to="/social" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Social</Link> {/* Added Social link */}
               </div>
             </div>
             
@@ -351,13 +313,23 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
             <div className="glass-card m-2 p-2 rounded-xl shadow-glass">
               {user && (
                 <>
-                  <Link to="/dashboard" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-purple/10 hover:text-neo-purple" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
-                  <Link to="/trade" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-blue/10 hover:text-neo-blue" onClick={() => setMobileMenuOpen(false)}>Trade</Link>
-                  <Link to="/news" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-amber/10 hover:text-neo-amber" onClick={() => setMobileMenuOpen(false)}>News</Link>
-                  <Link to="/casino" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-pink-500/10 hover:text-pink-500" onClick={() => setMobileMenuOpen(false)}>Casino</Link>
-                  <Link to="/coinflip" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-yellow-500/10 hover:text-yellow-500" onClick={() => setMobileMenuOpen(false)}>🪙 Coin Flip</Link>
-                  <Link to="/settings" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-cyan/10 hover:text-neo-cyan" onClick={() => setMobileMenuOpen(false)}>Settings</Link>
-                  <Link to="/social" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-emerald/10 hover:text-neo-emerald" onClick={() => setMobileMenuOpen(false)}>Social</Link>
+                  <Link to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">Dashboard</Link>
+                  <Link to="/trade" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">Trade</Link>
+                  <Link to="/casino" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">Casino</Link>
+                  <Link to="/news" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">News</Link>
+                  <Link to="/social" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">Social</Link> {/* Added Social link for mobile */}
+                  <button 
+                    onClick={handleLogout} 
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-500 hover:bg-red-500/20"
+                  >
+                    Logout
+                  </button>
+                </>
+              )}
+              {!user && (
+                <>
+                  <Link to="/login" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">Login</Link>
+                  <Link to="/register" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">Register</Link>
                 </>
               )}
             </div>
