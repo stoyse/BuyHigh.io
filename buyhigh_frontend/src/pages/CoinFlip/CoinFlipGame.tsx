@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { recordCoinFlip, CoinFlipRequestData, CoinFlipResponseData, GetUserInfo } from '../../apiService';
+import { useAuth } from '../../contexts/AuthContext';
 import './CoinFlipGame.css';
 
 const CoinFlipGame: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
   const [betAmount, setBetAmount] = useState<number>(10);
   const [selectedSide, setSelectedSide] = useState<'heads' | 'tails'>('heads');
   const [gameResult, setGameResult] = useState<'heads' | 'tails' | null>(null);
@@ -11,16 +13,13 @@ const CoinFlipGame: React.FC = () => {
   const [gameResponse, setGameResponse] = useState<CoinFlipResponseData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userBalance, setUserBalance] = useState<number>(0);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   // Check if user is logged in and get balance
   useEffect(() => {
-    const checkUserStatus = async () => {
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        setIsLoggedIn(true);
+    const fetchUserBalance = async () => {
+      if (isAuthenticated && user?.id) {
         try {
-          const userInfo = await GetUserInfo(userId);
+          const userInfo = await GetUserInfo(String(user.id));
           if (userInfo && userInfo.balance !== undefined) {
             setUserBalance(userInfo.balance);
           }
@@ -29,11 +28,11 @@ const CoinFlipGame: React.FC = () => {
         }
       }
     };
-    checkUserStatus();
-  }, []);
+    fetchUserBalance();
+  }, [isAuthenticated, user]);
 
   const flipCoin = async () => {
-    if (!isLoggedIn) {
+    if (!isAuthenticated || !user?.id) {
       setError('Please log in to play the coin flip game');
       return;
     }
@@ -94,7 +93,7 @@ const CoinFlipGame: React.FC = () => {
     setError(null);
   };
 
-  if (!isLoggedIn) {
+  if (!isAuthenticated || !user?.id) {
     return (
       <div className="coinflip-container">
         <div className="coinflip-card">
