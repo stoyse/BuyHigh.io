@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { playSlots, GetUserInfo } from '../../apiService';
 import { useAuth } from '../../contexts/AuthContext';
+import BaseLayout from '../../components/Layout/BaseLayout';
 import './SlotsGame.css';
 
 interface GameResult {
@@ -136,123 +137,125 @@ const SlotsGame: React.FC = () => {
   };
 
   return (
-    <div className="slots-container">
-      <div className="slots-card">
-        <h1>🎰 Slot Machine</h1>
-        
-        <div className="balance-display">
-          <h3>Your Balance: {balance.toLocaleString()} credits</h3>
-        </div>
-
-        <div className="bet-section">
-          <label htmlFor="bet-input">Bet Amount:</label>
-          <input
-            id="bet-input"
-            type="number"
-            min="1"
-            max={balance}
-            value={bet}
-            onChange={(e) => handleBetChange(parseInt(e.target.value) || 1)}
-            disabled={isLoading}
-          />
-        </div>
-
-        <div className="bet-quick-buttons">
-          <button onClick={() => setBetPercentage(0.25)} disabled={isLoading} className="bet-percentage-btn">
-            25%
-          </button>
-          <button onClick={() => setBetPercentage(0.5)} disabled={isLoading} className="bet-percentage-btn">
-            50%
-          </button>
-          <button onClick={() => setBetPercentage(0.75)} disabled={isLoading} className="bet-percentage-btn">
-            75%
-          </button>
-          <button onClick={() => setBetPercentage(1)} disabled={isLoading} className="bet-percentage-btn">
-            Max
-          </button>
-        </div>
-
-        <div className="slots-machine">
-          <div className="slots-display">
-            <div className="slots-reels">
-              {gameResult ? (
-                gameResult.symbols.map((symbol, index) => (
-                  <div key={index} className={`slot-reel ${isSpinning ? 'spinning' : ''}`}>
-                    <div className="slot-symbol">{symbol}</div>
-                  </div>
-                ))
-              ) : (
-                [0, 1, 2].map((index) => (
-                  <div key={index} className={`slot-reel ${isSpinning ? 'spinning' : ''}`}>
-                    <div className="slot-symbol">🎰</div>
-                  </div>
-                ))
-              )}
-            </div>
+    <BaseLayout title="Slot Machine - BuyHigh.io">
+      <div className="slots-container">
+        <div className="slots-card">
+          <h1>🎰 Slot Machine</h1>
+          
+          <div className="balance-display">
+            <h3>Your Balance: {balance.toLocaleString()} credits</h3>
           </div>
 
-          <div className="game-controls">
-            <button
-              onClick={handleSpin}
-              disabled={isLoading || bet > balance || bet <= 0}
-              className={`spin-button ${isLoading ? 'spinning' : ''}`}
-            >
-              {isLoading ? 'Spinning...' : '🎰 SPIN'}
+          <div className="bet-section">
+            <label htmlFor="bet-input">Bet Amount:</label>
+            <input
+              id="bet-input"
+              type="number"
+              min="1"
+              max={balance}
+              value={bet}
+              onChange={(e) => handleBetChange(parseInt(e.target.value) || 1)}
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="bet-quick-buttons">
+            <button onClick={() => setBetPercentage(0.25)} disabled={isLoading} className="bet-percentage-btn">
+              25%
+            </button>
+            <button onClick={() => setBetPercentage(0.5)} disabled={isLoading} className="bet-percentage-btn">
+              50%
+            </button>
+            <button onClick={() => setBetPercentage(0.75)} disabled={isLoading} className="bet-percentage-btn">
+              75%
+            </button>
+            <button onClick={() => setBetPercentage(1)} disabled={isLoading} className="bet-percentage-btn">
+              Max
             </button>
           </div>
-        </div>
 
-        {message && (
-          <div className={`message ${gameResult?.won ? 'win-message' : 'lose-message'}`}>
-            {message}
-          </div>
-        )}
-
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
-
-        {gameResult && (
-          <div className="game-result">
-            <h4>Game Result:</h4>
-            <div className="result-details">
-              <div className="result-symbols">
-                {gameResult.symbols.map((symbol, index) => (
-                  <span key={index} className="result-symbol">
-                    {symbol} {SYMBOL_DISPLAY[symbol as keyof typeof SYMBOL_DISPLAY]}
-                  </span>
-                ))}
+          <div className="slots-machine">
+            <div className="slots-display">
+              <div className="slots-reels">
+                {gameResult ? (
+                  gameResult.symbols.map((symbol, index) => (
+                    <div key={index} className={`slot-reel ${isSpinning ? 'spinning' : ''}`}>
+                      <div className="slot-symbol">{symbol}</div>
+                    </div>
+                  ))
+                ) : (
+                  [0, 1, 2].map((index) => (
+                    <div key={index} className={`slot-reel ${isSpinning ? 'spinning' : ''}`}>
+                      <div className="slot-symbol">🎰</div>
+                    </div>
+                  ))
+                )}
               </div>
-              {gameResult.won && (
-                <div className="win-details">
-                  <p>Multiplier: {gameResult.multiplier}x</p>
-                  <p>Payout: {gameResult.payout} credits</p>
-                </div>
-              )}
+            </div>
+
+            <div className="game-controls">
+              <button
+                onClick={handleSpin}
+                disabled={isLoading || bet > balance || bet <= 0}
+                className={`spin-button ${isLoading ? 'spinning' : ''}`}
+              >
+                {isLoading ? 'Spinning...' : '🎰 SPIN'}
+              </button>
             </div>
           </div>
-        )}
 
-        <div className="paytable">
-          <h3>Paytable</h3>
-          <div className="paytable-grid">
-            {Object.entries(SYMBOL_MULTIPLIERS).map(([symbol, multiplier]) => (
-              <div key={symbol} className="paytable-row">
-                <span className="paytable-symbol">{symbol}</span>
-                <span className="paytable-name">{SYMBOL_DISPLAY[symbol as keyof typeof SYMBOL_DISPLAY]}</span>
-                <span className="paytable-multiplier">{multiplier}x / {(multiplier * 0.5).toFixed(1)}x</span>
+          {message && (
+            <div className={`message ${gameResult?.won ? 'win-message' : 'lose-message'}`}>
+              {message}
+            </div>
+          )}
+
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+
+          {gameResult && (
+            <div className="game-result">
+              <h4>Game Result:</h4>
+              <div className="result-details">
+                <div className="result-symbols">
+                  {gameResult.symbols.map((symbol, index) => (
+                    <span key={index} className="result-symbol">
+                      {symbol} {SYMBOL_DISPLAY[symbol as keyof typeof SYMBOL_DISPLAY]}
+                    </span>
+                  ))}
+                </div>
+                {gameResult.won && (
+                  <div className="win-details">
+                    <p>Multiplier: {gameResult.multiplier}x</p>
+                    <p>Payout: {gameResult.payout} credits</p>
+                  </div>
+                )}
               </div>
-            ))}
+            </div>
+          )}
+
+          <div className="paytable">
+            <h3>Paytable</h3>
+            <div className="paytable-grid">
+              {Object.entries(SYMBOL_MULTIPLIERS).map(([symbol, multiplier]) => (
+                <div key={symbol} className="paytable-row">
+                  <span className="paytable-symbol">{symbol}</span>
+                  <span className="paytable-name">{SYMBOL_DISPLAY[symbol as keyof typeof SYMBOL_DISPLAY]}</span>
+                  <span className="paytable-multiplier">{multiplier}x / {(multiplier * 0.5).toFixed(1)}x</span>
+                </div>
+              ))}
+            </div>
+            <p className="paytable-note">
+              Win by getting 2 or 3 matching symbols!<br/>
+              3 symbols = full multiplier, 2 symbols = half multiplier
+            </p>
           </div>
-          <p className="paytable-note">
-            Win by getting 2 or 3 matching symbols!<br/>
-            3 symbols = full multiplier, 2 symbols = half multiplier
-          </p>
         </div>
       </div>
-    </div>
+    </BaseLayout>
   );
 };
 
