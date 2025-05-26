@@ -522,3 +522,37 @@ export const getNews = async (): Promise<ApiNewsAsset[]> => {
     return []; // Leeres Array im Fehlerfall
   }
 };
+
+// Types for Coin Flip API
+export interface CoinFlipRequestData {
+  Success: boolean;
+  bet: number; // Changed from int to number for TypeScript
+  profit: number; // Changed from int to number for TypeScript
+}
+
+export interface CoinFlipResponseData {
+  status: string;
+  received_data: CoinFlipRequestData;
+  // Potentially other fields the backend might return
+}
+
+// Function to call the coin flip endpoint
+export const recordCoinFlip = async (data: CoinFlipRequestData): Promise<CoinFlipResponseData> => {
+  logApiCall('POST', '/gamble/coinflip', data);
+  try {
+    const response = await axios.post<CoinFlipResponseData>(`${API_BASE_URL}/gamble/coinflip`, data, {
+      withCredentials: true, // Assuming this might be needed like other POST requests
+    });
+    logDebug('Coin Flip Record Response:', response.data);
+    return response.data;
+  } catch (error) {
+    logDebug('Error recording coin flip:', error);
+    if (axios.isAxiosError(error) && error.response) {
+      // Handle known error structure from backend if available
+      throw error.response.data;
+    } else if (error instanceof Error) {
+      throw new Error(`Error recording coin flip: ${error.message}`);
+    }
+    throw new Error('An unknown error occurred while recording coin flip.');
+  }
+};

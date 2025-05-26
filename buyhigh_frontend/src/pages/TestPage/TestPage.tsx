@@ -12,7 +12,10 @@ import {
   SellStock,
   SubmitDailyQuizAnswer,
   DailyQuizAttemptPayload,
-  DailyQuizAttemptResponse
+  DailyQuizAttemptResponse,
+  recordCoinFlip,
+  CoinFlipRequestData,
+  CoinFlipResponseData
 } from '../../apiService';
 
 interface ApiTestResult {
@@ -55,6 +58,14 @@ const TestPage: React.FC = () => {
   const [quizAttemptResult, setQuizAttemptResult] = useState<DailyQuizAttemptResponse | null>(null);
   const [quizAttemptError, setQuizAttemptError] = useState<string | null>(null);
   const [quizAttemptLoading, setQuizAttemptLoading] = useState<boolean>(false);
+
+  // Coin Flip fields
+  const [coinFlipSuccess, setCoinFlipSuccess] = useState<boolean>(true);
+  const [coinFlipBet, setCoinFlipBet] = useState<number>(10);
+  const [coinFlipProfit, setCoinFlipProfit] = useState<number>(5);
+  const [coinFlipResult, setCoinFlipResult] = useState<CoinFlipResponseData | null>(null);
+  const [coinFlipError, setCoinFlipError] = useState<string | null>(null);
+  const [coinFlipLoading, setCoinFlipLoading] = useState<boolean>(false);
 
   // API query function
   const fetchApiData = async (key: string, fetchFunction: () => Promise<any>, url: string) => {
@@ -174,6 +185,34 @@ const TestPage: React.FC = () => {
       setQuizAttemptError(err.message || 'An error occurred during quiz submission.');
     } finally {
       setQuizAttemptLoading(false);
+    }
+  };
+
+  // Handle Coin Flip Submission
+  const handleCoinFlipSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCoinFlipResult(null);
+    setCoinFlipError(null);
+    setCoinFlipLoading(true);
+
+    if (!loggedInUserId) {
+      setCoinFlipError("Please login first to record coin flip.");
+      setCoinFlipLoading(false);
+      return;
+    }
+
+    try {
+      const payload: CoinFlipRequestData = { 
+        Success: coinFlipSuccess, 
+        bet: coinFlipBet,
+        profit: coinFlipProfit
+      };
+      const result = await recordCoinFlip(payload);
+      setCoinFlipResult(result);
+    } catch (err: any) {
+      setCoinFlipError(err.message || 'An error occurred during coin flip recording.');
+    } finally {
+      setCoinFlipLoading(false);
     }
   };
 
@@ -322,6 +361,56 @@ const TestPage: React.FC = () => {
         {quizAttemptError && <div className="error">{quizAttemptError}</div>}
       </div>
 
+      <div className="test-section">
+        <h2>Coin Flip Test</h2>
+        <form onSubmit={handleCoinFlipSubmit} className="test-form">
+          <div className="form-group">
+            <label>Success:</label>
+            <select 
+              value={coinFlipSuccess ? 'true' : 'false'} 
+              onChange={(e) => setCoinFlipSuccess(e.target.value === 'true')}
+              required
+            >
+              <option value="true">True</option>
+              <option value="false">False</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Bet:</label>
+            <input 
+              type="number" 
+              value={coinFlipBet} 
+              onChange={(e) => setCoinFlipBet(Number(e.target.value))} 
+              required 
+              min="1" 
+            />
+          </div>
+          <div className="form-group">
+            <label>Profit:</label>
+            <input 
+              type="number" 
+              value={coinFlipProfit} 
+              onChange={(e) => setCoinFlipProfit(Number(e.target.value))} 
+              required 
+              step="0.01"
+              min="0.01" 
+            />
+          </div>
+          <button type="submit" disabled={coinFlipLoading}>
+            {coinFlipLoading ? 'Recording...' : 'Record Coin Flip'}
+          </button>
+        </form>
+        
+        {coinFlipResult && (
+          <div className="result-section">
+            <h3>Coin Flip Result:</h3>
+            <pre>{JSON.stringify(coinFlipResult, null, 2)}</pre>
+          </div>
+        )}
+        
+        {coinFlipError && <div className="error">{coinFlipError}</div>}
+      </div>
+
       <div className="api-results">
         <h2>GET API Query Results</h2>
         {Object.entries(apiResults).map(([key, result]) => renderApiResult(key, result))}
@@ -361,7 +450,7 @@ const TestPage: React.FC = () => {
           margin-right: 15px;
         }
         
-        .form-group input {
+        .form-group input, .form-group select {
           flex: 1;
           padding: 8px;
           border: 1px solid #ccc;
