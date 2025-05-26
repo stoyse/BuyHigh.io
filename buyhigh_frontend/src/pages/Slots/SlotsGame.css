@@ -1,85 +1,122 @@
 .slots-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
-  color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+.slots-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  max-width: 700px;
+  width: 100%;
+  text-align: center;
+  animation: slideIn 0.6s ease-out;
+  color: #333;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .slots-header {
-  text-align: center;
   margin-bottom: 30px;
 }
 
 .slots-header h1 {
+  color: #333;
+  margin-bottom: 20px;
   font-size: 2.5rem;
-  margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .balance-display {
-  font-size: 1.2rem;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 10px 20px;
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-  display: inline-block;
+  background: linear-gradient(45deg, #4CAF50, #45a049);
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.balance-amount {
-  font-weight: bold;
-  color: #ffd700;
+.balance-display h3 {
+  margin: 0;
+  font-size: 1.4rem;
 }
 
 .slots-machine {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+}
+
+.bet-section {
+  margin-bottom: 30px;
+}
+
+.bet-section label {
+  display: block;
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 10px;
+  font-weight: bold;
 }
 
 .slots-display {
-  background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+  background: #f8f9fa;
+  border: 2px solid #dee2e6;
   border-radius: 15px;
   padding: 20px;
   margin-bottom: 30px;
-  box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .slots-reels {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 15px;
 }
 
 .slot-reel {
   width: 120px;
   height: 120px;
-  background: linear-gradient(145deg, #f0f0f0, #d0d0d0);
+  background: linear-gradient(45deg, #ffd700, #ffed4e);
   border-radius: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  border: 3px solid #fff;
 }
 
 .slot-reel.spinning {
-  animation: spin 1s linear infinite;
+  animation: spinReel 1s linear infinite;
 }
 
-@keyframes spin {
-  0% { transform: rotateY(0deg); }
-  100% { transform: rotateY(360deg); }
+@keyframes spinReel {
+  0% { transform: rotateY(0deg) scale(1); }
+  25% { transform: rotateY(180deg) scale(1.05); }
+  50% { transform: rotateY(360deg) scale(1.1); }
+  75% { transform: rotateY(540deg) scale(1.05); }
+  100% { transform: rotateY(720deg) scale(1); }
 }
 
 .slot-symbol {
   font-size: 3rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
 }
 
 .bet-controls {
@@ -105,14 +142,20 @@
 }
 
 .bet-input {
-  width: 120px;
-  padding: 10px;
-  font-size: 1.2rem;
-  border: none;
+  width: 200px;
+  padding: 12px;
+  font-size: 1.1rem;
+  border: 2px solid #ddd;
   border-radius: 8px;
   text-align: center;
-  background: rgba(255, 255, 255, 0.9);
+  transition: border-color 0.3s ease;
   color: #333;
+}
+
+.bet-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .credits-label {
@@ -129,17 +172,20 @@
 
 .bet-percentage-btn {
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  background: linear-gradient(45deg, #ff9a9e, #fecfef);
+  border: 1px solid #ddd;
+  color: #333;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
+  font-weight: bold;
 }
 
 .bet-percentage-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.3);
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
   transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .bet-percentage-btn:disabled {
@@ -148,21 +194,21 @@
 }
 
 .spin-button {
-  background: linear-gradient(145deg, #ff6b6b, #ee5a24);
+  background: linear-gradient(45deg, #667eea, #764ba2);
   color: white;
   border: none;
-  padding: 15px 30px;
+  padding: 15px 40px;
   font-size: 1.3rem;
   font-weight: bold;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .spin-button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .spin-button:disabled {
@@ -172,12 +218,18 @@
 }
 
 .spin-button.spinning {
-  animation: pulse 1s ease-in-out infinite;
+  animation: spinPulse 1s ease-in-out infinite;
 }
 
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+@keyframes spinPulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.05);
+    opacity: 0.7;
+  }
 }
 
 .message {
@@ -187,40 +239,76 @@
   border-radius: 10px;
   font-size: 1.2rem;
   font-weight: bold;
+  animation: messageAppear 0.5s ease-out;
+}
+
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .win-message {
-  background: linear-gradient(145deg, #2ecc71, #27ae60);
+  background: linear-gradient(45deg, #4CAF50, #45a049);
   color: white;
-  box-shadow: 0 4px 8px rgba(46, 204, 113, 0.3);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
 }
 
 .lose-message {
-  background: linear-gradient(145deg, #e74c3c, #c0392b);
+  background: linear-gradient(45deg, #f44336, #da190b);
   color: white;
-  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+  box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
 }
 
 .error-message {
-  background: linear-gradient(145deg, #e74c3c, #c0392b);
+  background: linear-gradient(45deg, #ff6b6b, #ee5a24);
   color: white;
   padding: 15px;
   border-radius: 10px;
   text-align: center;
   margin: 20px 0;
-  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+  box-shadow: 0 4px 8px rgba(255, 107, 107, 0.3);
+  font-weight: bold;
 }
 
 .game-result {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
   padding: 20px;
   margin: 20px 0;
+  animation: resultAppear 0.5s ease-out;
+  text-align: left;
+}
+
+@keyframes resultAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .result-details {
   text-align: center;
+}
+
+.result-details h4 {
+  margin-top: 0;
+  color: #333;
+}
+
+.result-details p {
+  margin: 5px 0;
+  color: #666;
 }
 
 .result-symbols {
@@ -248,17 +336,20 @@
 }
 
 .paytable {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
   padding: 20px;
   margin-top: 30px;
+  text-align: left;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .paytable h3 {
   text-align: center;
   margin-bottom: 15px;
-  color: #ffd700;
+  color: #333;
+  margin-top: 0;
 }
 
 .paytable-grid {
@@ -270,9 +361,10 @@
   display: grid;
   grid-template-columns: 60px 1fr 80px;
   align-items: center;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .paytable-symbol {
@@ -287,7 +379,7 @@
 .paytable-multiplier {
   text-align: center;
   font-weight: bold;
-  color: #ffd700;
+  color: #667eea;
 }
 
 .paytable-note {
@@ -297,36 +389,117 @@
   font-size: 0.9rem;
 }
 
+.spinning-message {
+  font-size: 1.2rem;
+  color: #667eea;
+  font-weight: bold;
+  animation: pulse 1s infinite;
+  text-align: center;
+  margin: 20px 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   .slots-container {
     padding: 10px;
   }
   
+  .slots-card {
+    padding: 30px 20px;
+    margin: 10px;
+  }
+  
   .slots-header h1 {
     font-size: 2rem;
   }
   
+  .slots-reels {
+    gap: 10px;
+  }
+  
   .slot-reel {
-    width: 80px;
-    height: 80px;
+    width: 90px;
+    height: 90px;
+  }
+  
+  .slot-symbol {
+    font-size: 2.5rem;
+  }
+  
+  .bet-quick-buttons {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .bet-percentage-btn {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .result-symbols {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .paytable-row {
+    grid-template-columns: 50px 1fr 60px;
+    font-size: 0.9rem;
+    padding: 6px 8px;
+  }
+  
+  .paytable-symbol {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .slots-container {
+    padding: 5px;
+  }
+  
+  .slots-card {
+    padding: 20px 15px;
+  }
+  
+  .slots-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .bet-input {
+    width: 150px;
+    font-size: 1rem;
+  }
+  
+  .slots-reels {
+    gap: 8px;
+  }
+  
+  .slot-reel {
+    width: 70px;
+    height: 70px;
   }
   
   .slot-symbol {
     font-size: 2rem;
   }
   
-  .bet-quick-buttons {
-    flex-wrap: wrap;
-  }
-  
-  .result-symbols {
-    flex-direction: column;
-    align-items: center;
+  .spin-button {
+    padding: 12px 30px;
+    font-size: 1.1rem;
   }
   
   .paytable-row {
-    grid-template-columns: 50px 1fr 50px;
-    font-size: 0.9rem;
+    grid-template-columns: 40px 1fr 50px;
+    font-size: 0.8rem;
+  }
+  
+  .paytable-symbol {
+    font-size: 1rem;
   }
 }
