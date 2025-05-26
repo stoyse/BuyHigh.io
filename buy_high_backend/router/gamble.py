@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../'))
-from database.handler.postgres.postgres_db_handler import update_user_balance
+from database.handler.postgres.postgres_db_handler import update_user_balance, get_user_by_id
 from ..auth_utils import get_current_user, AuthenticatedUser
 
 class CoinFlipResult(BaseModel):
@@ -23,11 +23,31 @@ async def record_coin_flip_result(result: CoinFlipResult, current_user: Authenti
     bet = result.bet
     profit = result.profit
     
+    # Hole die aktuelle Balance aus der Datenbank
+    user_data = get_user_by_id(current_user.id)
+    if not user_data:
+        return {
+            "status": "error",
+            "message": "User not found",
+            "balance_updated": False
+        }
+    
+    current_balance = user_data.get('balance', 0) if user_data else 0
+    
     # Berechne neuen Balance basierend auf dem Ergebnis
     if success:
-        new_balance = current_user.balance + profit
+        new_balance = current_balance + profit
     else:
-        new_balance = current_user.balance - bet
+        new_balance = current_balance - bet
+    
+    # Verhindere negative Balance
+    if new_balance < 0:
+        return {
+            "status": "error",
+            "message": "Insufficient balance for bet",
+            "current_balance": current_balance,
+            "balance_updated": False
+        }
     
     # Aktualisiere die Balance in der Datenbank
     update_success = update_user_balance(current_user.id, new_balance)
@@ -36,7 +56,7 @@ async def record_coin_flip_result(result: CoinFlipResult, current_user: Authenti
         return {
             "status": "success", 
             "received_data": result,
-            "old_balance": current_user.balance,
+            "old_balance": current_balance,
             "new_balance": new_balance,
             "balance_updated": True
         }
