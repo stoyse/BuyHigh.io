@@ -30,6 +30,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     
     # This is highly insecure and for demonstration only.
     # A real system would involve JWT decoding and verification.
+    
+    # Try to parse Firebase UID from token
     if token.startswith("firebase_uid_"): # Simulate token being firebase_uid
         firebase_uid = token.split("firebase_uid_")[1]
         user_data = db_handler.get_user_by_firebase_uid(firebase_uid)
@@ -37,15 +39,22 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
             # Convert dict to User Pydantic model
             return User(**user_data) # Ensure User model matches db_handler output
     
-    # Fallback for a generic "fake_user_id" if the above fails or for testing
-    # This part would be removed in a production system
-    user_data = db_handler.get_user_by_id(1) # Example: fetch user with ID 1
-    if not user_data:
-        # If user 1 doesn't exist, create a dummy user object
-        # This is purely for making the dependency work without a real auth flow initially
-        return User(id=1, email="user@example.com", firebase_uid="dummy_firebase_uid", username="dummy_user")
-
-    return User(**user_data) # Ensure User model matches db_handler output
+    # Try to parse user_id from token (for testing purposes)
+    if token.startswith("user_id_"):
+        try:
+            user_id = int(token.split("user_id_")[1])
+            user_data = db_handler.get_user_by_id(user_id)
+            if user_data:
+                return User(**user_data)
+        except ValueError:
+            pass
+    
+    # If no valid token format found, raise authentication error
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid authentication token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 # Placeholder for a user object that might be available globally in Flask's `g`
 # In FastAPI, you get this via Depends(get_current_user)
