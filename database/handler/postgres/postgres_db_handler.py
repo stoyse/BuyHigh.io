@@ -312,6 +312,53 @@ def get_all_profiles():
         cur.close()
         conn.close()
 
+def get_all_users_basic_info():
+    """
+    Retrieves a list of all users with basic information suitable for a public listing.
+    This is a placeholder and needs to be adapted to your actual user schema and desired fields.
+    """
+    # add_analytics(event_type="get_all_users_basic_info_call", details={"source": "postgres_db_handler:get_all_users_basic_info"})
+    conn = get_db_connection()
+    # Use DictCursor to access columns by name
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    users_list = []
+    try:
+        # Adjust the SELECT query to fetch fields corresponding to the BasicUser Pydantic model
+        # Ensure column names match the Pydantic model fields or alias them in the query.
+        # Example: SELECT id, username, level, xp, balance, total_profit, total_trades, profile_picture_url FROM users ORDER BY username
+        # This query assumes your 'users' table has these columns.
+        cur.execute("""
+            SELECT 
+                id, 
+                username, 
+                level, 
+                xp, 
+                balance, 
+                total_profit, 
+                total_trades, 
+                profile_picture_url 
+            FROM users 
+            ORDER BY username
+        """
+        )
+        rows = cur.fetchall()
+        for row in rows:
+            # Convert row (which is a DictRow) to a plain dict
+            # Pydantic will validate this dict against the BasicUser model
+            users_list.append(dict(row)) 
+        
+        # add_analytics(event_type="get_all_users_basic_info_success", details={"count": len(users_list), "source": "postgres_db_handler:get_all_users_basic_info"})
+        return users_list
+    except psycopg2.Error as e:
+        logger.error(f"Fehler beim Abrufen aller Benutzer (Basisinfo): {e}", exc_info=True)
+        # add_analytics(event_type="get_all_users_basic_info_error", details={"error": str(e), "source": "postgres_db_handler:get_all_users_basic_info"})
+        return []  # Return empty list on error
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
 def create_asset(symbol, name, asset_type, exchange=None, currency="USD", 
                 sector=None, industry=None, logo_url=None, description=None, default_price=None):
     """
