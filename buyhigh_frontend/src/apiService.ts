@@ -33,6 +33,7 @@ export interface LoginResponse {
   id_token: string;
   email?: string; // Optional, da es möglicherweise nicht immer vorhanden ist (z.B. beim Standard-Login)
   username?: string; // Optional
+  isGuest?: boolean; // Added for guest login
 }
 
 export interface RegisterRequestData {
@@ -73,7 +74,64 @@ export const loginWithGoogleToken = async (idToken: string): Promise<LoginRespon
     }
     throw error;
   }
-}
+};
+
+export const loginWithFirebaseToken = async (idToken: string): Promise<LoginResponse> => {
+  logApiCall('POST', '/auth/firebase-token-login', { id_token_length: idToken.length });
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/firebase-token-login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id_token: idToken }),
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
+      console.error('Firebase Token Login failed with status:', response.status, errorData);
+      throw new Error(errorData.detail || 'Firebase Token Login failed');
+    }
+    const data: LoginResponse = await response.json();
+    logDebug('Firebase Token Login successful', data);
+    return data;
+  } catch (error) {
+    console.error('Error during Firebase Token login:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    // Um die LoginResponse-Struktur zu erfüllen, auch im Fehlerfall
+    return { 
+      success: false, 
+      message: errorMessage, 
+      userId: '', 
+      firebase_uid: '', 
+      id_token: '' 
+    };
+  }
+};
+
+export const loginAnonymouslyWithFirebase = async (idToken: string): Promise<LoginResponse> => {
+  logApiCall('POST', '/auth/firebase-anonymous-login', { id_token_length: idToken.length });
+  try {
+    const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/firebase-anonymous-login`, { id_token: idToken });
+    logDebug('Firebase Anonymous Login Response:', response.data);
+    // Assuming backend sends isGuest, or we can infer it.
+    // If backend doesn't explicitly send isGuest: true for this route, ensure it's added.
+    return { ...response.data, isGuest: response.data.isGuest !== undefined ? response.data.isGuest : true };
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error during Firebase Anonymous login:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error during Firebase Anonymous login:', error);
+    }
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Firebase Anonymous login failed',
+      userId: '',
+      firebase_uid: '',
+      id_token: '',
+      isGuest: true 
+    };
+  }
+};
 
 export const loginUser = async (email: string, password: string): Promise<LoginResponse> => {
   logApiCall('POST', '/auth/login', { email }); // Updated endpoint

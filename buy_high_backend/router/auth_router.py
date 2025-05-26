@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 import logging
 from ..utils import auth as auth_module
 import database.handler.postgres.postgres_db_handler as db_handler
-from ..pydantic_models import LoginRequest, RegisterRequest, UserResponse, GoogleLoginRequest
+from ..pydantic_models import LoginRequest, RegisterRequest, UserResponse, GoogleLoginRequest, FirebaseTokenLoginRequest
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -216,3 +216,81 @@ async def api_google_login(request_data: GoogleLoginRequest):
     except Exception as e:
         logger.error(f"Error during Google login: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An unexpected error occurred during Google login.")
+
+@router.post("/firebase-anonymous-login")
+async def api_firebase_anonymous_login(request_data: FirebaseTokenLoginRequest):
+    logger.info("Auth_router: /firebase-anonymous-login endpoint called.")
+    try:
+        id_token = request_data.id_token
+        logger.debug(f"Received Firebase Anonymous ID token: {id_token[:30]}...")
+
+        decoded_token = auth_module.verify_firebase_id_token(id_token)
+        if not decoded_token:
+            logger.warning("Firebase Anonymous ID token verification failed.")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Firebase Anonymous ID token.")
+
+        firebase_uid = decoded_token.get('uid')
+        
+        # Check if the token is actually from an anonymous provider
+        # The structure of decoded_token.firebase might vary slightly based on SDK version or token content.
+        # Typically, for anonymous users, decoded_token.firebase.sign_in_provider is 'anonymous'.
+        # Adjust this check if your decoded_token structure for anonymous users is different.
+        firebase_info = decoded_token.get('firebase', {})
+        sign_in_provider = firebase_info.get('sign_in_provider')
+
+        if sign_in_provider != 'anonymous':
+            logger.warning(f"Token provided to anonymous login is not from an anonymous provider. Provider: {sign_in_provider}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Token is not for an anonymous user.")
+
+        logger.info(f"Firebase Anonymous token verified. Firebase UID: {firebase_uid}")
+
+        local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
+        if not local_user:
+            logger.info(f"No local user for Firebase Anonymous UID {firebase_uid}. Creating new local guest user.")
+            
+            guest_username = f"Guest_{firebase_uid[:8]}"
+            # Ensure email is unique if constrained by DB. Using firebase_uid ensures uniqueness.
+            guest_email = f"guest_{firebase_uid}@buyhigh.io" 
+
+            # Assuming add_user can handle a 'provider' parameter or you adapt it.
+            # If add_user doesn't take 'provider', you might need to add a specific
+            # db_handler.add_guest_user function or modify add_user.
+            # For now, let's assume 'provider' can be passed.
+            # Also, ensure your add_user function can handle potentially NULL or placeholder emails if needed.
+            if db_handler.add_user(username=guest_username, email=guest_email, firebase_uid=firebase_uid, provider='anonymous'):
+                local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
+                if local_user:
+                    logger.info(f"New local guest user created with ID: {local_user['id']} for Firebase UID: {firebase_uid}")
+                else:
+                    logger.error(f"Failed to retrieve guest user after creation for Firebase UID: {firebase_uid}")
+                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create or retrieve guest user account locally.")
+            else:
+                logger.error(f"Failed to create local guest user for Firebase UID: {firebase_uid} after anonymous Firebase login.")
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create guest user account locally.")
+        
+        if not local_user: # Should be caught by the nested checks, but as a safeguard
+            logger.error(f"Critical: Could not find or create local guest user for Firebase UID {firebase_uid}.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Guest user not found or could not be created locally.")
+
+        try:
+            db_handler.update_last_login(local_user['id'])
+            logger.info(f"Updated last login for guest user ID: {local_user['id']}")
+        except Exception as e:
+            logger.warning(f"Failed to update last login for guest user ID {local_user['id']}: {e}")
+
+        return {
+            "success": True,
+            "message": "Firebase Anonymous login successful. User is a guest.",
+            "userId": local_user['id'], 
+            "firebase_uid": firebase_uid,
+            "email": local_user.get('email'), 
+            "username": local_user.get('username'),
+            "id_token": id_token, 
+            "isGuest": True 
+        }
+
+    except HTTPException: # Re-raise HTTPExceptions directly to maintain status codes
+        raise 
+    except Exception as e: # Catch any other unexpected errors
+        logger.error(f"Error during Firebase Anonymous login: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An unexpected error occurred during anonymous login.")

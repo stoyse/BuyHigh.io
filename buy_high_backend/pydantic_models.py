@@ -14,6 +14,9 @@ class RegisterRequest(BaseModel):
 class GoogleLoginRequest(BaseModel):
     id_token: str
 
+class FirebaseTokenLoginRequest(BaseModel):
+    id_token: str
+
 class UserCreateRequest(BaseModel): # For internal use, if creating in local DB
     email: EmailStr
     firebase_uid: str
