@@ -268,7 +268,7 @@
 
 .paytable-row {
   display: grid;
-  grid-template-columns: 60px 1fr 60px;
+  grid-template-columns: 60px 1fr 80px;
   align-items: center;
   padding: 8px;
   background: rgba(255, 255, 255, 0.1);

@@ -245,12 +245,13 @@ const SlotsGame: React.FC = () => {
             <div key={symbol} className="paytable-row">
               <span className="paytable-symbol">{symbol}</span>
               <span className="paytable-name">{SYMBOL_DISPLAY[symbol as keyof typeof SYMBOL_DISPLAY]}</span>
-              <span className="paytable-multiplier">{multiplier}x</span>
+              <span className="paytable-multiplier">{multiplier}x / {(multiplier * 0.5).toFixed(1)}x</span>
             </div>
           ))}
         </div>
         <p className="paytable-note">
-          Win by getting 3 matching symbols. Higher multipliers for rarer symbols!
+          Win by getting 2 or 3 matching symbols!<br/>
+          3 symbols = full multiplier, 2 symbols = half multiplier
         </p>
       </div>
     </div>

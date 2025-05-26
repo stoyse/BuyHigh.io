@@ -25,13 +25,14 @@ class SlotsResult(BaseModel):
 router = APIRouter()
 
 # Slots symbols and their weights (higher weight = more common)
+# Adjusted for higher win probability
 SLOTS_SYMBOLS = {
-    "🍒": {"weight": 30, "multiplier": 2},   # Cherry - common, low payout
-    "🍋": {"weight": 25, "multiplier": 3},   # Lemon
-    "🍊": {"weight": 20, "multiplier": 4},   # Orange
-    "🍇": {"weight": 15, "multiplier": 5},   # Grapes
-    "⭐": {"weight": 8, "multiplier": 8},    # Star - rare, high payout
-    "💎": {"weight": 2, "multiplier": 20}    # Diamond - very rare, highest payout
+    "🍒": {"weight": 40, "multiplier": 2},   # Cherry - very common, low payout
+    "🍋": {"weight": 35, "multiplier": 3},   # Lemon - more common
+    "🍊": {"weight": 30, "multiplier": 4},   # Orange - common
+    "🍇": {"weight": 25, "multiplier": 5},   # Grapes - fairly common
+    "⭐": {"weight": 15, "multiplier": 8},    # Star - less rare, high payout
+    "💎": {"weight": 5, "multiplier": 20}     # Diamond - rare but more common, highest payout
 }
 
 def get_weighted_symbol():
@@ -47,18 +48,22 @@ def calculate_slots_win(reels: list[str], bet: int) -> tuple[int, int]:
     for symbol in reels:
         symbol_counts[symbol] = symbol_counts.get(symbol, 0) + 1
     
-    # Check for winning combinations (3 matching symbols)
+    # Check for winning combinations
     max_count = max(symbol_counts.values())
-    is_win = max_count >= 3  # Win if any symbol appears 3 times
+    is_win = max_count >= 2  # Win if any symbol appears 2 or more times
     multiplier = 0
     win_amount = 0
     
     if is_win:
-        # Find the symbol that appears 3 times
+        # Find the symbol with the highest count
         for symbol, count in symbol_counts.items():
-            if count >= 3:  # 3 matching symbols
+            if count >= 3:  # 3 matching symbols = full payout
                 multiplier = SLOTS_SYMBOLS[symbol]["multiplier"]
                 win_amount = bet * multiplier
+                break
+            elif count == 2:  # 2 matching symbols = half payout
+                multiplier = SLOTS_SYMBOLS[symbol]["multiplier"] * 0.5
+                win_amount = int(bet * multiplier)
                 break
     
     return win_amount, multiplier
