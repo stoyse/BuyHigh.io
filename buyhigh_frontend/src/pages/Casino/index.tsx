@@ -69,6 +69,7 @@ const Casino = () => {
           gradientTo="orange-500/20"
           darkGradientFrom="yellow-600/30"
           darkGradientTo="orange-600/30"
+          href="/coinflip"
         >
           <div className="absolute inset-0 coin-flip-animation">
             <div className="absolute inset-0 bg-yellow-500 rounded-full m-12 border-8 border-yellow-600 flex items-center justify-center text-4xl">
@@ -214,6 +215,7 @@ interface GameCardProps {
   darkGradientTo: string;
   animationDelay?: string;
   hoverRotate?: string;
+  href?: string;
   children: React.ReactNode;
 }
 
@@ -229,6 +231,7 @@ const GameCard: React.FC<GameCardProps> = ({
   darkGradientTo,
   animationDelay,
   hoverRotate = "rotate-1",
+  href = "#",
   children 
 }) => {
   return (
@@ -236,7 +239,7 @@ const GameCard: React.FC<GameCardProps> = ({
       className={`game-card glass-card rounded-xl overflow-hidden border-2 border-${borderColor} hover:border-pink-500 transition-all duration-300 hover:scale-105 hover:${hoverRotate} hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] animate-blur-in bg-gradient-to-br from-${gradientFrom} to-${gradientTo} dark:from-${darkGradientFrom} dark:to-${darkGradientTo}`}
       style={{ animationDelay }}
     >
-      <a href="#" className="block h-full">
+      <a href={href} className="block h-full">
         <div className="relative h-48 overflow-hidden flex justify-center items-center bg-black/20">
           {children}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">

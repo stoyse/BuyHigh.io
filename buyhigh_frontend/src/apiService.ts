@@ -532,8 +532,12 @@ export interface CoinFlipRequestData {
 
 export interface CoinFlipResponseData {
   status: string;
-  received_data: CoinFlipRequestData;
-  // Potentially other fields the backend might return
+  received_data?: CoinFlipRequestData;
+  old_balance?: number;
+  new_balance?: number;
+  balance_updated?: boolean;
+  current_balance?: number;
+  message?: string;
 }
 
 // Function to call the coin flip endpoint

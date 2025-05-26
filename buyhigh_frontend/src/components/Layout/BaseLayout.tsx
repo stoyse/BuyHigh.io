@@ -179,6 +179,12 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
                       </svg>
                       Casino
                     </Link>
+                    <Link to="/coinflip" className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/coinflip' ? 'bg-yellow-500/10 text-yellow-500' : 'text-gray-700 dark:text-gray-300 hover:bg-yellow-500/10 hover:text-yellow-500 dark:hover:text-yellow-400'} transition-all duration-200 flex items-center group`}>
+                      <svg className="w-5 h-5 mr-1.5 text-yellow-500/70 group-hover:text-yellow-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      🪙 Coin Flip
+                    </Link>
                     <Link to="/roadmap" className={`px-3 py-2 rounded-lg text-sm font-medium ${location.pathname === '/roadmap' ? 'bg-neo-cyan/10 text-neo-cyan' : 'text-gray-700 dark:text-gray-300 hover:bg-neo-cyan/10 hover:text-neo-cyan dark:hover:text-neo-cyan'} transition-all duration-200 flex items-center group`}>
                       <svg className="w-5 h-5 mr-1.5 text-neo-cyan/70 group-hover:text-neo-cyan transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
@@ -355,6 +361,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
                   <Link to="/trade" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-blue/10 hover:text-neo-blue" onClick={() => setMobileMenuOpen(false)}>Trade</Link>
                   <Link to="/news" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-amber/10 hover:text-neo-amber" onClick={() => setMobileMenuOpen(false)}>News</Link>
                   <Link to="/casino" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-pink-500/10 hover:text-pink-500" onClick={() => setMobileMenuOpen(false)}>Casino</Link>
+                  <Link to="/coinflip" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-yellow-500/10 hover:text-yellow-500" onClick={() => setMobileMenuOpen(false)}>🪙 Coin Flip</Link>
                   <Link to="/settings" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-cyan/10 hover:text-neo-cyan" onClick={() => setMobileMenuOpen(false)}>Settings</Link>
                   <Link to="/social" className="block px-3 py-2 rounded-lg text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-neo-emerald/10 hover:text-neo-emerald" onClick={() => setMobileMenuOpen(false)}>Social</Link>
                 </>

@@ -12,6 +12,7 @@ import Home from './pages/Home/Home';
 import Casino from './pages/Casino';
 import Trade from './pages/Trade/Trade';
 import NewsPage from './pages/News/NewsPage';
+import CoinFlipGame from './pages/CoinFlip/CoinFlipGame';
 import { frontendLogger } from './frontendLogger';
 // Import other pages as needed
 
@@ -58,6 +59,11 @@ function App() {
             <ProtectedRoute>
             <NewsPage />
             </ProtectedRoute>} />
+          <Route path="/coinflip" element={
+            <ProtectedRoute>
+              <CoinFlipGame />
+            </ProtectedRoute>
+          } />
           {/* Add more routes as needed */}
         </Routes>
       </Router>
