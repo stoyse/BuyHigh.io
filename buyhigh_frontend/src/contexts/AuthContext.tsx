@@ -19,6 +19,8 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID || "YOUR_APP_ID" // Add to .env if needed
 };
 
+console.log("Firebase Config being used:", firebaseConfig); // DEBUGGING LINE
+
 let app: FirebaseApp;
 // Initialize Firebase only if it hasn't been initialized yet
 if (getApps().length === 0) {
