@@ -20,7 +20,11 @@ const CoinFlipGame: React.FC = () => {
       if (isAuthenticated && user?.id) {
         try {
           const userInfo = await GetUserInfo(String(user.id));
-          if (userInfo && userInfo.balance !== undefined) {
+          // Fix: Handle nested user structure from backend API
+          if (userInfo && userInfo.success && userInfo.user && userInfo.user.balance !== undefined) {
+            setUserBalance(userInfo.user.balance);
+          } else if (userInfo && userInfo.balance !== undefined) {
+            // Fallback for direct balance access
             setUserBalance(userInfo.balance);
           }
         } catch (error) {
