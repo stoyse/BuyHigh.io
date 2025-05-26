@@ -186,3 +186,20 @@ class RedeemCodeResponse(BaseModel):
     reload: Optional[bool] = False
     reward: Optional[float] = None
     new_balance: Optional[float] = None
+
+# Added BasicUser and AllUsersResponse models
+class BasicUser(BaseModel):
+    id: int
+    username: str
+    level: Optional[int] = 0
+    xp: Optional[int] = 0
+    balance: Optional[float] = 0.0 # Assuming balance can be float
+    total_profit: Optional[float] = 0.0 # Assuming profit can be float
+    total_trades: Optional[int] = 0
+    profile_picture_url: Optional[str] = None
+    # Add other fields that you expect to be part of a user's basic public profile
+
+class AllUsersResponse(BaseModel):
+    success: bool
+    users: List[BasicUser]
+    message: Optional[str] = None
