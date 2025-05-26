@@ -17,6 +17,7 @@ from .education_router import router as education_router
 from .misc_router import router as misc_router
 from .easter_egg_router import router as easter_egg_router
 from .news_router import router as news_router  # Import news_router
+from .gamble import router as gamble_router # Import gamble_router
 
 # Umgebungsvariablen laden
 load_dotenv()
@@ -68,6 +69,8 @@ debug_logger.info(f"Including easter_egg_router ({id(easter_egg_router)}) into m
 router.include_router(easter_egg_router)
 debug_logger.info(f"Including news_router ({id(news_router)}) into main router ({id(router)}) without prefix.")
 router.include_router(news_router)  # Include news_router
+debug_logger.info(f"Including gamble_router ({id(gamble_router)}) into main router ({id(router)}) without prefix.") # Log gamble_router
+router.include_router(gamble_router) # Include gamble_router
 
 debug_logger.info(f"Finished including sub-routers into main router ({id(router)}) in router.__init__.")
 
