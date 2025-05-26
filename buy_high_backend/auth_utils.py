@@ -3,6 +3,10 @@ from fastapi.security import OAuth2PasswordBearer
 from typing import Optional
 import database.handler.postgres.postgres_db_handler as db_handler # Assuming this can be imported
 from .pydantic_models import User # Import User Pydantic model
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
+from utils import auth as auth_module
 
 # In a real app, this would come from config
 SECRET_KEY = "your-secret-key"
@@ -14,32 +18,31 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login") # Adjusted to new lo
 # Placeholder for current_user. In a real app, this would decode a JWT token.
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     """
-    Placeholder for JWT token validation and user retrieval.
-    For now, it simulates fetching a user based on a dummy token logic.
-    A real implementation would:
-    1. Decode and verify the JWT token.
-    2. Extract user identifier (e.g., user_id or firebase_uid) from token.
-    3. Fetch user from database.
-    4. Raise HTTPException if token is invalid or user not found.
+    Authenticate user based on Firebase ID token or test tokens.
+    This function now properly handles Firebase JWT tokens.
     """
-    # This is a very basic placeholder.
-    # In a real app, you'd validate the token and fetch user details.
-    # For demonstration, let's assume the token IS the firebase_uid for simplicity here.
-    # Or, if login returns a custom token, this function would validate that.
-    # For now, we'll try to fetch a user if a token "user_id_X" is passed.
     
-    # This is highly insecure and for demonstration only.
-    # A real system would involve JWT decoding and verification.
+    # First try to verify as Firebase ID token (real JWT)
+    try:
+        decoded_token = auth_module.verify_firebase_id_token(token)
+        if decoded_token:
+            firebase_uid = decoded_token.get('uid')
+            if firebase_uid:
+                user_data = db_handler.get_user_by_firebase_uid(firebase_uid)
+                if user_data:
+                    return User(**user_data)
+    except Exception as e:
+        # Log the error but continue to try other token formats
+        print(f"Firebase token verification failed: {e}")
     
-    # Try to parse Firebase UID from token
-    if token.startswith("firebase_uid_"): # Simulate token being firebase_uid
+    # Fallback: Try to parse Firebase UID from custom token format (for testing)
+    if token.startswith("firebase_uid_"):
         firebase_uid = token.split("firebase_uid_")[1]
         user_data = db_handler.get_user_by_firebase_uid(firebase_uid)
         if user_data:
-            # Convert dict to User Pydantic model
-            return User(**user_data) # Ensure User model matches db_handler output
+            return User(**user_data)
     
-    # Try to parse user_id from token (for testing purposes)
+    # Fallback: Try to parse user_id from token (for testing purposes)
     if token.startswith("user_id_"):
         try:
             user_id = int(token.split("user_id_")[1])
