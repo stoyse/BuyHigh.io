@@ -47,18 +47,19 @@ def calculate_slots_win(reels: list[str], bet: int) -> tuple[int, int]:
     for symbol in reels:
         symbol_counts[symbol] = symbol_counts.get(symbol, 0) + 1
     
-    # Check for winning combinations
+    # Check for winning combinations (3 matching symbols)
     max_count = max(symbol_counts.values())
-    is_win = max_count > 2  # Win if any symbol appears more than twice
-    multiplier = 1
+    is_win = max_count >= 3  # Win if any symbol appears 3 times
+    multiplier = 0
     win_amount = 0
     
     if is_win:
-        # Calculate win amount and multiplier based on the most common symbol
+        # Find the symbol that appears 3 times
         for symbol, count in symbol_counts.items():
-            if count > 2:  # Only consider symbols that contributed to the win
-                multiplier += SLOTS_SYMBOLS[symbol]["multiplier"] * (count - 2)
-                win_amount += bet * SLOTS_SYMBOLS[symbol]["multiplier"] * (count - 2)
+            if count >= 3:  # 3 matching symbols
+                multiplier = SLOTS_SYMBOLS[symbol]["multiplier"]
+                win_amount = bet * multiplier
+                break
     
     return win_amount, multiplier
 
@@ -183,6 +184,79 @@ async def record_slots_result(result: SlotsResult, current_user: AuthenticatedUs
                 "multiplier": multiplier,
                 "won": success,
                 "payout": profit if success else 0
+            }
+        }
+    else:
+        return {
+            "status": "error",
+            "message": "Failed to update user balance",
+            "balance_updated": False
+        }
+
+@router.post("/gamble/slots/play", tags=["Gamble"])
+async def play_slots(request: SlotsRequest, current_user: AuthenticatedUser = Depends(get_current_user)):
+    """Play slots game - server calculates the result"""
+    bet = request.bet
+    
+    # Hole die aktuelle Balance aus der Datenbank
+    user_data = get_user_by_id(current_user.id)
+    if not user_data:
+        return {
+            "status": "error",
+            "message": "User not found",
+            "balance_updated": False
+        }
+    
+    current_balance = user_data.get('balance', 0) if user_data else 0
+    
+    # Validiere den Einsatz gegen die aktuelle Balance
+    if bet > current_balance:
+        return {
+            "status": "error",
+            "message": "Insufficient balance for bet",
+            "current_balance": current_balance,
+            "balance_updated": False
+        }
+    
+    if bet <= 0:
+        return {
+            "status": "error",
+            "message": "Bet must be positive",
+            "current_balance": current_balance,
+            "balance_updated": False
+        }
+    
+    # Generiere 3 zufällige Symbole
+    symbols = [get_weighted_symbol() for _ in range(3)]
+    
+    # Berechne Gewinn
+    win_amount, multiplier = calculate_slots_win(symbols, bet)
+    is_win = win_amount > 0
+    
+    # Berechne neue Balance
+    if is_win:
+        new_balance = current_balance + win_amount
+        profit = win_amount
+    else:
+        new_balance = current_balance - bet
+        profit = 0
+    
+    # Aktualisiere die Balance in der Datenbank
+    update_success = update_user_balance(current_user.id, new_balance)
+    
+    if update_success:
+        return {
+            "status": "success",
+            "old_balance": current_balance,
+            "new_balance": new_balance,
+            "balance_updated": True,
+            "game_result": {
+                "symbols": symbols,
+                "multiplier": multiplier,
+                "won": is_win,
+                "bet": bet,
+                "profit": profit,
+                "payout": win_amount
             }
         }
     else:

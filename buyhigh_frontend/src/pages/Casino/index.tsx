@@ -112,6 +112,7 @@ const Casino = () => {
           darkGradientFrom="purple-600/30"
           darkGradientTo="blue-600/30"
           animationDelay="0.2s"
+          href="/slots"
         >
           <div className="flex space-x-2 transform scale-90">
             <div className="w-16 h-24 bg-gray-800 border-2 border-purple-500 rounded-lg flex items-center justify-center overflow-hidden">

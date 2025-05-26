@@ -526,8 +526,8 @@ export const getNews = async (): Promise<ApiNewsAsset[]> => {
 // Types for Coin Flip API
 export interface CoinFlipRequestData {
   Success: boolean;
-  bet: number; // Changed from int to number for TypeScript
-  profit: number; // Changed from int to number for TypeScript
+  bet: number;
+  profit: number;
 }
 
 export interface CoinFlipResponseData {
@@ -538,6 +538,35 @@ export interface CoinFlipResponseData {
   balance_updated?: boolean;
   current_balance?: number;
   message?: string;
+}
+
+// Types for Slots API
+export interface SlotsRequestData {
+  bet: number;
+}
+
+export interface SlotsResultData {
+  Success: boolean;
+  bet: number;
+  profit: number;
+  symbols: string[];
+  multiplier: number;
+}
+
+export interface SlotsResponseData {
+  status: string;
+  received_data?: SlotsResultData;
+  old_balance?: number;
+  new_balance?: number;
+  balance_updated?: boolean;
+  current_balance?: number;
+  message?: string;
+  game_result?: {
+    symbols: string[];
+    multiplier: number;
+    won: boolean;
+    payout: number;
+  };
 }
 
 // Function to call the coin flip endpoint
@@ -558,5 +587,45 @@ export const recordCoinFlip = async (data: CoinFlipRequestData): Promise<CoinFli
       throw new Error(`Error recording coin flip: ${error.message}`);
     }
     throw new Error('An unknown error occurred while recording coin flip.');
+  }
+};
+
+// Function to call the slots endpoint
+export const recordSlots = async (data: SlotsResultData): Promise<SlotsResponseData> => {
+  logApiCall('POST', '/gamble/slots', data);
+  try {
+    const response = await axios.post<SlotsResponseData>(`${API_BASE_URL}/gamble/slots`, data, {
+      withCredentials: true,
+    });
+    logDebug('Slots Response:', response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Slots API error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to record slots result');
+    } else {
+      console.error('Unexpected error:', error);
+      throw new Error('An unexpected error occurred');
+    }
+  }
+};
+
+// Function to play slots game (server calculates result)
+export const playSlots = async (bet: number): Promise<SlotsResponseData> => {
+  logApiCall('POST', '/gamble/slots/play', { bet });
+  try {
+    const response = await axios.post<SlotsResponseData>(`${API_BASE_URL}/gamble/slots/play`, { bet }, {
+      withCredentials: true,
+    });
+    logDebug('Slots Play Response:', response.data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Slots Play API error:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to play slots');
+    } else {
+      console.error('Unexpected error:', error);
+      throw new Error('An unexpected error occurred');
+    }
   }
 };
