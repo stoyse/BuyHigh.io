@@ -19,6 +19,7 @@ import { frontendLogger } from './frontendLogger';
 import SocialPage from './pages/SocialPage/SocialPage'; // Import SocialPage
 import SettingsPage from './pages/SettingsPage/SettingsPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
+import TraderBadgesPage from './pages/TraderBadges/TraderBadgesPage';
 function App() {
   return (
     <AuthProvider>
@@ -85,6 +86,11 @@ function App() {
           <Route path="/profile" element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/badges" element={
+            <ProtectedRoute>
+              <TraderBadgesPage />
             </ProtectedRoute>
           } />
         </Routes>
