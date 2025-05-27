@@ -18,6 +18,7 @@ import { frontendLogger } from './frontendLogger';
 // Import other pages as needed
 import SocialPage from './pages/SocialPage/SocialPage'; // Import SocialPage
 import SettingsPage from './pages/SettingsPage/SettingsPage';
+import ProfilePage from './pages/ProfilePage/ProfilePage';
 function App() {
   return (
     <AuthProvider>
@@ -79,6 +80,11 @@ function App() {
           <Route path="/settings" element={
             <ProtectedRoute>
               <SettingsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           } />
         </Routes>
