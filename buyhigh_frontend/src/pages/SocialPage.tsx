@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getAllUsers } from '../services/apiService'; // Adjust path as necessary
+import BaseLayout from '../components/Layout/BaseLayout';
 
 // Define a type for the user profile data
 interface UserProfile {
@@ -76,15 +77,23 @@ const SocialPage: React.FC = () => {
     });
 
   if (loading) {
-    return <div className="text-center p-10">Loading community...</div>;
+    return (
+      <BaseLayout title="Community">
+        <div className="text-center p-10">Loading community...</div>
+      </BaseLayout>
+    );
   }
 
   if (error) {
-    return <div className="text-center p-10 text-red-500">Error: {error}</div>;
+    return (
+      <BaseLayout title="Community">
+        <div className="text-center p-10 text-red-500">Error: {error}</div>
+      </BaseLayout>
+    );
   }
 
   return (
-    <div className="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <BaseLayout title="Community">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">BuyHigh Community</h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400">Connect with fellow financial adventurers</p>
@@ -181,7 +190,7 @@ const SocialPage: React.FC = () => {
           </p>
         </div>
       )}
-    </div>
+    </BaseLayout>
   );
 };
 
