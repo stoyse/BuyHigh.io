@@ -66,7 +66,6 @@ const SettingsPage: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="glass-card p-8 rounded-2xl text-center">
-          {/* Removed animate-spin from the div below */}
           <div className="w-8 h-8 mx-auto mb-4 rounded-full border-4 border-neo-purple border-t-transparent"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading settings...</p>
         </div>
@@ -142,7 +141,7 @@ const SettingsPage: React.FC = () => {
         <div className="space-y-6">
           {/* Profile Section */}
           {activeSection === 'profile' && (
-            <div className="glass-card p-6 rounded-2xl border border-gray-200/10 dark:border-gray-700/20 relative overflow-hidden animate-float">
+            <div className="glass-card p-6 rounded-2xl border border-gray-200/10 dark:border-gray-700/20 relative overflow-hidden">
               <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-neo-blue rounded-full opacity-10 blur-3xl animate-pulse-slow"></div>
               <div className="relative z-10">
                 <h2 className="text-xl font-semibold mb-6 flex items-center">
@@ -195,7 +194,7 @@ const SettingsPage: React.FC = () => {
           {/* Security Section */}
           {activeSection === 'security' && (
             <div className="space-y-6">
-              <div className="glass-card p-6 rounded-2xl border border-gray-200/10 dark:border-gray-700/20 relative overflow-hidden animate-float">
+              <div className="glass-card p-6 rounded-2xl border border-gray-200/10 dark:border-gray-700/20 relative overflow-hidden">
                 <div className="absolute -top-20 -right-20 w-40 h-40 bg-neo-purple rounded-full opacity-10 blur-3xl animate-pulse-slow"></div>
                 <div className="relative z-10">
                   <h2 className="text-xl font-semibold mb-6 flex items-center">
@@ -251,7 +250,7 @@ const SettingsPage: React.FC = () => {
 
           {/* Preferences Section */}
           {activeSection === 'preferences' && (
-            <div className="glass-card p-6 rounded-2xl border border-gray-200/10 dark:border-gray-700/20 relative overflow-hidden animate-float">
+            <div className="glass-card p-6 rounded-2xl border border-gray-200/10 dark:border-gray-700/20 relative overflow-hidden">
               <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-neo-emerald rounded-full opacity-10 blur-3xl animate-pulse-slow"></div>
               <div className="relative z-10">
                 <h2 className="text-xl font-semibold mb-6 flex items-center">
@@ -309,7 +308,7 @@ const SettingsPage: React.FC = () => {
 
           {/* Danger Zone */}
           {activeSection === 'danger' && (
-            <div className="glass-card p-6 rounded-2xl border border-neo-red/30 dark:border-neo-red/40 relative overflow-hidden animate-float">
+            <div className="glass-card p-6 rounded-2xl border border-neo-red/30 dark:border-neo-red/40 relative overflow-hidden">
               <div className="absolute -top-20 -right-20 w-40 h-40 bg-neo-red/20 rounded-full opacity-20 blur-3xl animate-pulse-slow"></div>
               <div className="relative z-10">
                 <h2 className="text-xl font-semibold text-neo-red mb-6 flex items-center">
