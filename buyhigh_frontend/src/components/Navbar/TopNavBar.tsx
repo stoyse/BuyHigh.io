@@ -36,7 +36,7 @@ const TopNavBar: React.FC<TopNavBarProps> = ({ user, handleLogout, darkMode, set
           </div>
           
           <div className="flex items-center space-x-4">
-            {user && user.user ? (
+            {user && user.user && (
               <>
                 <div className="hidden sm:block dropdown">
                   <div 
@@ -120,28 +120,7 @@ const TopNavBar: React.FC<TopNavBarProps> = ({ user, handleLogout, darkMode, set
                   Logout
                 </button>
               </>
-            ) : (
-              <>
-                <button 
-                  onClick={() => navigate('/login')}
-                  className="neo-button rounded-lg px-4 py-2 text-sm font-medium bg-neo-blue/10 text-neo-blue border border-neo-blue/20 hover:bg-neo-blue hover:text-white transition-all duration-300 flex items-center"
-                >
-                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                  </svg>
-                  Login
-                </button>
-                <button 
-                  className="neo-button rounded-lg px-4 py-2 text-sm font-medium bg-neo-emerald/10 text-neo-emerald border border-neo-emerald/20 hover:bg-neo-emerald hover:text-white transition-all duration-300 flex items-center"
-                  onClick={() => navigate('/register')}
-                >
-                  <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-                  </svg>
-                  Register
-                </button>
-              </>
-            )}
+            )} {/* Ende des Blocks für angemeldete Benutzer. Keine Login/Register-Buttons mehr hier. */}
             
             <button 
               onClick={() => setDarkMode(!darkMode)} 
@@ -174,7 +153,7 @@ const TopNavBar: React.FC<TopNavBarProps> = ({ user, handleLogout, darkMode, set
         
         {mobileMenuOpen && (
           <div className="glass-card m-2 p-2 rounded-xl shadow-glass">
-            {user ? (
+            {user && (
               <>
                 <Link to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
                 <Link to="/trade" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Trade</Link>
@@ -194,12 +173,7 @@ const TopNavBar: React.FC<TopNavBarProps> = ({ user, handleLogout, darkMode, set
                   Logout
                 </button>
               </>
-            ) : (
-              <>
-                <Link to="/login" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Login</Link>
-                <Link to="/register" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Register</Link>
-              </>
-            )}
+            )} {/* Ende des Blocks für angemeldete Benutzer im mobilen Menü. Keine Login/Register-Links mehr hier. */}
           </div>
         )}
       </div>
