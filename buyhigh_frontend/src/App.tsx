@@ -16,7 +16,7 @@ import CoinFlipGame from './pages/CoinFlip/CoinFlipGame';
 import SlotsGame from './pages/Slots/SlotsGame';
 import { frontendLogger } from './frontendLogger';
 // Import other pages as needed
-import SocialPage from './pages/SocialPage'; // Import SocialPage
+import SocialPage from './pages/SocialPage/SocialPage'; // Import SocialPage
 import SettingsPage from './pages/SettingsPage/SettingsPage';
 function App() {
   return (

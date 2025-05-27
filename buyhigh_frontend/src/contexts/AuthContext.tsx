@@ -37,6 +37,7 @@ interface User {
   email?: string;
   username?: string;
   isGuest?: boolean;
+  firebase_provider?: string; // Add this line
 }
 
 interface AuthContextType {

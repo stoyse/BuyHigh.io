@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { getAllUsers } from '../services/apiService'; // Adjust path as necessary
-import BaseLayout from '../components/Layout/BaseLayout';
+import { getAllUsers } from '../../services/apiService'; // Adjust path as necessary
+import BaseLayout from '../../components/Layout/BaseLayout';
 
 // Define a type for the user profile data
 interface UserProfile {
