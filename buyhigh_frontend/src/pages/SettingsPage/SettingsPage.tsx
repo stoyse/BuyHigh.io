@@ -15,7 +15,8 @@ const SettingsPage: React.FC = () => {
         return;
       }
 
-      if (!authUser || !authUser.id) {
+      // Corrected check for authUser and authUser.id
+      if (!authUser || authUser.id === undefined || authUser.id === null) {
         setError('User not authenticated. Please login.');
         setIsLoading(false);
         return;
