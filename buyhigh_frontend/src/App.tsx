@@ -17,7 +17,7 @@ import SlotsGame from './pages/Slots/SlotsGame';
 import { frontendLogger } from './frontendLogger';
 // Import other pages as needed
 import SocialPage from './pages/SocialPage'; // Import SocialPage
-
+import SettingsPage from './pages/SettingsPage';
 function App() {
   return (
     <AuthProvider>
@@ -76,7 +76,11 @@ function App() {
               <SocialPage />
             </ProtectedRoute>
           } />
-          {/* Add more routes as needed */}
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          } />
         </Routes>
       </Router>
     </AuthProvider>
