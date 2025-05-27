@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import TopNavBar from '../../components/Navbar/TopNavBar';
+import React, { useState, useEffect } from 'react';
 import {
   loginUser,
   fetchFunnyTips,
@@ -66,6 +67,16 @@ const TestPage: React.FC = () => {
   const [coinFlipResult, setCoinFlipResult] = useState<CoinFlipResponseData | null>(null);
   const [coinFlipError, setCoinFlipError] = useState<string | null>(null);
   const [coinFlipLoading, setCoinFlipLoading] = useState<boolean>(false);
+
+  // Props for TopNavBar
+  const [user, setUser] = useState<any>(null); // Mock user, replace with actual user state
+  const [darkMode, setDarkMode] = useState<boolean>(false);
+
+  const handleLogout = () => {
+    // Implement logout logic
+    setUser(null);
+    console.log("User logged out");
+  };
 
   // API query function
   const fetchApiData = async (key: string, fetchFunction: () => Promise<any>, url: string) => {
@@ -233,6 +244,7 @@ const TestPage: React.FC = () => {
 
   return (
     <div className="test-page">
+      <TopNavBar user={user} handleLogout={handleLogout} darkMode={darkMode} setDarkMode={setDarkMode} />
       <h1>API Test Dashboard</h1>
 
       <div className="test-section">
