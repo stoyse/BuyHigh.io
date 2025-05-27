@@ -20,6 +20,7 @@ import SocialPage from './pages/SocialPage/SocialPage'; // Import SocialPage
 import SettingsPage from './pages/SettingsPage/SettingsPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import TraderBadgesPage from './pages/TraderBadges/TraderBadgesPage';
+import TransactionsPage from './pages/TransactionsPage/TransactionsPage';
 function App() {
   return (
     <AuthProvider>
@@ -91,6 +92,11 @@ function App() {
           <Route path="/badges" element={
             <ProtectedRoute>
               <TraderBadgesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/transactions" element={
+            <ProtectedRoute>
+              <TransactionsPage />
             </ProtectedRoute>
           } />
         </Routes>

@@ -56,7 +56,7 @@ const BadgeSection: React.FC<BadgeSectionProps> = ({
   animationDelay 
 }) => (
   <div 
-    className="badge-section glass-card shadow-neo border border-gray-200/10 dark:border-gray-700/20 rounded-2xl p-6 mb-8 relative overflow-hidden animate-float transition-all duration-500 hover:-translate-y-1" 
+    className="badge-section glass-card shadow-neo border border-gray-200/10 dark:border-gray-700/20 rounded-2xl p-6 mb-8 relative overflow-hidden" 
     style={{ animationDelay }}
   >
     {/* Decorative elements */}
