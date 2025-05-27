@@ -17,7 +17,7 @@ import SlotsGame from './pages/Slots/SlotsGame';
 import { frontendLogger } from './frontendLogger';
 // Import other pages as needed
 import SocialPage from './pages/SocialPage'; // Import SocialPage
-import SettingsPage from './pages/SettingsPage';
+import SettingsPage from './pages/SettingsPage/SettingsPage';
 function App() {
   return (
     <AuthProvider>

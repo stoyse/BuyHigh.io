@@ -1,18 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { logoutUser, GetUserInfo } from '../apiService'; // Assuming apiService.ts is in the parent directory
+import { logoutUser, GetUserInfo } from '../../apiService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const SettingsPage: React.FC = () => {
-  const [userInfo, setUserInfo] = useState<any>(null); // Replace 'any' with a proper user info type
+  const [userInfo, setUserInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const { user: authUser, loading: authLoading } = useAuth(); // Get user and loading state from AuthContext
 
-  // Fetch user info (example)
   useEffect(() => {
     const fetchUserInfo = async () => {
+      if (authLoading) { // Wait for auth state to be determined
+        return;
+      }
+
+      if (!authUser || !authUser.id) {
+        setError('User not authenticated. Please login.');
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        // Replace 'userId' with the actual user ID, perhaps from context or props
-        const data = await GetUserInfo('userId'); 
-        setUserInfo(data);
+        setIsLoading(true); // Set loading true before fetching
+        const userId = authUser.id.toString();
+        const data = await GetUserInfo(userId); 
+        if (data && data.success) {
+          setUserInfo(data.user || data.data || data); // Adjust based on actual API response structure
+        } else {
+          setError(data.message || 'Failed to fetch user information.');
+        }
       } catch (err) {
         setError('Failed to fetch user information.');
         console.error(err);
@@ -20,8 +37,9 @@ const SettingsPage: React.FC = () => {
         setIsLoading(false);
       }
     };
+
     fetchUserInfo();
-  }, []);
+  }, [authUser, authLoading]); // Depend on authUser and authLoading
 
   const handleLogout = async () => {
     try {
