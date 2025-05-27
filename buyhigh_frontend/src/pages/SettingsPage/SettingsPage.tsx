@@ -10,36 +10,48 @@ const SettingsPage: React.FC = () => {
   const { user: authUser, loading: authLoading } = useAuth(); // Get user and loading state from AuthContext
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      if (authLoading) { // Wait for auth state to be determined
-        return;
-      }
-
-      // Corrected check for authUser and authUser.id
-      if (!authUser || authUser.id === undefined || authUser.id === null) {
+    const fetchPageData = async () => {
+      // Use the same check as in Dashboard.tsx for consistency
+      if (!authUser || !authUser.id) {
+        console.warn("[SettingsPage] No authUser or no authUser.id present!", authUser);
         setError('User not authenticated. Please login.');
         setIsLoading(false);
         return;
       }
 
       try {
-        setIsLoading(true); // Set loading true before fetching
+        setIsLoading(true);
+        setError(null); // Reset error at the start of the try block
         const userId = authUser.id.toString();
+
+        // Diagnostic log to check the actual userId value being passed
+        console.log("[SettingsPage] Attempting to call GetUserInfo with userId:", userId);
+
         const data = await GetUserInfo(userId); 
+
         if (data && data.success) {
-          setUserInfo(data.user || data.data || data); // Adjust based on actual API response structure
+          // Adjust based on actual API response structure, similar to Dashboard
+          setUserInfo(data.user || data.data || data); 
         } else {
-          setError(data.message || 'Failed to fetch user information.');
+          // Handle cases where data might exist but success is false, or data is not as expected
+          const errorMessage = data?.message || 'Failed to fetch user information (API request not successful).';
+          setError(errorMessage);
+          console.warn("[SettingsPage] GetUserInfo was not successful or data malformed:", data);
         }
-      } catch (err) {
-        setError('Failed to fetch user information.');
-        console.error(err);
+      } catch (err: any) { // Explicitly type err for better error handling
+        const errorMessage = err.message || 'An unexpected error occurred while fetching user information.';
+        setError(errorMessage);
+        console.error("[SettingsPage] Error in fetchPageData:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUserInfo();
+    // Call fetchPageData only if authLoading is false, mirroring Dashboard.tsx
+    if (!authLoading) {
+      fetchPageData();
+    }
+
   }, [authUser, authLoading]); // Depend on authUser and authLoading
 
   const handleLogout = async () => {
