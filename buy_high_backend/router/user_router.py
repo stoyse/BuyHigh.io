@@ -101,7 +101,7 @@ async def api_get_all_users(current_user: AuthenticatedUser = Depends(get_curren
     Retrieves a list of all users with basic information.
     """
     try:
-        users_data = db_handler.get_all_users_basic_info() 
+        users_data = db_handler.get_all_profiles() 
         
         if users_data is None:
             logger.warning("No users found or error in fetching from DB.")
