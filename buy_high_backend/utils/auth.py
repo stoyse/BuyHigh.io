@@ -60,6 +60,40 @@ def initialize_firebase_app():
 # Da main.py die Umgebungsvariable vorher setzt, sollte dies jetzt funktionieren.
 initialize_firebase_app()
 
+def create_firebase_user(email: str, password: str, display_name: str = None):
+    """
+    Erstellt einen neuen Benutzer in Firebase Authentication.
+    """
+    logger.info(f"UTILS.AUTH: create_firebase_user aufgerufen für E-Mail: {email}")
+    if not firebase_admin._apps:
+        logger.error("UTILS.AUTH: Firebase App nicht initialisiert. Benutzererstellung nicht möglich.")
+        raise ConnectionError("Firebase ist nicht initialisiert. Benutzererstellung fehlgeschlagen.")
+    
+    try:
+        user_record = firebase_auth_module.create_user(
+            email=email,
+            password=password,
+            display_name=display_name,
+            email_verified=False # Standardmäßig nicht verifiziert, kann später geändert werden
+        )
+        logger.info(f"UTILS.AUTH: Firebase-Benutzer erfolgreich erstellt: {user_record.uid} für E-Mail: {email}")
+        return user_record
+    except firebase_auth_module.EmailAlreadyExistsError:
+        logger.warning(f"UTILS.AUTH: E-Mail {email} existiert bereits in Firebase.")
+        # Hier könnten Sie den bestehenden Benutzer abrufen und zurückgeben oder einen spezifischen Fehler auslösen.
+        # Für dieses Beispiel lösen wir einen ValueError aus, der im aufrufenden Code behandelt werden kann.
+        raise ValueError(f"EMAIL_EXISTS: Die E-Mail-Adresse {email} wird bereits verwendet.")
+    except firebase_auth_module.FirebaseError as e:
+        # Allgemeiner Firebase-Fehler
+        logger.error(f"UTILS.AUTH: Fehler beim Erstellen des Firebase-Benutzers für {email}: {e}")
+        # Prüfen auf spezifische Fehler, z.B. schwaches Passwort
+        if "WEAK_PASSWORD" in str(e).upper(): # Firebase gibt oft Fehlercodes in der Nachricht zurück
+            raise ValueError("WEAK_PASSWORD: Das Passwort ist zu schwach. Es muss mindestens 6 Zeichen lang sein.")
+        raise
+    except Exception as e:
+        logger.error(f"UTILS.AUTH: Unerwarteter Fehler beim Erstellen des Firebase-Benutzers für {email}: {e}", exc_info=True)
+        raise
+
 def login_firebase_user_rest(email: str, password: str):
     """
     Authentifiziert einen Benutzer mit Firebase E-Mail und Passwort.

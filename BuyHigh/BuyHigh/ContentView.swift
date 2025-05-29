@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject var authManager: AuthManager // Added AuthManager
     @State private var selectedPage: NavBarPage = .dashboard
 
     var body: some View {
@@ -24,7 +25,7 @@ struct ContentView: View {
                     }
                     .padding()
                 case .profile:
-                    ViewProfile()
+                    ViewProfile(authManager: authManager) // Pass AuthManager
                 case .trade:
                     ViewTrade()
                 case .game:
@@ -40,4 +41,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+        .environmentObject(AuthManager()) // Add AuthManager for preview
 }
