@@ -25,7 +25,7 @@ struct ViewProfile: View {
                 } else if let uid = authManagerEnv.userId { // Fallback to authManager.userId
                     Text("User ID: \\(uid)")
                 } else {
-                    Text("User ID: Nicht verfügbar")
+                    Text("User ID: Not available")
                 }
             }
             .font(.headline)
@@ -37,7 +37,7 @@ struct ViewProfile: View {
                     .padding()
             } else if let errorMessage = userLoader.errorMessage {
                 VStack { // Error message block
-                    Text("Fehler")
+                    Text("Error")
                         .font(.title3) // Smaller than .largeTitle
                         .foregroundColor(.red)
                         .padding(.bottom, 2)
@@ -45,7 +45,7 @@ struct ViewProfile: View {
                         .foregroundColor(.red)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
-                    Button("Erneut versuchen") {
+                    Button("Try Again") {
                         userLoader.fetchUserData()
                     }
                     .padding(.top, 5)
@@ -54,7 +54,7 @@ struct ViewProfile: View {
             } else if let userData = userLoader.userData { // Changed to unwrap userData
                 // Display User Details
                 List { // Using a List for better structure and scrollability if content grows
-                    Section(header: Text("Benutzerinformationen").font(.title2)) {
+                    Section(header: Text("User Info:").font(.title2)) {
                         HStack {
                             Text("Username:")
                                 .fontWeight(.bold)
@@ -105,7 +105,7 @@ struct ViewProfile: View {
                 
             } else {
                 // Initial state, not loading, no error, no data.
-                Text("Keine Benutzerdaten zum Anzeigen vorhanden.")
+                Text("No userdata Available")
                     .padding()
                 Spacer() // Ensures logout button is pushed down.
             }
@@ -138,6 +138,7 @@ struct ViewProfile: View {
 // Adjust Preview to provide AuthManager for UserLoader
 #Preview {
     let authManager = AuthManager()
+
 
     
     // Use the new initializer for the preview

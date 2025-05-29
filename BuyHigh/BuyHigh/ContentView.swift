@@ -16,16 +16,9 @@ struct ContentView: View {
             Group {
                 switch selectedPage {
                 case .dashboard:
-                    VStack {
-                        Image(systemName: "house")
-                            .imageScale(.large)
-                            .foregroundStyle(.tint)
-                        Text("Hello, world!")
-                        Spacer()
-                    }
-                    .padding()
+                    ViewDashboard(authManager: authManager)
                 case .profile:
-                    ViewProfile(authManager: authManager) // Pass AuthManager
+                  ViewProfile(authManager: authManager) // Pass AuthManager
                 case .trade:
                     ViewTrade()
                 case .game:
@@ -40,6 +33,7 @@ struct ContentView: View {
 }
 
 #Preview {
+
     ContentView()
         .environmentObject(AuthManager()) // Add AuthManager for preview
 }
