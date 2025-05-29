@@ -8,8 +8,20 @@
 import SwiftUI
 
 struct ViewTrade: View {
+    @State private var selectedPage: NavBarPage = .trade
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        VStack(spacing: 0) {
+            VStack {
+                Image(systemName: "chart.bar")
+                    .imageScale(.large)
+                    .foregroundStyle(.tint)
+                Text("Start Trading!")
+                Spacer()
+            }
+            .padding()
+            //NavBar(selectedPage: $selectedPage)
+        }
+
     }
 }
 
