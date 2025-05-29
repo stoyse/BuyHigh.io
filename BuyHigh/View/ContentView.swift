@@ -25,6 +25,8 @@ struct ContentView: View {
                     ViewGame()
                 case .learn:
                     ViewLearn()
+                case .transactions:
+                    ViewTransactions(authManager: authManager) // authManager übergeben
                 }
             }
             NavBar(selectedPage: $selectedPage)

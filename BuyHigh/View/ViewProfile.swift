@@ -21,9 +21,9 @@ struct ViewProfile: View {
             // User ID Area (Top)
             VStack {
                 if let uid = userLoader.userData?.id { // Prefer userData.id if fetch was successful
-                    Text("User ID: \\(uid)")
+                    Text("User ID: \(uid)")
                 } else if let uid = authManagerEnv.userId { // Fallback to authManager.userId
-                    Text("User ID: \\(uid)")
+                    Text("User ID: \(uid)")
                 } else {
                     Text("User ID: Not available")
                 }

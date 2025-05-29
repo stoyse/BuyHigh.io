@@ -11,6 +11,7 @@ struct CardBalance: View {
     let balance: Double?
     
     var body: some View {
+        // NavigationLink wurde entfernt, um die Navigation der übergeordneten Ansicht zu ermöglichen
         VStack(alignment: .leading, spacing: 12) {
             // Header mit Icon
             HStack {
@@ -59,15 +60,30 @@ struct CardBalance: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
+                .fill(Color(.systemBackground)) // Korrigiert
                 .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(.systemGray5), lineWidth: 1)
+                .stroke(Color(.systemGray5), lineWidth: 1) // Korrigiert
         )
+        // Wichtig: Um die NavigationLink-Standardformatierung (z.B. blaue Textfarbe) zu vermeiden
+        // und das ursprüngliche Aussehen der Karte beizubehalten, können wir buttonStyle verwenden.
+        // .buttonStyle(PlainButtonStyle()) // Nicht mehr nötig, da kein NavigationLink mehr hier ist
+        // Der .contentShape(Rectangle()) Modifikator kann hinzugefügt werden, wenn die gesamte Fläche der VStack antippbar sein soll
+        // für den NavigationLink in der übergeordneten Ansicht.
+        .contentShape(Rectangle())
     }
 }
+
+// Zur Erinnerung: Stellen Sie sicher, dass die übergeordnete Ansicht, die CardBalance verwendet,
+// in eine NavigationView eingebettet ist, damit die Navigation funktioniert.
+// Zum Beispiel:
+/*
+NavigationView {
+    YourParentViewContainingCardBalance()
+}
+*/
 
 
 

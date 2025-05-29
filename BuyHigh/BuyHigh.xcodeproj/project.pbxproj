@@ -35,19 +35,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		A39EDF172DE8FC9D00589F77 /* View */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = View;
+			sourceTree = "<group>";
+		};
 		A3A5D2C02DE7592600BEA3FC /* BuyHigh */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = BuyHigh;
-			sourceTree = "<group>";
-		};
-		A3A5D2CE2DE7592800BEA3FC /* BuyHighTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = BuyHighTests;
-			sourceTree = "<group>";
-		};
-		A3A5D2D82DE7592800BEA3FC /* BuyHighUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = BuyHighUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -82,9 +77,8 @@
 			children = (
 				A39EDF052DE8CF9900589F77 /* Launch Screen.storyboard */,
 				A3A5D2C02DE7592600BEA3FC /* BuyHigh */,
-				A3A5D2CE2DE7592800BEA3FC /* BuyHighTests */,
-				A3A5D2D82DE7592800BEA3FC /* BuyHighUITests */,
 				A3A5D2BF2DE7592600BEA3FC /* Products */,
+				A39EDF172DE8FC9D00589F77 /* View */,
 			);
 			sourceTree = "<group>";
 		};
@@ -114,6 +108,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				A39EDF172DE8FC9D00589F77 /* View */,
 				A3A5D2C02DE7592600BEA3FC /* BuyHigh */,
 			);
 			name = BuyHigh;
@@ -136,9 +131,6 @@
 			dependencies = (
 				A3A5D2CD2DE7592800BEA3FC /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				A3A5D2CE2DE7592800BEA3FC /* BuyHighTests */,
-			);
 			name = BuyHighTests;
 			packageProductDependencies = (
 			);
@@ -158,9 +150,6 @@
 			);
 			dependencies = (
 				A3A5D2D72DE7592800BEA3FC /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				A3A5D2D82DE7592800BEA3FC /* BuyHighUITests */,
 			);
 			name = BuyHighUITests;
 			packageProductDependencies = (

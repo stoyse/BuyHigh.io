@@ -13,6 +13,7 @@ enum NavBarPage {
     case game
     case learn
     case profile
+    case transactions
 }
 
 struct NavBar: View {
@@ -22,23 +23,36 @@ struct NavBar: View {
         HStack(spacing: 0) {
             Spacer()
             Button(action: { selectedPage = .dashboard }) {
-                VStack { Image(systemName: "house") }
+                VStack { 
+                    Image(systemName: "house")
+                        .font(.title2)
+                }
             }
             Spacer()
             Button(action: { selectedPage = .trade }) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.title2)
             }
             Spacer()
             Button(action: { selectedPage = .game }) {
-                VStack { Image(systemName: "gamecontroller.fill") }
+                VStack { 
+                    Image(systemName: "gamecontroller.fill")
+                        .font(.title2)
+                }
             }
             Spacer()
             Button(action: { selectedPage = .learn }) {
-                VStack { Image(systemName: "book.fill") }
+                VStack { 
+                    Image(systemName: "book.fill")
+                        .font(.title2)
+                }
             }
             Spacer()
             Button(action: { selectedPage = .profile }) {
-                VStack { Image(systemName: "person.crop.circle") }
+                VStack { 
+                    Image(systemName: "person.crop.circle")
+                        .font(.title2)
+                }
             }
             Spacer()
         }
