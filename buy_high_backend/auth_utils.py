@@ -22,9 +22,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     This function now properly handles Firebase JWT tokens.
     """
     
+    # Remove "Bearer " prefix if present
+    if token.lower().startswith("bearer "):
+        cleaned_token = token[7:]
+    else:
+        cleaned_token = token
+
     # First try to verify as Firebase ID token (real JWT)
     try:
-        decoded_token = auth_module.verify_firebase_id_token(token)
+        # Use the cleaned_token for verification
+        decoded_token = auth_module.verify_firebase_id_token(cleaned_token)
         if decoded_token:
             firebase_uid = decoded_token.get('uid')
             if firebase_uid:
@@ -36,6 +43,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         print(f"Firebase token verification failed: {e}")
     
     # Fallback: Try to parse Firebase UID from custom token format (for testing)
+    # Use the original token for these checks as they have specific prefixes
     if token.startswith("firebase_uid_"):
         firebase_uid = token.split("firebase_uid_")[1]
         user_data = db_handler.get_user_by_firebase_uid(firebase_uid)
