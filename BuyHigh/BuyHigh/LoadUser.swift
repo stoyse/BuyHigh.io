@@ -14,14 +14,21 @@ struct UserData: Codable {
     let username: String?
     let email: String
     let firebase_uid: String?
-    // Add other fields that are part of the 'user' object in UserDataResponse
-    // For example:
-    // let balance: Double?
-    // let profile_pic_url: String?
-    // let level: Int?
-    // let xp: Int?
-    // let total_profit: Double?
-    // let total_trades: Int?
+    // Added fields based on the server response
+    let balance: Double?
+    let created_at: String? // Consider decoding to Date if needed
+    let last_login: String? // Consider decoding to Date if needed
+    let mood_pet: String?
+    let pet_energy: Int?
+    let is_meme_mode: Bool?
+    let email_verified: Bool?
+    let theme: String?
+    let total_trades: Int?
+    let profit_loss: Double? // In your response it's 0.0, ensure type matches if it can be other numbers
+    let xp: Int?
+    let level: Int?
+    // password_hash is intentionally omitted as it's likely not needed in the frontend
+    // firebase_provider is also omitted for now, add if needed
 }
 
 struct UserDataApiResponse: Codable {
@@ -45,11 +52,16 @@ class UserLoader: ObservableObject {
             self.errorMessage = "User ID or Token not available. Please log in."
             return
         }
+        // Debug: Print the userId
+        print("UserLoader: Attempting to fetch data for userId: \(userId)")
 
-        guard let url = URL(string: "https://api.stoyse.hackclub.app/user/\\(userId)") else {
+        // Corrected URL interpolation
+        guard let url = URL(string: "https://api.stoyse.hackclub.app/user/\(userId)") else {
             self.errorMessage = "Invalid URL"
             return
         }
+        // Debug: Print the constructed URL
+        print("UserLoader: Constructed URL: \(url.absoluteString)")
 
         self.isLoading = true
         self.errorMessage = nil
@@ -57,14 +69,19 @@ class UserLoader: ObservableObject {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.setValue("Bearer \\(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         URLSession.shared.dataTask(with: request) { data, response, error in
             DispatchQueue.main.async {
                 self.isLoading = false
-                if let error = error {
-                    self.errorMessage = "Network error: \\(error.localizedDescription)"
+                // Original: if let error = error {
+                // self.errorMessage = "Network error: \\(error.localizedDescription)"
+                // return
+                // }
+                // Adressiert Warnung für Zeile 66
+                if error != nil {
+                    self.errorMessage = "Network error: \(error!.localizedDescription)"
                     return
                 }
 
@@ -72,19 +89,39 @@ class UserLoader: ObservableObject {
                     self.errorMessage = "Invalid response from server."
                     return
                 }
+                // Debug: Print HTTP status code
+                print("UserLoader: HTTP Status Code: \(httpResponse.statusCode)")
                 
                 // Log raw response for debugging
-                if let data = data, let rawResponseString = String(data: data, encoding: .utf8) {
-                    print("Raw UserData Response: \\(rawResponseString)")
+                // Original: if let data = data, let rawResponseString = String(data: data, encoding: .utf8) {
+                // print("Raw UserData Response: \\(rawResponseString)")
+                // }
+                // Adressiert Warnung für Zeile 77
+                if let data = data {
+                    if let rawString = String(data: data, encoding: .utf8) {
+                        print("Raw UserData Response: \(rawString)") // Korrigierte Interpolation
+                    }
                 }
 
 
                 guard (200...299).contains(httpResponse.statusCode) else {
                     var detailMessage = "Server error: \\(httpResponse.statusCode)."
-                    if let data = data, let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data), let detail = errorResponse.detail {
-                         detailMessage += " Details: \\(detail)"
-                    } else if let data = data, let responseString = String(data: data, encoding: .utf8) {
-                        detailMessage += " Response: \\(responseString)"
+                    // Original: if let data = data, let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data), let detail = errorResponse.detail {
+                    //      detailMessage += " Details: \\(detail)"
+                    // }
+                    // Adressiert Warnung für Zeile 84
+                    if let data = data, let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                        if let detailValue = errorResponse.detail {
+                             detailMessage += " Details: \\(detailValue)"
+                        }
+                    // Original: } else if let data = data, let responseString = String(data: data, encoding: .utf8) {
+                    //     detailMessage += " Response: \\(responseString)"
+                    // }
+                    // Adressiert Warnung für Zeile 86
+                    } else if let data = data {
+                        if let str = String(data: data, encoding: .utf8) {
+                            detailMessage += " Response: \\(str)"
+                        }
                     }
                     self.errorMessage = detailMessage
                     return
@@ -107,8 +144,10 @@ class UserLoader: ObservableObject {
                          // Potentially use a message from the response if available
                     }
                 } catch {
-                    let rawDataForErrorMessage = String(data: data, encoding: .utf8) ?? "Raw data not convertible to String"
-                    self.errorMessage = "Failed to decode user data: \\(error.localizedDescription). Raw data: \\(rawDataForErrorMessage)"
+                    // Original: let rawDataForErrorMessage = String(data: data, encoding: .utf8) ?? "Raw data not convertible to String"
+                    // self.errorMessage = "Failed to decode user data: \\\\(error.localizedDescription). Raw data: \\\\(rawDataForErrorMessage)"
+                    // Adressiert Warnung für Zeile 110 und korrigiert Syntaxfehler
+                    self.errorMessage = "Failed to decode user data: \(error.localizedDescription). Raw data: \(String(data: data, encoding: .utf8) ?? "Raw data not convertible to String")"
                 }
             }
         }.resume()

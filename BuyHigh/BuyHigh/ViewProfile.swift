@@ -17,80 +17,128 @@ struct ViewProfile: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack { // Main container
+            // User ID Area (Top)
+            VStack {
+                if let uid = userLoader.userData?.id { // Prefer userData.id if fetch was successful
+                    Text("User ID: \\(uid)")
+                } else if let uid = authManagerEnv.userId { // Fallback to authManager.userId
+                    Text("User ID: \\(uid)")
+                } else {
+                    Text("User ID: Nicht verfügbar")
+                }
+            }
+            .font(.headline)
+            .padding(.top)
+
+            // Dynamic Content Area (Middle)
             if userLoader.isLoading {
                 ProgressView("Loading Profile...")
-            } else if let userData = userLoader.userData {
-                VStack {
-                    Image(systemName: "person.crop.circle")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 100, height: 100)
-                        .padding(.bottom, 10)
-                    
-                    Text("Hello, \(userData.username ?? "User")!")
-                        .font(.title)
-                    Text(userData.email)
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                    
-                    // Display other user data as needed
-                    // Text("User ID: \\(userData.id)")
-                    // if let fbUid = userData.firebase_uid { Text("Firebase UID: \\(fbUid)") }
-
-                    Spacer()
-                    
-                    Button(action: {
-                        authManagerEnv.logout() // Changed from authManager to authManagerEnv
-                    }) {
-                        Text("Logout")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding()
-                            .frame(width: 220, height: 60)
-                            .background(Color.red)
-                            .cornerRadius(15.0)
-                    }
-                    .padding(.top, 50)
-                }
-                .padding()
+                    .padding()
             } else if let errorMessage = userLoader.errorMessage {
-                VStack {
-                    Text("Error")
-                        .font(.largeTitle)
+                VStack { // Error message block
+                    Text("Fehler")
+                        .font(.title3) // Smaller than .largeTitle
                         .foregroundColor(.red)
+                        .padding(.bottom, 2)
                     Text(errorMessage)
                         .foregroundColor(.red)
                         .multilineTextAlignment(.center)
-                        .padding()
-                    Button("Retry") {
+                        .padding(.horizontal)
+                    Button("Erneut versuchen") {
                         userLoader.fetchUserData()
                     }
-                    .padding()
+                    .padding(.top, 5)
                 }
+                .padding() // Padding for the error block
+            } else if let userData = userLoader.userData { // Changed to unwrap userData
+                // Display User Details
+                List { // Using a List for better structure and scrollability if content grows
+                    Section(header: Text("Benutzerinformationen").font(.title2)) {
+                        HStack {
+                            Text("Username:")
+                                .fontWeight(.bold)
+                            Spacer()
+                            Text(userData.username ?? "N/A")
+                        }
+                        HStack {
+                            Text("Email:")
+                                .fontWeight(.bold)
+                            Spacer()
+                            Text(userData.email)
+                        }
+                        if let balance = userData.balance {
+                            HStack {
+                                Text("Balance:")
+                                    .fontWeight(.bold)
+                                Spacer()
+                                Text(String(format: "%.2f", balance))
+                            }
+                        }
+                        if let level = userData.level {
+                            HStack {
+                                Text("Level:")
+                                    .fontWeight(.bold)
+                                Spacer()
+                                Text(String(level))
+                            }
+                        }
+                        if let xp = userData.xp {
+                            HStack {
+                                Text("XP:")
+                                    .fontWeight(.bold)
+                                Spacer()
+                                Text(String(xp))
+                            }
+                        }
+                        if let trades = userData.total_trades {
+                            HStack {
+                                Text("Trades:")
+                                    .fontWeight(.bold)
+                                Spacer()
+                                Text(String(trades))
+                            }
+                        }
+                    }
+                }
+                .listStyle(GroupedListStyle()) // Apply a grouped list style
+                
             } else {
-                // Fallback or initial state before loading starts
-                ProgressView() // Or a message like "Tap to load profile"
+                // Initial state, not loading, no error, no data.
+                Text("Keine Benutzerdaten zum Anzeigen vorhanden.")
+                    .padding()
+                Spacer() // Ensures logout button is pushed down.
             }
+
+            Spacer() // Pushes Logout button to the bottom
+
+            // Logout Button Area (Bottom)
+            Button(action: {
+                authManagerEnv.logout()
+            }) {
+                Text("Logout")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(width: 220, height: 60)
+                    .background(Color.red)
+                    .cornerRadius(15.0)
+            }
+            .padding(.bottom)
         }
         .onAppear {
-            // userLoader.authManager = authManagerEnv // No longer needed, authManager is set in UserLoader's init
-            userLoader.fetchUserData()
+            // Fetch user data if not already loaded or if retrying
+            if userLoader.userData == nil && !userLoader.isLoading {
+                 userLoader.fetchUserData()
+            }
         }
-        // Optional: Navigation zu anderen Seiten
-        /*.onChange(of: selectedPage) { newPage in
-            // Hier könntest du ggf. Navigation auslösen, falls ViewProfile nur für Profil gedacht ist
-        }*/
     }
 }
 
 // Adjust Preview to provide AuthManager for UserLoader
 #Preview {
     let authManager = AuthManager()
-    // Simulate logged-in state for preview if needed
-    // authManager.isLoggedIn = true
-    // authManager.idToken = "fake-token"
-    // authManager.userId = 123
+
     
     // Use the new initializer for the preview
     return ViewProfile(authManager: authManager)
