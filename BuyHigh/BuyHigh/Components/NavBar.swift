@@ -14,6 +14,7 @@ enum NavBarPage {
     case learn
     case profile
     case transactions
+    case ai  
 }
 
 struct NavBar: View {
@@ -48,9 +49,9 @@ struct NavBar: View {
                 }
             }
             Spacer()
-            Button(action: { selectedPage = .profile }) {
+            Button(action: { selectedPage = .ai }) {
                 VStack { 
-                    Image(systemName: "person.crop.circle")
+                    Image(systemName: "brain")
                         .font(.title2)
                 }
             }

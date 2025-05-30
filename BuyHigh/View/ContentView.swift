@@ -20,16 +20,19 @@ struct ContentView: View {
                     switch selectedPage {
                     case .dashboard:
                         ViewDashboard(authManager: authManager)
-                    case .profile:
-                        ViewProfile(authManager: authManager) // Stelle sicher, dass ViewProfile authManager erhält, falls benötigt
                     case .trade:
                         ViewTrade()
                     case .game:
                         ViewGame()
                     case .learn:
                         ViewLearn()
+                    case .profile:
+                        ViewProfile(authManager: authManager)
                     case .transactions:
                         ViewTransactions(authManager: authManager)
+                    case .ai:
+                        ViewAI()
+                        
                     }
                 }
                 NavBar(selectedPage: $selectedPage)
