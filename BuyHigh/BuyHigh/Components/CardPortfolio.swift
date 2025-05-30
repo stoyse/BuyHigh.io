@@ -16,9 +16,18 @@ struct CardPortfolio: View {
     
     init(authManager: AuthManager) {
         _portfolioLoader = StateObject(wrappedValue: PortfolioLoader(authManager: authManager))
+        // Optional: Protokolliert die Initialisierung, um zu sehen, ob sie unerwartet oft aufgerufen wird.
+        // print("CardPortfolio init - portfolioLoader instance: \\(portfolioLoader)")
     }
     
     var body: some View {
+        // Protokolliert den Zustand des portfolioLoader jedes Mal, wenn body ausgewertet wird.
+        let _ = { // Verwende einen Closure, um mehrere Print-Anweisungen sauber zu gruppieren
+            print("CardPortfolio body: isLoading = \\(portfolioLoader.isLoading)")
+            print("CardPortfolio body: errorMessage = \(portfolioLoader.errorMessage ?? "No error message")")
+            print("CardPortfolio body: portfolio.count = \\(portfolioLoader.portfolio.count)")
+        }()
+
         VStack(alignment: .leading, spacing: 0) {
             Text("My Portfolio")
                 .font(.title2)
@@ -27,10 +36,12 @@ struct CardPortfolio: View {
                 .padding(.bottom, 8)
 
             if portfolioLoader.isLoading {
+                let _ = print("CardPortfolio body: Zeige ProgressView")
                 ProgressView("Loading Portfolio...")
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .center)
             } else if let errorMessage = portfolioLoader.errorMessage {
+                let _ = print("CardPortfolio body: Zeige ErrorMessage: \\(errorMessage)")
                 VStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.red)
@@ -54,6 +65,7 @@ struct CardPortfolio: View {
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .center)
             } else if portfolioLoader.portfolio.isEmpty {
+                let _ = print("CardPortfolio body: Zeige 'Portfolio ist leer'-Nachricht")
                 VStack {
                     Image(systemName: "briefcase.fill")
                         .font(.largeTitle)
@@ -70,22 +82,42 @@ struct CardPortfolio: View {
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .center)
             } else {
+                let _ = print("CardPortfolio body: Zeige Liste mit \\\\\\\\(portfolioLoader.portfolio.count) Elementen")
+
+                // Dynamische Höhenberechnung für die Liste
+                let numberOfRows = portfolioLoader.portfolio.count
+                let rowHeight: CGFloat = 75 // Geschätzte/durchschnittliche Höhe für eine PortfolioItemRow (anpassbar)
+                let maxVisibleRows = 4 // Maximale Anzahl von Zeilen, die angezeigt werden, bevor die Liste intern scrollt
+                let maxListHeight = CGFloat(maxVisibleRows) * rowHeight
+                
+                let calculatedListHeight = CGFloat(numberOfRows) * rowHeight
+                let listDisplayHeight = min(calculatedListHeight, maxListHeight)
+
                 List {
                     ForEach(portfolioLoader.portfolio) { item in
                         PortfolioItemRow(item: item)
+                            // .background(Color.yellow) // Hintergrund für jedes Item - ENTFERNT
                     }
                 }
                 .listStyle(PlainListStyle())
+                // .background(Color.green) // Hintergrund für die gesamte Liste - ENTFERNT
+                // Wende die berechnete Höhe an. Stelle sicher, dass die Höhe nicht Null ist, wenn Elemente vorhanden sind.
+                .frame(height: numberOfRows > 0 ? listDisplayHeight : 0) 
             }
         }
         .onAppear {
+            // Protokolliert, wann onAppear aufgerufen wird und was es entscheidet zu tun.
+            print("CardPortfolio onAppear: portfolio.isEmpty = \\(portfolioLoader.portfolio.isEmpty), errorMessageIsNil = \\(portfolioLoader.errorMessage == nil), isLoading = \\(!portfolioLoader.isLoading)")
             if portfolioLoader.portfolio.isEmpty && portfolioLoader.errorMessage == nil && !portfolioLoader.isLoading {
                 if let userId = authManagerEnv.userId {
+                    print("CardPortfolio onAppear: Rufe loadPortfolio für userID: \\(userId) auf")
                     portfolioLoader.loadPortfolio(userID: userId)
                 } else {
-                    // Hier könnte eine Meldung für den nicht eingeloggten Zustand stehen
+                    print("CardPortfolio onAppear: userId ist nil, lade Portfolio nicht.")
                     // portfolioLoader.errorMessage = "Please log in to view your portfolio."
                 }
+            } else {
+                print("CardPortfolio onAppear: Bedingungen zum Laden des Portfolios nicht erfüllt.")
             }
         }
         .background(Color.gray.opacity(0.1)) // Reine SwiftUI-Farbe für den Hintergrund

@@ -9,11 +9,12 @@ import Foundation
 import SwiftUI
 
 struct Portfolio: Codable, Identifiable {
-    let id = UUID()
+    // let id = UUID() // Alt: UUID als ID
+    var id: String { symbol } // Neu: Symbol als ID
     let symbol: String
     let name: String
     let type: String
-    let quantity: Int
+    let quantity: Double // Geändert von Int zu Double
     let averagePrice: Double
     let currentPrice: Double
     let performance: Double
@@ -36,12 +37,29 @@ struct Portfolio: Codable, Identifiable {
 struct PortfolioResponse: Codable {
     let success: Bool
     let portfolio: [Portfolio]
-    let totalValue: Double
+    let totalValue: Double? // Geändert von Double zu Double?
     let message: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case portfolio
+        case totalValue = "total_value"
+        case message
+    }
 }
 
 class PortfolioLoader: ObservableObject {
-        @Published var portfolio: [Portfolio] = []
+        @Published var portfolio: [Portfolio] = [] {
+            didSet {
+                print("PortfolioLoader: portfolio property was updated.")
+                print("PortfolioLoader: New portfolio count: \\(portfolio.count)")
+                if let firstItem = portfolio.first {
+                    print("PortfolioLoader: First item in portfolio: \\(firstItem.symbol)")
+                } else {
+                    print("PortfolioLoader: Portfolio is empty after update.")
+                }
+            }
+        }
         @Published var isLoading = false
         @Published var errorMessage: String? = nil
         
@@ -112,11 +130,13 @@ class PortfolioLoader: ObservableObject {
 
                     do {
                         let decodedResponse = try JSONDecoder().decode(PortfolioResponse.self, from: data)
-                        print("TransactionLoader: Decoded response - success: \(decodedResponse.success)")
-                        print("TransactionLoader: Number of transactions: \(decodedResponse.portfolio.count ?? 0)")
+                        print("TransactionLoader: Decoded response - success: \\(decodedResponse.success)")
+                        // portfolio ist nicht optional, daher ist ?? 0 nicht nötig
+                        print("TransactionLoader: Number of transactions: \\(decodedResponse.portfolio.count)")
                         
                         if decodedResponse.success {
-                            self.portfolio = decodedResponse.portfolio ?? []
+                            // portfolio ist nicht optional, daher ist ?? [] nicht nötig
+                            self.portfolio = decodedResponse.portfolio
                         } else {
                             print("TransactionLoader: Server returned failure: \(decodedResponse.message ?? "No message")")
                             self.errorMessage = decodedResponse.message ?? "Failed to load transactions."
