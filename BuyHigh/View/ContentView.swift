@@ -8,34 +8,52 @@
 import SwiftUI
 
 struct ContentView: View {
-    @EnvironmentObject var authManager: AuthManager // Added AuthManager
-    @State private var selectedPage: NavBarPage = .dashboard
+    @EnvironmentObject var authManager: AuthManager
+    @State private var selectedPage: NavBarPage = .dashboard // Behalten für die interne Navigation der Hauptansicht
 
     var body: some View {
-        VStack(spacing: 0) {
-            Group {
-                switch selectedPage {
-                case .dashboard:
-                    ViewDashboard(authManager: authManager)
-                case .profile:
-                  ViewProfile(authManager: authManager) // Pass AuthManager
-                case .trade:
-                    ViewTrade()
-                case .game:
-                    ViewGame()
-                case .learn:
-                    ViewLearn()
-                case .transactions:
-                    ViewTransactions(authManager: authManager) // authManager übergeben
+        // Entscheiden, welche Ansicht basierend auf dem Login-Status angezeigt wird
+        if authManager.isLoggedIn {
+            // Hauptansicht der App nach dem Login
+            VStack(spacing: 0) {
+                Group {
+                    switch selectedPage {
+                    case .dashboard:
+                        ViewDashboard(authManager: authManager)
+                    case .profile:
+                        ViewProfile(authManager: authManager) // Stelle sicher, dass ViewProfile authManager erhält, falls benötigt
+                    case .trade:
+                        ViewTrade()
+                    case .game:
+                        ViewGame()
+                    case .learn:
+                        ViewLearn()
+                    case .transactions:
+                        ViewTransactions(authManager: authManager)
+                    }
                 }
+                NavBar(selectedPage: $selectedPage)
             }
-            NavBar(selectedPage: $selectedPage)
+            .onAppear {
+                print("ContentView: Displaying main app content (isLoggedIn is true)")
+            }
+        } else {
+            // Login-Ansicht, wenn nicht eingeloggt
+            ViewLogin()
+                .onAppear {
+                    print("ContentView: Displaying ViewLogin (isLoggedIn is false)")
+                }
         }
     }
 }
 
 #Preview {
-
-    ContentView()
-        .environmentObject(AuthManager()) // Add AuthManager for preview
+    // Für die Vorschau können wir verschiedene Zustände testen:
+    let previewAuthManager = AuthManager()
+    // Um den nicht eingeloggten Zustand zu sehen:
+    // previewAuthManager.isLoggedIn = false
+    // Um den eingeloggten Zustand zu sehen (Standard, wenn UserDefaults leer oder true):
+    // previewAuthManager.isLoggedIn = true
+    
+    return ContentView().environmentObject(previewAuthManager)
 }

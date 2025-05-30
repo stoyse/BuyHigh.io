@@ -22,7 +22,7 @@ struct ViewLogin: View {
                 .padding()
                 .background(Color.gray.opacity(0.2))
                 .cornerRadius(5.0)
-                .autocapitalization(.none) // Corrected autocapitalization
+                .textInputAutocapitalization(.never) // Corrected autocapitalization
                 .keyboardType(.emailAddress)
 
             SecureField("Password", text: $password)
@@ -46,6 +46,20 @@ struct ViewLogin: View {
                     .padding()
                     .frame(width: 220, height: 60)
                     .background(Color.blue)
+                    .cornerRadius(15.0)
+            }
+            .padding(.bottom, 10) // Add some space before the next button
+
+            // Button for guest login
+            Button(action: {
+                authManager.signInAnonymouslyWithFirebase()
+            }) {
+                Text("Continue as Guest")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(width: 220, height: 60)
+                    .background(Color.gray) // Different color for guest button
                     .cornerRadius(15.0)
             }
         }

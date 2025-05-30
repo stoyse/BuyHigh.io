@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		A39EDF062DE8CF9900589F77 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A39EDF052DE8CF9900589F77 /* Launch Screen.storyboard */; };
+		A39EDF1F2DE9264100589F77 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = A39EDF1E2DE9264100589F77 /* FirebaseAuth */; };
+		A39EDF212DE9264100589F77 /* FirebaseAuthCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = A39EDF202DE9264100589F77 /* FirebaseAuthCombine-Community */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +54,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A39EDF1F2DE9264100589F77 /* FirebaseAuth in Frameworks */,
+				A39EDF212DE9264100589F77 /* FirebaseAuthCombine-Community in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -113,6 +117,8 @@
 			);
 			name = BuyHigh;
 			packageProductDependencies = (
+				A39EDF1E2DE9264100589F77 /* FirebaseAuth */,
+				A39EDF202DE9264100589F77 /* FirebaseAuthCombine-Community */,
 			);
 			productName = BuyHigh;
 			productReference = A3A5D2BE2DE7592600BEA3FC /* BuyHigh.app */;
@@ -190,6 +196,9 @@
 			);
 			mainGroup = A3A5D2B52DE7592600BEA3FC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A39EDF1D2DE9264100589F77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A3A5D2BF2DE7592600BEA3FC /* Products */;
 			projectDirPath = "";
@@ -560,6 +569,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A39EDF1D2DE9264100589F77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.13.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A39EDF1E2DE9264100589F77 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A39EDF1D2DE9264100589F77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		A39EDF202DE9264100589F77 /* FirebaseAuthCombine-Community */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A39EDF1D2DE9264100589F77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = "FirebaseAuthCombine-Community";
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A3A5D2B62DE7592600BEA3FC /* Project object */;
 }
