@@ -9,9 +9,12 @@ import SwiftUI
 
 struct ViewAI: View {
     var body: some View {
-        Image(systemName: "brain")
-        Text("Hello, Mr.Stonks!")
-        Spacer()
+        VStack {
+            Image(systemName: "brain")
+            Text("Hello, Mr.Stonks!")
+            CardMrStonks() // Added CardMrStonks
+            Spacer()
+        }
     }
 }
 
