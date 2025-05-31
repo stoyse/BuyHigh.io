@@ -247,8 +247,8 @@ class AuthManager: ObservableObject {
         do {
             try Auth.auth().signOut()
             print("AuthManager: Successfully signed out from Firebase Auth.")
-        } catch let signOutError as NSError {
-            print("AuthManager: Error signing out from Firebase Auth: \\(signOutError.localizedDescription)")
+        } catch let error as NSError { // Replaced signOutError with _ or a general 'error'
+            print("AuthManager: Error signing out from Firebase Auth: \\(error.localizedDescription)")
             // Hier könntest du dem User eine Fehlermeldung anzeigen, falls das Ausloggen bei Firebase fehlschlägt,
             // aber für den lokalen Zustand fahren wir trotzdem fort.
         }

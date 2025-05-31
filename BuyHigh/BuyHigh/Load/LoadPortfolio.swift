@@ -53,8 +53,10 @@ class PortfolioLoader: ObservableObject {
             didSet {
                 print("PortfolioLoader: portfolio property was updated.")
                 print("PortfolioLoader: New portfolio count: \\(portfolio.count)")
-                if let firstItem = portfolio.first {
-                    print("PortfolioLoader: First item in portfolio: \\(firstItem.symbol)")
+                if let _ = portfolio.first { // Replaced firstItem with _
+                    // If you need to use the first item, you can assign it here
+                    // e.g., let firstSymbol = portfolio.first?.symbol
+                    // print("PortfolioLoader: First item in portfolio: \\(firstSymbol ?? \"N/A\")")
                 } else {
                     print("PortfolioLoader: Portfolio is empty after update.")
                 }

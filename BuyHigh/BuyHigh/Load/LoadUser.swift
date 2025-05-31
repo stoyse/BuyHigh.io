@@ -111,7 +111,7 @@ class UserLoader: ObservableObject {
                     // }
                     // Adressiert Warnung für Zeile 84
                     if let data = data, let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
-                        if let detailValue = errorResponse.detail {
+                        if let detailValue = errorResponse.detail { // Used detailValue directly
                              detailMessage += " Details: \\(detailValue)"
                         }
                     // Original: } else if let data = data, let responseString = String(data: data, encoding: .utf8) {
@@ -119,7 +119,7 @@ class UserLoader: ObservableObject {
                     // }
                     // Adressiert Warnung für Zeile 86
                     } else if let data = data {
-                        if let str = String(data: data, encoding: .utf8) {
+                        if let str = String(data: data, encoding: .utf8) { // Used str directly
                             detailMessage += " Response: \\(str)"
                         }
                     }
