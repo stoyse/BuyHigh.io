@@ -16,6 +16,7 @@ struct ViewTrade: View {
                     .imageScale(.large)
                     .foregroundStyle(.tint)
                 Text("Start Trading!")
+                CardTradingCharts()
                 Spacer()
             }
             .padding()
