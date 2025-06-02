@@ -8,24 +8,48 @@
 import SwiftUI
 
 struct ViewTrade: View {
-    @State private var selectedPage: NavBarPage = .trade
+    @EnvironmentObject var authManager: AuthManager
+    @StateObject private var assetLoader: AssetLoader
+
+    // Initializer, um authManager entgegenzunehmen und für AssetLoader zu verwenden
+    init(authManager: AuthManager) {
+        _assetLoader = StateObject(wrappedValue: AssetLoader(authManager: authManager))
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            VStack {
-                Image(systemName: "chart.bar")
-                    .imageScale(.large)
-                    .foregroundStyle(.tint)
-                Text("Start Trading!")
-                CardTradingCharts()
-                Spacer()
+            ScrollView {
+                VStack {
+                    Image(systemName: "chart.bar")
+                        .imageScale(.large)
+                        .foregroundStyle(.tint)
+                        .padding(.top)
+                    
+                    Text("Start Trading!")
+                        .font(.title)
+                        .padding(.bottom)
+                    
+                    // CardTrade Komponente hinzufügen und AssetLoader übergeben
+                    CardTrade(authManager: authManager, assetLoader: assetLoader)
+                        .padding(.horizontal)
+                        .padding(.bottom)
+                    
+                    Spacer()
+                }
+            }
+            .onAppear {
+                // Assets laden, wenn die Ansicht erscheint.
+                assetLoader.fetchAssets()
             }
             .padding()
-            //NavBar(selectedPage: $selectedPage)
         }
-
     }
 }
 
 #Preview {
-    ViewTrade()
+    // AuthManager für die Preview bereitstellen
+    let authManager = AuthManager() // Erstellt eine neue Instanz für die Preview
+    // AssetLoader wird innerhalb von ViewTrade initialisiert, das den authManager benötigt.
+    ViewTrade(authManager: authManager) // Explizite Übergabe des AuthManagers
+        .environmentObject(authManager) // Stellt ihn auch für Kind-Views in der Umgebung bereit
 }

@@ -21,7 +21,8 @@ struct ContentView: View {
                     case .dashboard:
                         ViewDashboard(authManager: authManager)
                     case .trade:
-                        ViewTrade()
+                        // Stelle sicher, dass ViewTrade den authManager erhält, wenn sein Initializer ihn benötigt.
+                        ViewTrade(authManager: authManager) 
                     case .game:
                         ViewGame()
                     case .learn:

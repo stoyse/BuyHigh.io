@@ -49,6 +49,15 @@ BuyHigh.io is a gamified stock trading platform designed for learning and entert
 - **`package.json`**: Manages dependencies and scripts.
 - **Tailwind CSS**: Used for styling.
 
+### iOS App (SwiftUI)
+- **`BuyHigh/BuyHighApp.swift`**: The main entry point of the iOS application, sets up the environment.
+- **`BuyHigh/ContentView.swift`**: Root view that handles navigation based on authentication state.
+- **`BuyHigh/AuthManager.swift`**: Manages user authentication state and API token handling.
+- **`BuyHigh/View/`**: Directory containing SwiftUI views for different screens of the app (e.g., `ViewDashboard.swift`, `ViewTrade.swift`).
+- **`BuyHigh/Load/`**: Directory for data loading classes that interact with the backend API (e.g., `LoadUser.swift`, `LoadTrade.swift`).
+- **`BuyHigh/Components/`**: Directory for reusable SwiftUI components (e.g., `CardTrade.swift`).
+- **`BuyHigh.xcodeproj`**: Xcode project file to build and run the iOS application.
+
 ### Database
 - **Schema**: Defined in `postgres_schema.sql`.
 - **Tables**:
@@ -82,6 +91,13 @@ yarn install
 yarn start
 ```
 This starts the React development server on `http://localhost:3000`.
+
+### iOS App
+To run the iOS application:
+1. Navigate to the `BuyHigh/` directory.
+2. Open the `BuyHigh.xcodeproj` file in Xcode.
+3. Select a simulator or a connected device.
+4. Click the "Run" button (or press Cmd+R).
 
 ---
 
