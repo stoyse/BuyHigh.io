@@ -44,3 +44,23 @@ start_and_test.sh
 SECRE_CODES.md
 
 GoogleService-Info.plist
+
+# AI/ML related files 
+models/
+models_cache/
+coreml_models/
+*.mlpackage/
+*.mlmodel
+*.pt
+*.bin
+*.safetensors
+*.h5
+*.onnx
+
+# Python AI packages cache
+.transformers_cache/
+.cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

@@ -1,0 +1,17 @@
+# Hugging Face und PyTorch
+torch>=2.0.0
+transformers>=4.30.0
+tokenizers>=0.13.0
+
+# CoreML Tools
+coremltools>=7.0
+
+# Weitere Abhängigkeiten
+numpy>=1.21.0
+tqdm>=4.64.0
+requests>=2.25.0
+
+# Optional: Für erweiterte Features
+torch-audio>=2.0.0
+sentencepiece>=0.1.99  # Für bestimmte Tokenizer
+protobuf>=3.20.0       # Für manche Modelle erforderlich
