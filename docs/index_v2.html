@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BuyHigh.io - Buy High, Sell Low</title>
+    <title>BuyHigh.io V2 - Trade Smarter</title>
     
     <!-- Favicon -->
     <link rel="icon" href="../static/favicon.png" type="image/x-icon">
@@ -31,20 +31,23 @@
           },
           extend: {
             colors: {
+              // V2 Color Scheme - Different from V1
               primary: {
-                light: '#6d28d9', // vibrant purple
-                dark: '#8b5cf6', // lighter purple for dark mode
+                light: '#2563eb', // blue-600
+                dark: '#3b82f6', // blue-500
               },
               secondary: {
-                light: '#0ea5e9', // bright blue
-                dark: '#38bdf8', // sky blue for dark mode
+                light: '#059669', // emerald-600
+                dark: '#10b981', // emerald-500
               },
               game: {
-                green: '#10b981', // emerald-500
-                red: '#ef4444',   // red-500
-                gold: '#f59e0b',  // amber-500
-                blue: '#3b82f6',  // blue-500
-                pink: '#ec4899',  // pink-500
+                green: '#16a34a', // green-600
+                red: '#dc2626',   // red-600
+                gold: '#d97706',  // amber-600
+                blue: '#2563eb',  // blue-600
+                pink: '#db2777',  // pink-600
+                purple: '#7c3aed', // violet-600
+                orange: '#ea580c', // orange-600
               }
             },
             fontFamily: {
@@ -126,8 +129,8 @@
       .grid-bg {
         background-size: 40px 40px;
         background-image: 
-          linear-gradient(to right, rgba(107, 33, 168, 0.1) 1px, transparent 1px),
-          linear-gradient(to bottom, rgba(107, 33, 168, 0.1) 1px, transparent 1px);
+          linear-gradient(to right, rgba(37, 99, 235, 0.1) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(37, 99, 235, 0.1) 1px, transparent 1px);
       }
       
       /* Gradient Animation */
@@ -137,7 +140,7 @@
         100% { background-position: 0% 50%; }
       }
       .animate-gradient {
-        background: linear-gradient(-45deg, #6d28d9, #8b5cf6, #0ea5e9, #38bdf8);
+        background: linear-gradient(-45deg, #2563eb, #3b82f6, #059669, #10b981);
         background-size: 400% 400%;
         animation: gradient 15s ease infinite;
       }
@@ -151,7 +154,7 @@
                 <div class="h-10 w-10 bg-primary-light rounded-lg flex items-center justify-center shadow-pixel">
                     <span class="font-pixel text-white text-sm">B</span>
                 </div>
-                <span class="font-pixel text-xl text-white">BuyHigh.io</span>
+                <span class="font-pixel text-xl text-white">BuyHigh.io <span class="text-xs text-game-orange">V2</span></span>
             </div>
             <div class="hidden md:flex space-x-8 font-pixel text-xs">
                 <a href="#features" class="hover:text-primary-dark transition-colors duration-300">Features</a>
@@ -159,8 +162,8 @@
                 <a href="#testimonials" class="hover:text-primary-dark transition-colors duration-300">Testimonials</a>
             </div>
             <div class="flex space-x-4">
-                <a href="https://stoyse.hackclub.app/auth/login?next=/" class="btn-pixel px-5 py-2 rounded font-pixel text-xs bg-game-blue text-white hover:bg-blue-700 transition-colors">Login</a>
-                <a href="https://stoyse.hackclub.app/auth/register" class="btn-pixel px-5 py-2 rounded font-pixel text-xs bg-game-green text-white hover:bg-green-700 transition-colors">Register</a>
+                <a href="https://buy-high-io.vercel.app/login" class="btn-pixel px-5 py-2 rounded font-pixel text-xs bg-game-blue text-white hover:bg-blue-700 transition-colors">Login</a>
+                <a href="https://buy-high-io.vercel.app/register" class="btn-pixel px-5 py-2 rounded font-pixel text-xs bg-game-green text-white hover:bg-green-700 transition-colors">Register</a>
             </div>
         </div>
     </nav>
@@ -170,13 +173,13 @@
         <div class="max-w-7xl mx-auto flex flex-wrap justify-center items-center gap-6">
             <span class="font-pixel text-sm text-white">CHOOSE YOUR EXPERIENCE:</span>
             <div class="flex flex-wrap gap-4 items-center">
-                <a href="#" class="btn-pixel px-6 py-3 rounded-lg font-pixel text-sm bg-game-blue text-white hover:bg-blue-700 transition-colors shadow-pixel-lg">
+                <a href="index.html" class="btn-pixel px-6 py-3 rounded-lg font-pixel text-sm bg-game-blue text-white hover:bg-blue-700 transition-colors shadow-pixel-lg">
                     <span class="flex items-center">
                         <span class="mr-2">📊</span>
                         Version 1
                     </span>
                 </a>
-                <a href="index_v2.html" class="btn-pixel px-6 py-3 rounded-lg font-pixel text-sm bg-game-green text-white hover:bg-green-700 transition-colors shadow-pixel-lg">
+                <a href="#" class="btn-pixel px-6 py-3 rounded-lg font-pixel text-sm bg-game-orange text-white hover:bg-orange-700 transition-colors shadow-pixel-lg">
                     <span class="flex items-center">
                         <span class="mr-2">🚀</span>
                         Version 2
@@ -196,19 +199,19 @@
         </div>
     </div>
     
-    <!-- Hero Section - Add padding to accommodate the new App Versions Bar -->
+    <!-- Hero Section -->
     <section class="min-h-screen grid-bg animate-gradient flex flex-col items-center justify-center px-4 pt-36">
         <div class="max-w-7xl mx-auto text-center z-10">
             <h1 class="font-pixel text-4xl md:text-5xl lg:text-6xl leading-tight mb-8 text-white">
-                <span class="block mb-4">BUY HIGH</span>
-                <span class="text-game-red">SELL LOW</span>
+                <span class="block mb-4">TRADE SMARTER</span>
+                <span class="text-game-orange">VERSION 2.0</span>
             </h1>
             <p class="font-pixel text-sm md:text-base max-w-2xl mx-auto mb-10 text-gray-300">
-                BuyHigh.io is a gamified, Flask-based trading simulator where users can buy and sell stocks, crypto, and forex with a playful twist—featuring mood pets, meme mode, pixel-art charts, and XP-driven progress to make learning finance fun and interactive. 📈🎮🐂
+                Welcome to Version 2 of BuyHigh.io! Experience enhanced trading with our improved UI, faster data updates, and new advanced trading tools. All with the same fun, gamified approach you love. 📊🎮💹
             </p>
             
             <div class="flex flex-col md:flex-row gap-6 justify-center mb-16">
-                <a href="https://stoyse.hackclub.app/auth/login?next=/" class="btn-pixel px-8 py-4 rounded font-pixel text-sm bg-primary-light text-white hover:bg-primary-dark transition-colors">
+                <a href="https://buy-high-io.vercel.app/login" class="btn-pixel px-8 py-4 rounded font-pixel text-sm bg-primary-light text-white hover:bg-primary-dark transition-colors">
                     Start Trading
                 </a>
                 <a href="#features" class="btn-pixel px-8 py-4 rounded font-pixel text-sm bg-transparent border-2 border-white text-white hover:bg-white hover:text-gray-900 transition-colors">
@@ -224,7 +227,7 @@
                 <div class="w-32 h-20 md:w-48 md:h-32">
                     <svg viewBox="0 0 100 50" class="w-full h-full">
                         <polyline points="0,50 20,30 40,40 60,20 80,25 100,10" 
-                                 fill="none" stroke="#10b981" stroke-width="3" />
+                                 fill="none" stroke="#16a34a" stroke-width="3" />
                     </svg>
                 </div>
                 <p class="font-pixel text-xxs md:text-xs text-game-green mt-2">+25%</p>
@@ -249,7 +252,7 @@
     <!-- Features Section -->
     <section id="features" class="py-20 px-4 bg-gray-800">
         <div class="max-w-7xl mx-auto">
-            <h2 class="font-pixel text-2xl md:text-3xl text-center mb-16 text-white">AWESOME FEATURES</h2>
+            <h2 class="font-pixel text-2xl md:text-3xl text-center mb-16 text-white">VERSION 2 FEATURES</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
                 <!-- Feature 1 -->
@@ -257,26 +260,26 @@
                     <div class="h-16 w-16 bg-primary-light rounded-lg mb-6 flex items-center justify-center shadow-pixel">
                         <span class="font-pixel text-white text-xl">📈</span>
                     </div>
-                    <h3 class="font-pixel text-lg mb-4 text-white">Trade Virtual Stocks</h3>
-                    <p class="text-gray-300">Buy and sell virtual stocks with real market data. Practice trading without risking real money.</p>
+                    <h3 class="font-pixel text-lg mb-4 text-white">Advanced Charts</h3>
+                    <p class="text-gray-300">More chart types, indicators, and real-time data updates for serious traders.</p>
                 </div>
                 
                 <!-- Feature 2 -->
                 <div class="dark-glass p-6 rounded-lg transition-transform hover:scale-105 duration-300">
-                    <div class="h-16 w-16 bg-game-green rounded-lg mb-6 flex items-center justify-center shadow-pixel">
+                    <div class="h-16 w-16 bg-game-orange rounded-lg mb-6 flex items-center justify-center shadow-pixel">
                         <span class="font-pixel text-white text-xl">🏆</span>
                     </div>
-                    <h3 class="font-pixel text-lg mb-4 text-white">Earn XP & Badges</h3>
-                    <p class="text-gray-300">Level up your trader profile, earn experience points, and unlock achievements as you trade.</p>
+                    <h3 class="font-pixel text-lg mb-4 text-white">New Achievement System</h3>
+                    <p class="text-gray-300">Upgraded badges and ranks with more challenges and special rewards for skilled traders.</p>
                 </div>
                 
                 <!-- Feature 3 -->
                 <div class="dark-glass p-6 rounded-lg transition-transform hover:scale-105 duration-300">
-                    <div class="h-16 w-16 bg-game-blue rounded-lg mb-6 flex items-center justify-center shadow-pixel">
-                        <span class="font-pixel text-white text-xl">💬</span>
+                    <div class="h-16 w-16 bg-secondary-light rounded-lg mb-6 flex items-center justify-center shadow-pixel">
+                        <span class="font-pixel text-white text-xl">🤖</span>
                     </div>
-                    <h3 class="font-pixel text-lg mb-4 text-white">Chat with Traders</h3>
-                    <p class="text-gray-300">Join chat rooms to discuss strategies, share tips, and connect with other traders.</p>
+                    <h3 class="font-pixel text-lg mb-4 text-white">AI Trading Assistant</h3>
+                    <p class="text-gray-300">Get tips and insights from our new AI helper that analyzes market trends and your trading style.</p>
                 </div>
             </div>
         </div>
@@ -285,7 +288,7 @@
     <!-- How It Works Section -->
     <section id="how-it-works" class="py-20 px-4 bg-gray-900 grid-bg">
         <div class="max-w-7xl mx-auto">
-            <h2 class="font-pixel text-2xl md:text-3xl text-center mb-16 text-white">HOW IT WORKS</h2>
+            <h2 class="font-pixel text-2xl md:text-3xl text-center mb-16 text-white">HOW V2 WORKS</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <!-- Step 1 -->
@@ -302,8 +305,8 @@
                     <div class="h-16 w-16 mx-auto bg-primary-light rounded-full mb-4 flex items-center justify-center shadow-pixel">
                         <span class="font-pixel text-white">2</span>
                     </div>
-                    <h3 class="font-pixel text-lg mb-2 text-white">Get Virtual Cash</h3>
-                    <p class="text-gray-400">Start with €10,000 in play money</p>
+                    <h3 class="font-pixel text-lg mb-2 text-white">Get $20,000</h3>
+                    <p class="text-gray-400">Start with $20,000 in virtual cash</p>
                 </div>
                 
                 <!-- Step 3 -->
@@ -312,7 +315,7 @@
                         <span class="font-pixel text-white">3</span>
                     </div>
                     <h3 class="font-pixel text-lg mb-2 text-white">Trade</h3>
-                    <p class="text-gray-400">Buy & sell stocks with live data</p>
+                    <p class="text-gray-400">Buy & sell with advanced tools</p>
                 </div>
                 
                 <!-- Step 4 -->
@@ -320,8 +323,8 @@
                     <div class="h-16 w-16 mx-auto bg-primary-light rounded-full mb-4 flex items-center justify-center shadow-pixel">
                         <span class="font-pixel text-white">4</span>
                     </div>
-                    <h3 class="font-pixel text-lg mb-2 text-white">Level Up</h3>
-                    <p class="text-gray-400">Gain XP, unlock badges, compete</p>
+                    <h3 class="font-pixel text-lg mb-2 text-white">Compete</h3>
+                    <p class="text-gray-400">Join tournaments and win prizes</p>
                 </div>
             </div>
         </div>
@@ -330,21 +333,21 @@
     <!-- Testimonials Section -->
     <section id="testimonials" class="py-20 px-4 bg-gray-800">
         <div class="max-w-7xl mx-auto">
-            <h2 class="font-pixel text-2xl md:text-3xl text-center mb-16 text-white">WHAT TRADERS SAY</h2>
+            <h2 class="font-pixel text-2xl md:text-3xl text-center mb-16 text-white">V2 BETA FEEDBACK</h2>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Testimonial 1 -->
                 <div class="dark-glass p-6 rounded-lg">
                     <div class="flex items-center mb-4">
-                        <div class="h-12 w-12 bg-game-pink rounded-full mr-4 flex items-center justify-center">
-                            <span class="font-pixel text-white">JD</span>
+                        <div class="h-12 w-12 bg-game-orange rounded-full mr-4 flex items-center justify-center">
+                            <span class="font-pixel text-white">TR</span>
                         </div>
                         <div>
-                            <h4 class="font-pixel text-sm text-white">John Doe</h4>
-                            <p class="text-xs text-gray-400">Amateur Trader</p>
+                            <h4 class="font-pixel text-sm text-white">Tom Reynolds</h4>
+                            <p class="text-xs text-gray-400">Beta Tester</p>
                         </div>
                     </div>
-                    <p class="text-gray-300">"Finally I can lose virtual money instead of real money! The pixel art design makes even my losses look cute."</p>
+                    <p class="text-gray-300">"The V2 charts are amazing! I can finally use Bollinger Bands and RSI indicators in my trading strategy."</p>
                     <div class="mt-4 flex">
                         <span class="text-game-gold">★★★★★</span>
                     </div>
@@ -354,14 +357,14 @@
                 <div class="dark-glass p-6 rounded-lg">
                     <div class="flex items-center mb-4">
                         <div class="h-12 w-12 bg-game-blue rounded-full mr-4 flex items-center justify-center">
-                            <span class="font-pixel text-white">JS</span>
+                            <span class="font-pixel text-white">AK</span>
                         </div>
                         <div>
-                            <h4 class="font-pixel text-sm text-white">Jane Smith</h4>
+                            <h4 class="font-pixel text-sm text-white">Alex Kim</h4>
                             <p class="text-xs text-gray-400">Day Trader</p>
                         </div>
                     </div>
-                    <p class="text-gray-300">"BuyHigh.io helped me practice my strategies before using them in the real market. Love the mood pet feature!"</p>
+                    <p class="text-gray-300">"The AI assistant actually gave me some good insights about my trading pattern. I'm losing less virtual money now!"</p>
                     <div class="mt-4 flex">
                         <span class="text-game-gold">★★★★★</span>
                     </div>
@@ -371,16 +374,16 @@
                 <div class="dark-glass p-6 rounded-lg">
                     <div class="flex items-center mb-4">
                         <div class="h-12 w-12 bg-game-green rounded-full mr-4 flex items-center justify-center">
-                            <span class="font-pixel text-white">MK</span>
+                            <span class="font-pixel text-white">SL</span>
                         </div>
                         <div>
-                            <h4 class="font-pixel text-sm text-white">Mark Kim</h4>
-                            <p class="text-xs text-gray-400">Beginner</p>
+                            <h4 class="font-pixel text-sm text-white">Sarah Lee</h4>
+                            <p class="text-xs text-gray-400">Crypto Enthusiast</p>
                         </div>
                     </div>
-                    <p class="text-gray-300">"The best way to learn trading without the stress. The chat rooms are super helpful for getting tips from experienced traders."</p>
+                    <p class="text-gray-300">"Love the new tournament feature! Competing against other traders makes learning so much more fun and engaging."</p>
                     <div class="mt-4 flex">
-                        <span class="text-game-gold">★★★★☆</span>
+                        <span class="text-game-gold">★★★★★</span>
                     </div>
                 </div>
             </div>
@@ -390,8 +393,8 @@
     <!-- CTA Section -->
     <section class="py-20 px-4 animate-gradient">
         <div class="max-w-4xl mx-auto text-center">
-            <h2 class="font-pixel text-2xl md:text-3xl text-white mb-6">READY TO START TRADING?</h2>
-            <p class="font-pixel text-sm md:text-base text-white mb-10">Join thousands of traders in BuyHigh.io today and perfect your trading skills!</p>
+            <h2 class="font-pixel text-2xl md:text-3xl text-white mb-6">TRY VERSION 2 TODAY!</h2>
+            <p class="font-pixel text-sm md:text-base text-white mb-10">Experience the next generation of trading simulation with enhanced features and a vibrant community.</p>
             <a href="/auth/register" class="btn-pixel px-10 py-4 rounded font-pixel text-base bg-white text-gray-900 hover:bg-gray-200 transition-colors inline-block">
                 Create Free Account
             </a>
@@ -406,9 +409,9 @@
                     <div class="h-8 w-8 bg-primary-light rounded-lg flex items-center justify-center">
                         <span class="font-pixel text-white text-xs">B</span>
                     </div>
-                    <span class="font-pixel text-base text-white">BuyHigh.io</span>
+                    <span class="font-pixel text-base text-white">BuyHigh.io <span class="text-xs text-game-orange">V2</span></span>
                 </div>
-                <p class="text-sm">Buy High, Sell Low - The trading game that makes losing virtual money fun.</p>
+                <p class="text-sm">Version 2.0 - The next evolution in virtual trading simulation.</p>
             </div>
             
             <div>
@@ -444,7 +447,7 @@
                         </svg>
                     </a>
                     <a href="#" class="h-10 w-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-primary-light transition-colors">
-                        <svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24"></svg>
+                        <svg class="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
                         </svg>
                     </a>
@@ -454,13 +457,13 @@
         
         <div class="max-w-7xl mx-auto mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
             <p class="text-sm mb-4 md:mb-0">&copy; 2025 BuyHigh.io. All rights reserved.</p>
-            <p class="text-xs font-pixel">Designed with ❤️ for pixel traders</p>
+            <p class="text-xs font-pixel">Version 2.0 - Built with ❤️ for serious traders</p>
         </div>
     </footer>
 
     <!-- Fixed Floating Button -->
     <div class="fixed bottom-8 right-8">
-        <a href="https://stoyse.hackclub.app/auth/login?next=/" class="btn-pixel h-16 w-16 rounded-full bg-game-green text-white flex items-center justify-center shadow-pixel-xl hover:bg-green-600 transition-colors">
+        <a href="https://buy-high-io.vercel.app/login" class="btn-pixel h-16 w-16 rounded-full bg-game-orange text-white flex items-center justify-center shadow-pixel-xl hover:bg-orange-600 transition-colors">
             <span class="font-pixel text-xl">→</span>
         </a>
     </div>

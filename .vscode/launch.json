@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:BuyHigh.io}/AI/CoreMLTester",
+            "name": "Debug CoreMLTester (AI/CoreMLTester)",
+            "program": "${workspaceFolder:BuyHigh.io}/AI/CoreMLTester/.build/debug/CoreMLTester",
+            "preLaunchTask": "swift: Build Debug CoreMLTester (AI/CoreMLTester)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:BuyHigh.io}/AI/CoreMLTester",
+            "name": "Release CoreMLTester (AI/CoreMLTester)",
+            "program": "${workspaceFolder:BuyHigh.io}/AI/CoreMLTester/.build/release/CoreMLTester",
+            "preLaunchTask": "swift: Build Release CoreMLTester (AI/CoreMLTester)"
+        }
+    ]
+}
