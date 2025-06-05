@@ -91,6 +91,7 @@ const Casino = () => {
           darkGradientTo="pink-600/30"
           animationDelay="0.1s"
           hoverRotate="-rotate-1"
+          comingSoon={true}
         >
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-32 h-32 rounded-full border-4 border-red-500 animate-spin-slow relative">
@@ -139,6 +140,7 @@ const Casino = () => {
           darkGradientTo="teal-600/30"
           animationDelay="0.3s"
           hoverRotate="-rotate-1"
+          comingSoon={true}
         >
           <div className="animate-bounce-slow transform rotate-12">
             <span className="text-7xl">🎲</span>
@@ -159,6 +161,7 @@ const Casino = () => {
           darkGradientFrom="blue-600/30"
           darkGradientTo="indigo-600/30"
           animationDelay="0.4s"
+          comingSoon={true}
         >
           <div className="crash-animation">
             <div className="text-6xl">🚀</div>
@@ -178,6 +181,7 @@ const Casino = () => {
           darkGradientTo="rose-600/30"
           animationDelay="0.5s"
           hoverRotate="-rotate-1"
+          comingSoon={true}
         >
           <div className="flex transform rotate-12 blackjack-animation">
             <div className="w-16 h-20 bg-white rounded-lg shadow-lg ml-4 -mr-8 flex items-center justify-center text-4xl">
@@ -217,6 +221,7 @@ interface GameCardProps {
   animationDelay?: string;
   hoverRotate?: string;
   href?: string;
+  comingSoon?: boolean;
   children: React.ReactNode;
 }
 
@@ -233,14 +238,30 @@ const GameCard: React.FC<GameCardProps> = ({
   animationDelay,
   hoverRotate = "rotate-1",
   href = "#",
+  comingSoon = false,
   children 
 }) => {
+  const handleClick = (e: React.MouseEvent) => {
+    if (comingSoon) {
+      e.preventDefault();
+      return;
+    }
+  };
+
   return (
     <div 
-      className={`game-card glass-card rounded-xl overflow-hidden border-2 border-${borderColor} hover:border-pink-500 transition-all duration-300 hover:scale-105 hover:${hoverRotate} hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] animate-blur-in bg-gradient-to-br from-${gradientFrom} to-${gradientTo} dark:from-${darkGradientFrom} dark:to-${darkGradientTo}`}
+      className={`relative game-card glass-card rounded-xl overflow-hidden border-2 border-${borderColor} hover:border-pink-500 transition-all duration-300 hover:scale-105 hover:${hoverRotate} hover:shadow-[0_0_30px_rgba(236,72,153,0.5)] animate-blur-in bg-gradient-to-br from-${gradientFrom} to-${gradientTo} dark:from-${darkGradientFrom} dark:to-${darkGradientTo} ${
+        comingSoon ? 'opacity-50 cursor-not-allowed' : ''
+      }`}
       style={{ animationDelay }}
+      title={comingSoon ? 'Coming Soon' : ''}
     >
-      <a href={href} className="block h-full">
+      {comingSoon && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-gray-900 bg-opacity-85 rounded-xl">
+          <span className="text-white text-xl font-bold">Coming Soon</span>
+        </div>
+      )}
+      <a href={comingSoon ? undefined : href} className={`block h-full ${comingSoon ? 'pointer-events-none' : ''}`} onClick={handleClick}>
         <div className="relative h-48 overflow-hidden flex justify-center items-center bg-black/20">
           {children}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
@@ -249,8 +270,10 @@ const GameCard: React.FC<GameCardProps> = ({
         </div>
         <div className="p-5 text-center">
           <p className="mb-4 text-gray-700 dark:text-gray-300">{description}</p>
-          <div className={`neo-button text-${buttonColor}-400 bg-${buttonColor}-900/30 hover:bg-${buttonColor}-400 hover:text-black border border-${buttonColor}-400/50 p-2 rounded-lg font-bold`}>
-            {buttonText}
+          <div className={`neo-button text-${buttonColor}-400 bg-${buttonColor}-900/30 hover:bg-${buttonColor}-400 hover:text-black border border-${buttonColor}-400/50 p-2 rounded-lg font-bold ${
+            comingSoon ? 'opacity-50' : ''
+          }`}>
+            {comingSoon ? 'Coming Soon' : buttonText}
           </div>
         </div>
       </a>
