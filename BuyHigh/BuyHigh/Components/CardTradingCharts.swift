@@ -9,6 +9,7 @@ import SwiftUI
 import WebKit
 
 struct CardTradingCharts: View {
+    let stock: String
     var body: some View {
         WebView(htmlContent: tradingViewHTML)
             .edgesIgnoringSafeArea(.all)
