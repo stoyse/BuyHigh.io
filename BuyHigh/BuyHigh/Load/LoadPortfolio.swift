@@ -52,7 +52,7 @@ class PortfolioLoader: ObservableObject {
         @Published var portfolio: [Portfolio] = [] {
             didSet {
                 print("PortfolioLoader: portfolio property was updated.")
-                print("PortfolioLoader: New portfolio count: \\(portfolio.count)")
+                print("PortfolioLoader: New portfolio count: \(portfolio.count)")
                 if let _ = portfolio.first { // Replaced firstItem with _
                     // If you need to use the first item, you can assign it here
                     // e.g., let firstSymbol = portfolio.first?.symbol
@@ -132,9 +132,9 @@ class PortfolioLoader: ObservableObject {
 
                     do {
                         let decodedResponse = try JSONDecoder().decode(PortfolioResponse.self, from: data)
-                        print("TransactionLoader: Decoded response - success: \\(decodedResponse.success)")
+                        print("TransactionLoader: Decoded response - success: \(decodedResponse.success)")
                         // portfolio ist nicht optional, daher ist ?? 0 nicht nötig
-                        print("TransactionLoader: Number of transactions: \\(decodedResponse.portfolio.count)")
+                        print("TransactionLoader: Number of transactions: \(decodedResponse.portfolio.count)")
                         
                         if decodedResponse.success {
                             // portfolio ist nicht optional, daher ist ?? [] nicht nötig

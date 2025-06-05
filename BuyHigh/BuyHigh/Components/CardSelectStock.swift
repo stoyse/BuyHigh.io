@@ -1,0 +1,303 @@
+import SwiftUI
+import Foundation
+import Combine
+
+struct CardSelectStock: View {
+    @StateObject private var assetLoader: AssetLoader
+    @Binding var selectedSymbol: String?
+    @State private var selectedAsset: Asset?
+    private let authManager: AuthManager
+    
+    init(selectedSymbol: Binding<String?>, authManager: AuthManager) {
+        self._selectedSymbol = selectedSymbol
+        self._assetLoader = StateObject(wrappedValue: AssetLoader(authManager: authManager))
+        self.authManager = authManager
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            headerView
+            contentView
+            selectedAssetView
+        }
+        .onAppear {
+            assetLoader.loadAssets()
+        }
+    }
+    
+    private var headerView: some View {
+        Text("Select an Asset")
+            .font(.title2)
+            .fontWeight(.bold)
+            .padding(.horizontal)
+    }
+    
+    @ViewBuilder
+    private var contentView: some View {
+        if assetLoader.isLoading {
+            loadingView
+        } else if let errorMessage = assetLoader.errorMessage {
+            errorView(errorMessage)
+        } else if assetLoader.assets.isEmpty {
+            emptyView
+        } else {
+            assetsGridView
+        }
+    }
+    
+    private var loadingView: some View {
+        HStack {
+            Spacer()
+            ProgressView("Loading assets...")
+                .foregroundColor(.secondary)
+            Spacer()
+        }
+        .padding()
+    }
+    
+    private func errorView(_ message: String) -> some View {
+        VStack {
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundColor(.orange)
+                .font(.title2)
+            Text(message)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+            Button("Retry") {
+                assetLoader.loadAssets()
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
+    }
+    
+    private var emptyView: some View {
+        VStack {
+            Image(systemName: "tray")
+                .foregroundColor(.secondary)
+                .font(.title2)
+            Text("No assets available")
+                .foregroundColor(.secondary)
+        }
+        .padding()
+    }
+    
+    private var assetsGridView: some View {
+        ScrollView {
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: 12) {
+                ForEach(assetLoader.assets) { asset in
+                    AssetCard(
+                        asset: asset,
+                        isSelected: selectedAsset?.id == asset.id,
+                        onTap: {
+                            selectAsset(asset)
+                        }
+                    )
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+    
+    @ViewBuilder
+    private var selectedAssetView: some View {
+        if let selectedAsset = selectedAsset {
+            VStack(alignment: .leading, spacing: 8) {
+                Divider()
+                
+                HStack {
+                    selectedAssetInfoView(selectedAsset)
+                    Spacer()
+                    selectedAssetPriceView(selectedAsset)
+                }
+            }
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(12)
+            .padding(.horizontal)
+        }
+    }
+    
+    private func selectedAssetInfoView(_ asset: Asset) -> some View {
+        VStack(alignment: .leading) {
+            Text("Selected Asset")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            Text(asset.name)
+                .font(.headline)
+            Text(asset.symbol)
+                .font(.subheadline)
+                .foregroundColor(.blue)
+        }
+    }
+    
+    private func selectedAssetPriceView(_ asset: Asset) -> some View {
+        VStack(alignment: .trailing) {
+            Text("Price")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            
+            Text("$\(asset.default_price, specifier: "%.2f")")
+                .font(.headline)
+                .foregroundColor(.primary)
+        }
+    }
+    
+    private func selectAsset(_ asset: Asset) {
+        selectedAsset = asset
+        selectedSymbol = asset.symbol
+    }
+}
+
+struct AssetCard: View {
+    let asset: Asset
+    let isSelected: Bool
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            cardContent
+                .padding()
+                .frame(height: 120)
+                .background(cardBackground)
+                .overlay(cardBorder)
+                .cornerRadius(12)
+                .shadow(color: .black.opacity(0.1), radius: isSelected ? 4 : 2, x: 0, y: isSelected ? 2 : 1)
+                .scaleEffect(isSelected ? 1.02 : 1.0)
+                .animation(.easeInOut(duration: 0.2), value: isSelected)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private var cardContent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            headerView
+            assetNameView
+            Spacer()
+            bottomView
+        }
+    }
+    
+    private var headerView: some View {
+        HStack {
+            symbolView
+            Spacer()
+            assetTypeTag
+        }
+    }
+    
+    private var symbolView: some View {
+        Text(asset.symbol)
+            .font(.headline)
+            .fontWeight(.bold)
+            .foregroundColor(isSelected ? .white : .primary)
+    }
+    
+    private var assetTypeTag: some View {
+        Text(assetTypeDisplayName)
+            .font(.caption)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(assetTypeColor.opacity(0.2))
+            .foregroundColor(isSelected ? .white : assetTypeColor)
+            .cornerRadius(8)
+    }
+    
+    private var assetNameView: some View {
+        Text(asset.name)
+            .font(.subheadline)
+            .foregroundColor(isSelected ? .white.opacity(0.9) : .secondary)
+            .lineLimit(2)
+            .multilineTextAlignment(.leading)
+    }
+    
+    private var bottomView: some View {
+        HStack {
+            priceView
+            Spacer()
+            selectionIndicator
+        }
+    }
+    
+    @ViewBuilder
+    private var selectionIndicator: some View {
+        if isSelected {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.white)
+                .font(.title3)
+        }
+    }
+    
+    private var cardBackground: Color {
+        isSelected ? Color.blue : Color.white
+    }
+    
+    private var cardBorder: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .stroke(isSelected ? Color.blue : Color.gray.opacity(0.3), lineWidth: isSelected ? 2 : 1)
+    }
+    
+    private var priceView: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            priceText
+            priceLabel
+        }
+    }
+    
+    private var priceText: some View {
+        Text("$\(asset.default_price, specifier: "%.2f")")
+            .font(.title3)
+            .fontWeight(.semibold)
+            .foregroundColor(isSelected ? .white : .primary)
+    }
+    
+    private var priceLabel: some View {
+        Text("Default")
+            .font(.caption2)
+            .foregroundColor(isSelected ? .white.opacity(0.8) : .gray)
+    }
+    
+    private var assetTypeDisplayName: String {
+        switch asset.asset_type.lowercased() {
+        case "stock":
+            return "Stock"
+        case "index":
+            return "Index"
+        case "crypto":
+            return "Crypto"
+        case "forex":
+            return "Forex"
+        default:
+            return asset.asset_type.capitalized
+        }
+    }
+    
+    private var assetTypeColor: Color {
+        switch asset.asset_type.lowercased() {
+        case "stock":
+            return .blue
+        case "index":
+            return .purple
+        case "crypto":
+            return .orange
+        case "forex":
+            return .green
+        default:
+            return .gray
+        }
+    }
+}
+
+// Preview
+struct CardSelectStock_Previews: PreviewProvider {
+    @State static var selectedSymbol: String? = nil
+    
+    static var previews: some View {
+        let previewAuthManager = AuthManager()
+        CardSelectStock(selectedSymbol: $selectedSymbol, authManager: previewAuthManager)
+            .padding()
+    }
+}

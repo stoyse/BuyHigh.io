@@ -21,7 +21,7 @@ struct ContentView: View {
                     case .dashboard:
                         ViewDashboard(authManager: authManager)
                     case .trade:
-                        ViewTrade()
+                        ViewTrade(authManager: authManager)
                     case .game:
                         ViewGame()
                     case .learn:

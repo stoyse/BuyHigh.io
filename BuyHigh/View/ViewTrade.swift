@@ -8,24 +8,41 @@
 import SwiftUI
 
 struct ViewTrade: View {
-    @State private var selectedPage: NavBarPage = .trade
+    @State private var selectedSymbol: String?
+    var authManager: AuthManager
+    
     var body: some View {
         VStack(spacing: 0) {
-            VStack {
-                Image(systemName: "chart.bar")
-                    .imageScale(.large)
-                    .foregroundStyle(.tint)
-                Text("Start Trading!")
-                CardTradingCharts()
-                Spacer()
+            ScrollView {
+                VStack {
+                    CardSelectStock(selectedSymbol: $selectedSymbol, authManager: authManager)
+                    
+                    if let symbol = selectedSymbol {
+                        VStack {
+                            Text("Selected Asset: \(symbol)")
+                                .font(.headline)
+                                .foregroundColor(.blue)
+                                .padding()
+                            
+                            // Hier kannst du später deinen Chart hinzufügen
+                            Text("Chart für \(symbol) wird hier angezeigt")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .padding()
+                                .background(Color(.systemGray6))
+                                .cornerRadius(8)
+                        }
+                        .padding()
+                    }
+                    
+                    Spacer()
+                }
             }
             .padding()
-            //NavBar(selectedPage: $selectedPage)
         }
-
     }
 }
 
 #Preview {
-    ViewTrade()
+    ViewTrade(authManager: AuthManager())
 }

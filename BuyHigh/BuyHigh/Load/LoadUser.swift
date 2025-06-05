@@ -105,14 +105,14 @@ class UserLoader: ObservableObject {
 
 
                 guard (200...299).contains(httpResponse.statusCode) else {
-                    var detailMessage = "Server error: \\(httpResponse.statusCode)."
+                    var detailMessage = "Server error: \(httpResponse.statusCode)."
                     // Original: if let data = data, let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data), let detail = errorResponse.detail {
                     //      detailMessage += " Details: \\(detail)"
                     // }
                     // Adressiert Warnung für Zeile 84
                     if let data = data, let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
                         if let detailValue = errorResponse.detail { // Used detailValue directly
-                             detailMessage += " Details: \\(detailValue)"
+                             detailMessage += " Details: \(detailValue)"
                         }
                     // Original: } else if let data = data, let responseString = String(data: data, encoding: .utf8) {
                     //     detailMessage += " Response: \\(responseString)"
@@ -120,7 +120,7 @@ class UserLoader: ObservableObject {
                     // Adressiert Warnung für Zeile 86
                     } else if let data = data {
                         if let str = String(data: data, encoding: .utf8) { // Used str directly
-                            detailMessage += " Response: \\(str)"
+                            detailMessage += " Response: \(str)"
                         }
                     }
                     self.errorMessage = detailMessage
