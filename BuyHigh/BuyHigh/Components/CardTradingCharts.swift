@@ -11,7 +11,7 @@ import WebKit
 struct CardTradingCharts: View {
     let stock: String
     var body: some View {
-        WebView(htmlContent: tradingViewHTML)
+        WebView(htmlContent: generateTradingViewHTML(for: stock))
             .edgesIgnoringSafeArea(.all)
     }
 }
@@ -30,7 +30,8 @@ struct WebView: UIViewRepresentable {
     }
 }
 
-let tradingViewHTML = """
+func generateTradingViewHTML(for symbol: String) -> String {
+    return """
 <!DOCTYPE html>
 <html>
   <head>
@@ -55,9 +56,7 @@ let tradingViewHTML = """
       <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
       {
         "symbols": [
-          ["Apple", "AAPL|1D"],
-          ["Google", "GOOGL|1D"],
-          ["Microsoft", "MSFT|1D"]
+          ["\(symbol)", "\(symbol)|1D"]
         ],
         "chartOnly": false,
         "width": "100%",
@@ -71,11 +70,12 @@ let tradingViewHTML = """
   </body>
 </html>
 """
-
-struct TradingViewWidgetApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
+    
+    struct TradingViewWidgetApp: App {
+        var body: some Scene {
+            WindowGroup {
+                ContentView()
+            }
         }
     }
 }

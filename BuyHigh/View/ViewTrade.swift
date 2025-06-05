@@ -23,13 +23,9 @@ struct ViewTrade: View {
                                 .font(.headline)
                                 .foregroundColor(.blue)
                                 .padding()
-                            
-                            // Hier kannst du später deinen Chart hinzufügen
-                            Text("Chart für \(symbol) wird hier angezeigt")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .padding()
-                                .background(Color(.systemGray6))
+                            Text(symbol)
+                            CardTradingCharts(stock: symbol)
+                                .frame(height: 400)
                                 .cornerRadius(8)
                         }
                         .padding()
