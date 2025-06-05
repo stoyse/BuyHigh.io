@@ -1,9 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import { GetAssets, GetStockData, BuyStock, SellStock } from '../../apiService';
-import ReactApexChart from 'react-apexcharts';
+import React, { useState, useEffect, useRef, memo } from 'react';
+import { GetAssets, BuyStock, SellStock } from '../../apiService';
 import BaseLayout from '../../components/Layout/BaseLayout';
 
 import './Trade.css';
+
+// TradingView Widget Component
+interface TradingViewWidgetProps {
+  symbol: string;
+}
+
+const TradingViewWidget: React.FC<TradingViewWidgetProps> = memo(({ symbol }) => {
+  const container = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!container.current) return;
+    
+    // Clear previous widget
+    container.current.innerHTML = '';
+    
+    const script = document.createElement("script");
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    script.type = "text/javascript";
+    script.async = true;
+    script.innerHTML = `
+      {
+        "autosize": true,
+        "symbol": "NASDAQ:${symbol}",
+        "interval": "D",
+        "timezone": "Etc/UTC",
+        "theme": "dark",
+        "style": "1",
+        "locale": "en",
+        "allow_symbol_change": true,
+        "support_host": "https://www.tradingview.com"
+      }`;
+    container.current.appendChild(script);
+  }, [symbol]);
+
+  return (
+    <div className="tradingview-widget-container" ref={container} style={{ height: "100%", width: "100%" }}>
+      <div className="tradingview-widget-container__widget" style={{ height: "calc(100% - 32px)", width: "100%" }}></div>
+      <div className="tradingview-widget-copyright">
+        <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+          <span className="blue-text">Track all markets on TradingView</span>
+        </a>
+      </div>
+    </div>
+  );
+});
+
+TradingViewWidget.displayName = 'TradingViewWidget';
 
 interface Stock {
   id: string;
@@ -14,26 +60,10 @@ interface Stock {
   currency?: string;
 }
 
-interface CandlestickData {
-  x: number; // Timestamp
-  y: [number, number, number, number]; // open, high, low, close
-}
-
-interface StockDataItem {
-  date: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-  currency: string;
-}
-
 const Trade: React.FC = () => {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [timeframe, setTimeframe] = useState<string>('1d');
-  const [chartData, setChartData] = useState<CandlestickData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [prevPrices, setPrevPrices] = useState<{[key: string]: number}>({});
@@ -112,49 +142,6 @@ const Trade: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const fetchChartData = async () => {
-      if (!selectedStock) return;
-
-      try {
-        setLoading(true);
-        const data = await GetStockData(selectedStock.symbol, timeframe);
-        
-        let chartDataArray = Array.isArray(data) ? data : (data?.data || []);
-        
-        console.log("Received chart data:", chartDataArray[0]);
-        
-        const formattedData = chartDataArray
-          .map((item: StockDataItem) => {
-            const timestamp = item.date ? new Date(item.date).getTime() : null;
-            
-            if (timestamp === null) return null;
-            
-            return {
-              x: timestamp, 
-              y: [
-                typeof item.open === 'number' ? item.open : parseFloat(String(item.open)) || 0,
-                typeof item.high === 'number' ? item.high : parseFloat(String(item.high)) || 0,
-                typeof item.low === 'number' ? item.low : parseFloat(String(item.low)) || 0,
-                typeof item.close === 'number' ? item.close : parseFloat(String(item.close)) || 0
-              ]
-            } as CandlestickData;
-          })
-          .filter((item: CandlestickData | null): item is CandlestickData => item !== null);
-        
-        console.log(`${formattedData.length} data points formatted for chart`);
-        setChartData(formattedData);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching chart data:', err);
-        setError('Error loading chart data');
-        setLoading(false);
-      }
-    };
-
-    fetchChartData();
-  }, [selectedStock, timeframe]);
-
-  useEffect(() => {
     const newPriceChanges: {[key: string]: string} = {};
     const newPrices: {[key: string]: number} = {};
     
@@ -231,100 +218,6 @@ const Trade: React.FC = () => {
     if (isNaN(numericPercentage)) return 'N/A';
     
     return `${numericPercentage >= 0 ? '+' : ''}${numericPercentage.toFixed(2)}%`;
-  };
-
-  const chartOptions = {
-    chart: {
-      type: 'candlestick',
-      height: 500,
-      background: '#f8f9fa',
-      animations: {
-        enabled: false
-      },
-      toolbar: {
-        show: true,
-        tools: {
-          download: true,
-          selection: true,
-          zoom: true,
-          zoomin: true,
-          zoomout: true,
-          pan: true,
-          reset: true
-        }
-      }
-    },
-    title: {
-      text: selectedStock ? `${selectedStock.name} (${selectedStock.symbol})` : 'Stock Chart',
-      align: 'left'
-    },
-    xaxis: {
-      type: 'datetime',
-      labels: {
-        datetimeUTC: false,
-        format: 'dd MMM yyyy'
-      },
-      tickAmount: 10
-    },
-    yaxis: {
-      tooltip: {
-        enabled: true
-      },
-      labels: {
-        formatter: function(value: number) {
-          return value.toFixed(2);
-        }
-      },
-      forceNiceScale: true,
-      tickAmount: 8
-    },
-    tooltip: {
-      enabled: true,
-      x: {
-        format: 'dd MMM yyyy HH:mm'
-      },
-      y: {
-        formatter: function(value: number) {
-          return `$${value.toFixed(2)}`;
-        }
-      }
-    },
-    plotOptions: {
-      candlestick: {
-        colors: {
-          upward: '#0cac6e',
-          downward: '#d32f2f'
-        },
-        wick: {
-          useFillColor: true
-        }
-      }
-    },
-    grid: {
-      borderColor: '#f1f1f1',
-      row: {
-        colors: ['transparent', 'transparent'],
-        opacity: 0.2
-      }
-    },
-    responsive: [
-      {
-        breakpoint: 1000,
-        options: {
-          chart: {
-            height: 400
-          }
-        }
-      },
-      {
-        breakpoint: 600,
-        options: {
-          chart: {
-            height: 300
-          }
-        }
-      }
-    ]
   };
 
   const handleStockSelect = (stock: Stock) => {
@@ -445,59 +338,17 @@ const Trade: React.FC = () => {
                 </div>
               </div>
               
-              {loading && selectedStock ? (
-                <div className="chart-loading">
-                  <div className="loader"></div>
-                  <p className="mt-3 text-gray-500 dark:text-gray-400">Loading chart data...</p>
+              {selectedStock ? (
+                <div className="chart-container" style={{ height: "500px" }}>
+                  <TradingViewWidget symbol={selectedStock.symbol} />
                 </div>
               ) : (
-                chartData.length > 0 ? (
-                  <div className="chart-container dark:bg-gray-800/70">
-                    <ReactApexChart
-                      options={{
-                        ...chartOptions,
-                        theme: {
-                          mode: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
-                        },
-                        chart: {
-                          ...chartOptions.chart,
-                          background: document.documentElement.classList.contains('dark') ? '#1f2937' : '#f8f9fa',
-                        },
-                        grid: {
-                          borderColor: document.documentElement.classList.contains('dark') ? '#374151' : '#f1f1f1',
-                        },
-                        xaxis: {
-                          ...chartOptions.xaxis,
-                          labels: {
-                            ...chartOptions.xaxis.labels,
-                            style: {
-                              colors: document.documentElement.classList.contains('dark') ? '#d1d5db' : '#4b5563',
-                            }
-                          },
-                        },
-                        yaxis: {
-                          ...chartOptions.yaxis,
-                          labels: {
-                            ...chartOptions.yaxis.labels,
-                            style: {
-                              colors: document.documentElement.classList.contains('dark') ? '#d1d5db' : '#4b5563',
-                            }
-                          },
-                        }
-                      } as any}
-                      series={[{ data: chartData }]}
-                      type="candlestick"
-                      height={500}
-                    />
-                  </div>
-                ) : (
-                  <div className="no-data dark:text-gray-400">
-                    <svg className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <p>No data available for {selectedStock?.symbol || 'the selected stock'}</p>
-                  </div>
-                )
+                <div className="no-data dark:text-gray-400">
+                  <svg className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <p>Please select a stock to view the chart</p>
+                </div>
               )}
             </div>
 
@@ -618,6 +469,15 @@ const Trade: React.FC = () => {
             )}
           </div>
         </div>
+
+        {selectedStock && (
+          <div className="tradingview-widget-section mt-8">
+            <h2 className="gradient-text text-xl mb-4">TradingView Chart</h2>
+            <div className="tradingview-widget-container glass-card dark:bg-gray-800/40 dark:border-gray-700/30">
+              <TradingViewWidget symbol={selectedStock.symbol} />
+            </div>
+          </div>
+        )}
       </div>
     </BaseLayout>
   );
