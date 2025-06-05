@@ -10,12 +10,18 @@ import SwiftUI
 struct ViewTrade: View {
     @State private var selectedSymbol: String?
     var authManager: AuthManager
+    @StateObject private var stockLoader: StockDataLoader
+    
+    init(authManager: AuthManager) {
+        self.authManager = authManager
+        self._stockLoader = StateObject(wrappedValue: StockDataLoader(authManager: authManager))
+    }
     
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack {
-                    CardSelectStock(selectedSymbol: $selectedSymbol, authManager: authManager)
+                    CardSelectStock(selectedSymbol: $selectedSymbol, authManager: authManager, stockLoader: stockLoader)
                     
                     if let symbol = selectedSymbol {
                         VStack {

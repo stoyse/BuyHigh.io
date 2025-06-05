@@ -7,12 +7,14 @@ struct CardSelectStock: View {
     @Binding var selectedSymbol: String?
     @State private var selectedAsset: Asset?
     @State private var searchText: String = ""
+    @ObservedObject var stockLoader: StockDataLoader
     private let authManager: AuthManager
     
-    init(selectedSymbol: Binding<String?>, authManager: AuthManager) {
+    init(selectedSymbol: Binding<String?>, authManager: AuthManager, stockLoader: StockDataLoader) {
         self._selectedSymbol = selectedSymbol
         self._assetLoader = StateObject(wrappedValue: AssetLoader(authManager: authManager))
         self.authManager = authManager
+        self.stockLoader = stockLoader
     }
     
     var body: some View {
@@ -118,6 +120,7 @@ struct CardSelectStock: View {
                     AssetCard(
                         asset: asset,
                         isSelected: selectedAsset?.id == asset.id,
+                        stockLoader: stockLoader,
                         onTap: {
                             selectAsset(asset)
                         }
@@ -177,21 +180,39 @@ struct CardSelectStock: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
             
-            Text("$\(asset.default_price, specifier: "%.2f")")
-                .font(.headline)
-                .foregroundColor(.primary)
+            // Display currentPrice from stockLoader if it matches the selected asset
+            // The actual loading is triggered in .onAppear of this view or when an asset is selected
+            if selectedAsset?.symbol == asset.symbol, let price = stockLoader.currentPrice {
+                Text("$\(price, specifier: "%.2f")")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+            } else {
+                Text("Loading...")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                    .onAppear {
+                        // Trigger loading when this view appears for the specific asset,
+                        // but only if it's the currently selected one.
+                        if selectedAsset?.symbol == asset.symbol {
+                            stockLoader.loadCurrentPrice(symbol: asset.symbol)
+                        }
+                    }
+            }
         }
     }
     
     private func selectAsset(_ asset: Asset) {
         selectedAsset = asset
         selectedSymbol = asset.symbol
+        // Load stock data (current price) for the newly selected asset
+        stockLoader.loadCurrentPrice(symbol: asset.symbol)
     }
 }
 
 struct AssetCard: View {
     let asset: Asset
     let isSelected: Bool
+    @ObservedObject var stockLoader: StockDataLoader
     let onTap: () -> Void
     
     var body: some View {
@@ -285,14 +306,29 @@ struct AssetCard: View {
     }
     
     private var priceText: some View {
-        Text("$\(asset.default_price, specifier: "%.2f")")
+        // Check if we have live price data for this specific asset
+        let priceValue = if let currentPrice = stockLoader.getCurrentPrice(for: asset.symbol) {
+            currentPrice
+        } else {
+            asset.default_price
+        }
+        
+        return Text("$\(priceValue, specifier: "%.2f")")
             .font(.title3)
             .fontWeight(.semibold)
             .foregroundColor(isSelected ? .white : .primary)
+            .onAppear {
+                // Load current price for this asset when the card appears
+                if !stockLoader.hasLoadedData(for: asset.symbol) {
+                    stockLoader.loadCurrentPrice(symbol: asset.symbol)
+                }
+            }
     }
     
     private var priceLabel: some View {
-        Text("Default")
+        // Show "Live" if we have current price data for this specific asset, otherwise "Default"
+        let labelText = stockLoader.hasLoadedData(for: asset.symbol) ? "Live" : "Default"
+        return Text(labelText)
             .font(.caption2)
             .foregroundColor(isSelected ? .white.opacity(0.8) : .gray)
     }
@@ -334,7 +370,8 @@ struct CardSelectStock_Previews: PreviewProvider {
     
     static var previews: some View {
         let previewAuthManager = AuthManager()
-        CardSelectStock(selectedSymbol: $selectedSymbol, authManager: previewAuthManager)
-            .padding()
+        // Create a StockDataLoader instance for the preview
+        let previewStockLoader = StockDataLoader(authManager: previewAuthManager)
+        CardSelectStock(selectedSymbol: $selectedSymbol, authManager: previewAuthManager, stockLoader: previewStockLoader)
     }
 }

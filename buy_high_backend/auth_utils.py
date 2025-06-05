@@ -11,7 +11,7 @@ from utils import auth as auth_module
 # In a real app, this would come from config
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 52560000 # 100 years
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login") # Adjusted to new login path
 

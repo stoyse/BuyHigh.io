@@ -35,6 +35,7 @@ struct StockDataResponse: Codable {
 class StockDataLoader: ObservableObject {
     @Published var stockData: [StockDataPoint] = []
     @Published var currentPrice: Double? = nil
+    @Published var pricesBySymbol: [String: Double] = [:]
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
     
@@ -116,10 +117,11 @@ class StockDataLoader: ObservableObject {
                         print("StockDataLoader: Decoded direct array - Number of data points: \(decodedStockData.count)")
                         self.stockData = decodedStockData
                         
-                        // Set current price to the latest close price
+                        // Set current price to the latest close price and store it by symbol
                         if let latestDataPoint = decodedStockData.last {
                             self.currentPrice = latestDataPoint.close
-                            print("StockDataLoader: Current price set to: \(latestDataPoint.close)")
+                            self.pricesBySymbol[symbol] = latestDataPoint.close
+                            print("StockDataLoader: Current price for \(symbol) set to: \(latestDataPoint.close)")
                         }
                     } else {
                         // Fallback: Try to decode as wrapped response (if API returns error with wrapped format)
@@ -130,7 +132,8 @@ class StockDataLoader: ObservableObject {
                             self.stockData = stockDataPoints
                             if let latestDataPoint = stockDataPoints.last {
                                 self.currentPrice = latestDataPoint.close
-                                print("StockDataLoader: Current price set to: \(latestDataPoint.close)")
+                                self.pricesBySymbol[symbol] = latestDataPoint.close
+                                print("StockDataLoader: Current price for \(symbol) set to: \(latestDataPoint.close)")
                             }
                         } else {
                             print("StockDataLoader: Server returned failure: \(decodedResponse.message ?? "No message")")
@@ -148,5 +151,15 @@ class StockDataLoader: ObservableObject {
     // Convenience function to load just the current price (uses minimal timeframe)
     func loadCurrentPrice(symbol: String) {
         loadStockData(symbol: symbol, timeframe: "1W", fresh: true)
+    }
+    
+    // Get the current price for a specific symbol
+    func getCurrentPrice(for symbol: String) -> Double? {
+        return pricesBySymbol[symbol]
+    }
+    
+    // Check if we have loaded data for a specific symbol
+    func hasLoadedData(for symbol: String) -> Bool {
+        return pricesBySymbol[symbol] != nil
     }
 }
