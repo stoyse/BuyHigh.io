@@ -469,15 +469,6 @@ const Trade: React.FC = () => {
             )}
           </div>
         </div>
-
-        {selectedStock && (
-          <div className="tradingview-widget-section mt-8">
-            <h2 className="gradient-text text-xl mb-4">TradingView Chart</h2>
-            <div className="tradingview-widget-container glass-card dark:bg-gray-800/40 dark:border-gray-700/30">
-              <TradingViewWidget symbol={selectedStock.symbol} />
-            </div>
-          </div>
-        )}
       </div>
     </BaseLayout>
   );
