@@ -154,6 +154,7 @@ async def api_google_login(request_data: GoogleLoginRequest):
     try:
         id_token = request_data.id_token
         logger.debug(f"Received Google ID token: {id_token[:30]}...") # Log only a part of the token
+        logger.info(f"AUTH_ROUTER: Processing Google login with token length: {len(id_token)}")
 
         decoded_token = auth_module.verify_google_id_token(id_token)
         if not decoded_token:
@@ -167,6 +168,7 @@ async def api_google_login(request_data: GoogleLoginRequest):
         # picture = decoded_token.get('picture')
 
         logger.info(f"Google token verified. Firebase UID: {firebase_uid}, Email: {email}")
+        logger.info(f"AUTH_ROUTER: Decoded token data - UID: {firebase_uid}, Email: {email}, Username: {username}")
 
         local_user = db_handler.get_user_by_firebase_uid(firebase_uid)
         if not local_user:
@@ -198,7 +200,7 @@ async def api_google_login(request_data: GoogleLoginRequest):
         # The client already has the ID token from Google Sign-In.
         # This token can be used to authenticate with Firebase client-side services.
         # We return local user details and the Firebase UID.
-        return {
+        response_data = {
             "success": True,
             "message": "Google login successful.",
             "userId": local_user['id'], # Local DB user ID
@@ -207,6 +209,9 @@ async def api_google_login(request_data: GoogleLoginRequest):
             "username": local_user['username'],
             "id_token": id_token # Return the original Google ID token, client can use this with Firebase
         }
+        
+        logger.info(f"AUTH_ROUTER: Google login response data: {response_data}")
+        return response_data
 
     except ValueError as ve:
         logger.warning(f"Google login value error: {ve}")

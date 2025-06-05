@@ -242,15 +242,27 @@ export const fetchFunnyTips = async () => {
 
 export const GetUserInfo = async (userId: string) => {
   logApiCall('GET', `/user/${userId}`);
+  
+  console.log('API_SERVICE: Making GetUserInfo request for userId:', userId);
+  const authHeader = axios.defaults.headers.common['Authorization'];
+  console.log('API_SERVICE: Current Authorization header:', typeof authHeader === 'string' ? authHeader.substring(0, 50) + '...' : 'No Authorization header');
+  
   try {
     const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
       withCredentials: true,
     });
     logDebug('User Info Response:', response.data);
+    console.log('API_SERVICE: GetUserInfo successful for userId:', userId);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('Error fetching user info:', error.response?.data || error.message);
+      console.error('API_SERVICE: GetUserInfo failed for userId:', userId, 'Status:', error.response?.status);
+      console.error('API_SERVICE: GetUserInfo error details:', error.response?.data || error.message);
+      if (error.response?.status === 401) {
+        console.error('API_SERVICE: 401 Unauthorized - Token may be invalid or expired');
+        const currentAuthHeader = axios.defaults.headers.common['Authorization'];
+        console.error('API_SERVICE: Current token preview:', typeof currentAuthHeader === 'string' ? currentAuthHeader.substring(0, 50) + '...' : 'No token');
+      }
     } else {
       console.error('Unexpected error:', error);
     }
@@ -425,16 +437,28 @@ export const GetAssets = async (type?: string, activeOnly: boolean = true) => {
 export const GetStockData = async (symbol: string, timeframe: string) => {
   const params = { symbol, timeframe };
   logApiCall('GET', '/stock-data', params);
+  
+  console.log('API_SERVICE: Making GetStockData request for:', symbol, timeframe);
+  const authHeader = axios.defaults.headers.common['Authorization'];
+  console.log('API_SERVICE: Current Authorization header:', typeof authHeader === 'string' ? authHeader.substring(0, 50) + '...' : 'No Authorization header');
+  
   try {
     const response = await axios.get(`${API_BASE_URL}/stock-data`, {
       params,
       withCredentials: true,
     });
     logDebug('Stock Data Response:', { symbol, timeframe, dataPoints: response.data.length });
+    console.log('API_SERVICE: GetStockData successful, received', response.data.length, 'data points');
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.error('Error fetching stock data:', error.response?.data || error.message);
+      console.error('API_SERVICE: GetStockData failed with status:', error.response?.status);
+      console.error('API_SERVICE: GetStockData error details:', error.response?.data || error.message);
+      if (error.response?.status === 401) {
+        console.error('API_SERVICE: 401 Unauthorized - Token may be invalid or expired');
+        const currentAuthHeader = axios.defaults.headers.common['Authorization'];
+        console.error('API_SERVICE: Current token preview:', typeof currentAuthHeader === 'string' ? currentAuthHeader.substring(0, 50) + '...' : 'No token');
+      }
     } else {
       console.error('Unexpected error:', error);
     }

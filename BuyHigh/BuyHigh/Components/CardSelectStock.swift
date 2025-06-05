@@ -6,6 +6,7 @@ struct CardSelectStock: View {
     @StateObject private var assetLoader: AssetLoader
     @Binding var selectedSymbol: String?
     @State private var selectedAsset: Asset?
+    @State private var searchText: String = ""
     private let authManager: AuthManager
     
     init(selectedSymbol: Binding<String?>, authManager: AuthManager) {
@@ -17,6 +18,7 @@ struct CardSelectStock: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             headerView
+            searchBar
             contentView
             selectedAssetView
         }
@@ -30,6 +32,30 @@ struct CardSelectStock: View {
             .font(.title2)
             .fontWeight(.bold)
             .padding(.horizontal)
+    }
+    
+    private var searchBar: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(.secondary)
+            
+            TextField("Search assets...", text: $searchText)
+                .textFieldStyle(PlainTextFieldStyle())
+            
+            if !searchText.isEmpty {
+                Button(action: {
+                    searchText = ""
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(10)
+        .padding(.horizontal)
     }
     
     @ViewBuilder
@@ -88,7 +114,7 @@ struct CardSelectStock: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 12) {
-                ForEach(assetLoader.assets) { asset in
+                ForEach(filteredAssets) { asset in
                     AssetCard(
                         asset: asset,
                         isSelected: selectedAsset?.id == asset.id,
@@ -99,6 +125,17 @@ struct CardSelectStock: View {
                 }
             }
             .padding(.horizontal)
+        }
+    }
+    
+    private var filteredAssets: [Asset] {
+        if searchText.isEmpty {
+            return assetLoader.assets
+        } else {
+            return assetLoader.assets.filter { asset in
+                asset.name.localizedCaseInsensitiveContains(searchText) ||
+                asset.symbol.localizedCaseInsensitiveContains(searchText)
+            }
         }
     }
     

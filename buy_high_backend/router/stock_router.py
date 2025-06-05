@@ -1,6 +1,4 @@
-"""
-Router for stock data functionality.
-"""
+
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse

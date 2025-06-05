@@ -127,13 +127,19 @@ def verify_firebase_id_token(id_token: str):
     Überprüft ein Firebase ID-Token.
     """
     logger.info("UTILS.AUTH: Entered verify_firebase_id_token") # DIAGNOSTIC LOG
+    logger.debug(f"UTILS.AUTH: Token to verify (first 100 chars): {id_token[:100]}...")
+    logger.debug(f"UTILS.AUTH: Token length: {len(id_token)}")
+    
     if not firebase_admin._apps:
         logger.error("UTILS.AUTH: Firebase App nicht initialisiert. Token-Überprüfung nicht möglich.")
         return None
     try:
+        logger.debug("UTILS.AUTH: Calling firebase_auth_module.verify_id_token...")
         decoded_token = firebase_auth_module.verify_id_token(id_token)
         uid = decoded_token.get('uid')
-        logger.info(f"UTILS.AUTH: ID-Token erfolgreich verifiziert für UID: {uid}")
+        email = decoded_token.get('email')
+        logger.info(f"UTILS.AUTH: ID-Token erfolgreich verifiziert für UID: {uid}, Email: {email}")
+        logger.debug(f"UTILS.AUTH: Decoded token keys: {list(decoded_token.keys())}")
         return decoded_token
     except firebase_admin.auth.ExpiredIdTokenError:
         logger.warning(f"UTILS.AUTH: Firebase ID-Token ist abgelaufen.")
@@ -151,6 +157,9 @@ def verify_google_id_token(id_token: str):
     Dies ist notwendig für Tokens, die vom Google OAuth-Flow kommen.
     """
     logger.info("UTILS.AUTH: Entered verify_google_id_token") # DIAGNOSTIC LOG
+    logger.debug(f"UTILS.AUTH: Google token to verify (first 100 chars): {id_token[:100]}...")
+    logger.debug(f"UTILS.AUTH: Google token length: {len(id_token)}")
+    
     try:
         from google.oauth2 import id_token as google_id_token
         from google.auth.transport import requests
@@ -158,16 +167,23 @@ def verify_google_id_token(id_token: str):
         
         # Google's Client ID - Lese aus Umgebungsvariable
         google_client_id = os.getenv("FIREBASE_CLIENT_ID")
+        logger.debug(f"UTILS.AUTH: Using Google Client ID: {google_client_id[:20] if google_client_id else 'None'}...")
+        
         if not google_client_id:
             logger.error("UTILS.AUTH: FIREBASE_CLIENT_ID ist nicht in den Umgebungsvariablen gesetzt.")
             return None
         
+        logger.debug("UTILS.AUTH: Calling google_id_token.verify_oauth2_token...")
         # Verifiziere das Token direkt mit Google
         decoded_token = google_id_token.verify_oauth2_token(
             id_token, 
             requests.Request(), 
             google_client_id
         )
+        
+        logger.debug(f"UTILS.AUTH: Google token decoded. Keys: {list(decoded_token.keys())}")
+        logger.debug(f"UTILS.AUTH: Google token issuer: {decoded_token.get('iss')}")
+        logger.debug(f"UTILS.AUTH: Google token audience: {decoded_token.get('aud')}")
         
         # Überprüfe, ob der Issuer korrekt ist
         if decoded_token['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
@@ -186,6 +202,7 @@ def verify_google_id_token(id_token: str):
             'iss': 'google.com'  # Markiere als Google Token
         }
         
+        logger.debug(f"UTILS.AUTH: Created Firebase-compatible token: {firebase_compatible_token}")
         return firebase_compatible_token
         
     except ValueError as e:

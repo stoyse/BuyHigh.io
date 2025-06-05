@@ -19,11 +19,6 @@ struct ViewTrade: View {
                     
                     if let symbol = selectedSymbol {
                         VStack {
-                            Text("Selected Asset: \(symbol)")
-                                .font(.headline)
-                                .foregroundColor(.blue)
-                                .padding()
-                            Text(symbol)
                             CardTradingCharts(stock: symbol)
                                 .frame(height: 400)
                                 .cornerRadius(8)

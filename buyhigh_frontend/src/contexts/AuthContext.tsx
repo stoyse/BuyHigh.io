@@ -137,9 +137,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGoogle = async (idToken: string): Promise<boolean> => {
     try {
       setLoading(true);
+      console.log('AUTH_CONTEXT: Starting Google login with token length:', idToken.length);
+      console.log('AUTH_CONTEXT: Google ID token preview:', idToken.substring(0, 50) + '...');
+      
       const response = await loginWithGoogleToken(idToken); 
+      console.log('AUTH_CONTEXT: Google login response:', response);
 
       if (response.success && response.id_token) {
+        console.log('AUTH_CONTEXT: Google login successful, storing token');
+        console.log('AUTH_CONTEXT: Response ID token length:', response.id_token.length);
+        console.log('AUTH_CONTEXT: Response ID token preview:', response.id_token.substring(0, 50) + '...');
+        
         const userData: User = {
           id: response.userId, 
           firebase_uid: response.firebase_uid,
@@ -151,11 +159,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('authToken', response.id_token); 
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.id_token}`;
         
+        console.log('AUTH_CONTEXT: Set Authorization header with token:', response.id_token.substring(0, 50) + '...');
+        
         setUser(userData);
         setToken(response.id_token);
         setIsAuthenticated(true);
         return true;
       }
+      console.log('AUTH_CONTEXT: Google login failed - no success or id_token in response');
       setIsAuthenticated(false);
       return false;
     } catch (error) {
