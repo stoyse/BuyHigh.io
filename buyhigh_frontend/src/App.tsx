@@ -4,8 +4,7 @@ import './App.css';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/Login/LoginPage';
-import LoginPAge2 from './pages/Auth/LoginPage'; // Import LoginPage
-import RegisterPage from './pages/Auth/RegisterPage'; // Import RegisterPage
+import RegisterPage from './pages/Auth/RegisterPage_old'; // Import RegisterPage
 import Dashboard from './pages/Dashboard/Dashboard';
 import TestPage from './pages/TestPage/TestPage';
 import Home from './pages/Home/Home';

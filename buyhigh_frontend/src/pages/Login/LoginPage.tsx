@@ -162,26 +162,35 @@ const LoginPage: React.FC = () => {
           </form>
 
           <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-600" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-background-light dark:bg-background-dark text-gray-500 dark:text-gray-400">
-                  Or continue with
-                </span>
-              </div>
-            </div>
+            {/* Google Login Section - versteckt */}
+            {false && (
+              <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-background-light dark:bg-background-dark text-gray-500 dark:text-gray-400">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
 
-            <div className="mt-6 grid grid-cols-1 gap-3">
-              <div>
-                <GoogleLogin
-                  onSuccess={handleGoogleLoginSuccess}
-                  onError={handleGoogleLoginError}
-                  theme="outline"
-                  size="large"
-                />
-              </div>
+                <div className="mt-6 grid grid-cols-1 gap-3">
+                  <div>
+                    <GoogleLogin
+                      onSuccess={handleGoogleLoginSuccess}
+                      onError={handleGoogleLoginError}
+                      theme="outline"
+                      size="large"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+            
+            {/* Guest Login Button */}
+            <div className="mt-6">
               <div>
                 <button
                   onClick={handleGuestLogin}
@@ -196,9 +205,9 @@ const LoginPage: React.FC = () => {
                   ) : (
                     'Continue as Guest'
                   )}
-                </button>
-              </div>
+              </button>
             </div>
+          </div>
           </div>
 
           <div className="text-sm text-center mt-6">
