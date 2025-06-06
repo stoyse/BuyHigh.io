@@ -117,8 +117,8 @@ const TradingViewFinancials: React.FC<TradingViewFinancialsProps> = memo(({ symb
         "isTransparent": false,
         "largeChartUrl": "",
         "displayMode": "adaptive",
-        "width": 400,
-        "height": 550,
+        "width": 100%,
+        "height": 100%,
         "colorTheme": "dark",
         "symbol": "NASDAQ:${symbol}",
         "locale": "en"
