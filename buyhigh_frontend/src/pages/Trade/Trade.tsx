@@ -49,6 +49,47 @@ const TradingViewWidget: React.FC<TradingViewWidgetProps> = memo(({ symbol }) =>
   );
 });
 
+// TradingView Symbol Info Widget Component
+interface TradingViewSymbolInfoProps {
+  symbol: string;
+}
+
+const TradingViewSymbolInfo: React.FC<TradingViewSymbolInfoProps> = memo(({ symbol }) => {
+  const container = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!container.current) return;
+    
+    // Clear previous widget
+    container.current.innerHTML = '';
+    
+    const script = document.createElement("script");
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js";
+    script.type = "text/javascript";
+    script.async = true;
+    script.innerHTML = `
+      {
+        "symbol": "NASDAQ:${symbol}",
+        "width": 550,
+        "locale": "en",
+        "colorTheme": "dark",
+        "isTransparent": false
+      }`;
+    container.current.appendChild(script);
+  }, [symbol]);
+
+  return (
+    <div className="tradingview-widget-container" ref={container} style={{ width: "100%", height: "auto" }}>
+      <div className="tradingview-widget-container__widget"></div>
+      <div className="tradingview-widget-copyright">
+        <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+          <span className="blue-text">Track all markets on TradingView</span>
+        </a>
+      </div>
+    </div>
+  );
+});
+
 // TradingView Technical Analysis Widget Component
 interface TradingViewTechnicalAnalysisProps {
   symbol: string;
@@ -138,6 +179,7 @@ const TradingViewFinancials: React.FC<TradingViewFinancialsProps> = memo(({ symb
   );
 });
 
+TradingViewSymbolInfo.displayName = 'TradingViewSymbolInfo';
 TradingViewFinancials.displayName = 'TradingViewFinancials';
 TradingViewTechnicalAnalysis.displayName = 'TradingViewTechnicalAnalysis';
 
@@ -441,6 +483,15 @@ const Trade: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {selectedStock && (
+              <div className="symbol-info-card glass-card dark:bg-gray-800/40 dark:border-gray-700/30 mt-4">
+                <h2 className="gradient-text text-xl mb-3">Symbol Information</h2>
+                <div className="symbol-info-widget-container" style={{ width: '100%', height: 'auto' }}>
+                  <TradingViewSymbolInfo symbol={selectedStock.symbol} />
+                </div>
+              </div>
+            )}
 
             {selectedStock && (
               <div className="trade-execution-card glass-card dark:bg-gray-800/40 dark:border-gray-700/30 mt-4">
