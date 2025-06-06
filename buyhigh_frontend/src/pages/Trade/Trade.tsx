@@ -94,6 +94,51 @@ const TradingViewTechnicalAnalysis: React.FC<TradingViewTechnicalAnalysisProps> 
   );
 });
 
+// TradingView Financials Widget Component
+interface TradingViewFinancialsProps {
+  symbol: string;
+}
+
+const TradingViewFinancials: React.FC<TradingViewFinancialsProps> = memo(({ symbol }) => {
+  const container = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!container.current) return;
+    
+    // Clear previous widget
+    container.current.innerHTML = '';
+    
+    const script = document.createElement("script");
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-financials.js";
+    script.type = "text/javascript";
+    script.async = true;
+    script.innerHTML = `
+      {
+        "isTransparent": false,
+        "largeChartUrl": "",
+        "displayMode": "adaptive",
+        "width": 400,
+        "height": 550,
+        "colorTheme": "dark",
+        "symbol": "NASDAQ:${symbol}",
+        "locale": "en"
+      }`;
+    container.current.appendChild(script);
+  }, [symbol]);
+
+  return (
+    <div className="tradingview-widget-container" ref={container} style={{ height: "550px", width: "400px" }}>
+      <div className="tradingview-widget-container__widget"></div>
+      <div className="tradingview-widget-copyright">
+        <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
+          <span className="blue-text">Track all markets on TradingView</span>
+        </a>
+      </div>
+    </div>
+  );
+});
+
+TradingViewFinancials.displayName = 'TradingViewFinancials';
 TradingViewTechnicalAnalysis.displayName = 'TradingViewTechnicalAnalysis';
 
 interface Stock {
@@ -514,10 +559,28 @@ const Trade: React.FC = () => {
             )}
 
             {selectedStock && (
+              <div className="financials-card glass-card dark:bg-gray-800/40 dark:border-gray-700/30 mt-4">
+                <h2 className="gradient-text text-xl mb-3">Financials</h2>
+                <div className="financials-widget-container" style={{ display: 'flex', justifyContent: 'center', width: '100%', height: '550px' }}>
+                  <TradingViewFinancials symbol={selectedStock.symbol} />
+                </div>
+              </div>
+            )}
+
+            {selectedStock && (
               <div className="technical-analysis-card glass-card dark:bg-gray-800/40 dark:border-gray-700/30 mt-4">
                 <h2 className="gradient-text text-xl mb-3">Technical Analysis</h2>
                 <div className="analysis-widget-container" style={{ display: 'flex', justifyContent: 'center', width: '100%', height: '450px' }}>
                   <TradingViewTechnicalAnalysis symbol={selectedStock.symbol} />
+                </div>
+              </div>
+            )}
+
+            {selectedStock && (
+              <div className="financials-widget-card glass-card dark:bg-gray-800/40 dark:border-gray-700/30 mt-4">
+                <h2 className="gradient-text text-xl mb-3">Financials</h2>
+                <div className="financials-widget-container" style={{ display: 'flex', justifyContent: 'center', width: '100%', height: '550px' }}>
+                  <TradingViewFinancials symbol={selectedStock.symbol} />
                 </div>
               </div>
             )}
