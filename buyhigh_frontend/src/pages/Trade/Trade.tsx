@@ -383,28 +383,18 @@ const Trade: React.FC = () => {
                 </div>
               </div>
               
-              <div className="chart-and-analysis-container" style={{ display: "flex", gap: "16px" }}>
-                <div className="chart-wrapper" style={{ flex: "1" }}>
-                  {selectedStock ? (
-                    <div className="chart-container" style={{ height: "500px" }}>
-                      <TradingViewWidget symbol={selectedStock.symbol} />
-                    </div>
-                  ) : (
-                    <div className="no-data dark:text-gray-400">
-                      <svg className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                      </svg>
-                      <p>Please select a stock to view the chart</p>
-                    </div>
-                  )}
+              {selectedStock ? (
+                <div className="chart-container" style={{ height: "500px" }}>
+                  <TradingViewWidget symbol={selectedStock.symbol} />
                 </div>
-                
-                {selectedStock && (
-                  <div className="technical-analysis-wrapper">
-                    <TradingViewTechnicalAnalysis symbol={selectedStock.symbol} />
-                  </div>
-                )}
-              </div>
+              ) : (
+                <div className="no-data dark:text-gray-400">
+                  <svg className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <p>Please select a stock to view the chart</p>
+                </div>
+              )}
             </div>
 
             {selectedStock && (
@@ -522,12 +512,11 @@ const Trade: React.FC = () => {
                 </div>
               </div>
             )}
-            
+
             {selectedStock && (
               <div className="technical-analysis-card glass-card dark:bg-gray-800/40 dark:border-gray-700/30 mt-4">
                 <h2 className="gradient-text text-xl mb-3">Technical Analysis</h2>
-                
-                <div className="analysis-widget-container" style={{ position: 'relative', width: '100%', height: '450px' }}>
+                <div className="analysis-widget-container" style={{ display: 'flex', justifyContent: 'center', width: '100%', height: '450px' }}>
                   <TradingViewTechnicalAnalysis symbol={selectedStock.symbol} />
                 </div>
               </div>
