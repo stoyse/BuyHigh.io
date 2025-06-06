@@ -561,7 +561,7 @@ const Trade: React.FC = () => {
             {selectedStock && (
               <div className="financials-card glass-card dark:bg-gray-800/40 dark:border-gray-700/30 mt-4">
                 <h2 className="gradient-text text-xl mb-3">Financials</h2>
-                <div className="financials-widget-container" style={{ display: 'flex', justifyContent: 'center', width: '100%', height: '550px' }}>
+                <div className="financials-widget-container" style={{ width: '100%', height: '550px' }}>
                   <TradingViewFinancials symbol={selectedStock.symbol} />
                 </div>
               </div>
@@ -576,14 +576,7 @@ const Trade: React.FC = () => {
               </div>
             )}
 
-            {selectedStock && (
-              <div className="financials-widget-card glass-card dark:bg-gray-800/40 dark:border-gray-700/30 mt-4">
-                <h2 className="gradient-text text-xl mb-3">Financials</h2>
-                <div className="financials-widget-container" style={{ display: 'flex', justifyContent: 'center', width: '100%', height: '550px' }}>
-                  <TradingViewFinancials symbol={selectedStock.symbol} />
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
       </div>
