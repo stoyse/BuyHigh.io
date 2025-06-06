@@ -116,9 +116,9 @@ const TradingViewFinancials: React.FC<TradingViewFinancialsProps> = memo(({ symb
       {
         "isTransparent": false,
         "largeChartUrl": "",
-        "displayMode": "adaptive",
-        "width": 100%,
-        "height": 100%,
+        "displayMode": "regular",
+        "width": "100%",
+        "height": "550",
         "colorTheme": "dark",
         "symbol": "NASDAQ:${symbol}",
         "locale": "en"
@@ -127,7 +127,7 @@ const TradingViewFinancials: React.FC<TradingViewFinancialsProps> = memo(({ symb
   }, [symbol]);
 
   return (
-    <div className="tradingview-widget-container" ref={container} style={{ height: "550px", width: "400px" }}>
+    <div className="tradingview-widget-container" ref={container} style={{ height: "550px", width: "100%" }}>
       <div className="tradingview-widget-container__widget"></div>
       <div className="tradingview-widget-copyright">
         <a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank">
