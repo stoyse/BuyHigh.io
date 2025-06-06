@@ -25,7 +25,9 @@ struct CardSelectStock: View {
             selectedAssetView
         }
         .onAppear {
-            assetLoader.loadAssets()
+            Task {
+                await assetLoader.loadAssets()
+            }
         }
     }
     
@@ -55,7 +57,7 @@ struct CardSelectStock: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color.gray.opacity(0.1))
+        .background(Color(.systemGray6))
         .cornerRadius(10)
         .padding(.horizontal)
     }
@@ -92,7 +94,9 @@ struct CardSelectStock: View {
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
             Button("Retry") {
-                assetLoader.loadAssets()
+                Task {
+                    await assetLoader.loadAssets()
+                }
             }
             .buttonStyle(.bordered)
         }
@@ -155,7 +159,7 @@ struct CardSelectStock: View {
                 }
             }
             .padding()
-            .background(Color.gray.opacity(0.1))
+            .background(Color(.systemGray6))
             .cornerRadius(12)
             .padding(.horizontal)
         }
@@ -223,7 +227,7 @@ struct AssetCard: View {
                 .background(cardBackground)
                 .overlay(cardBorder)
                 .cornerRadius(12)
-                .shadow(color: .black.opacity(0.1), radius: isSelected ? 4 : 2, x: 0, y: isSelected ? 2 : 1)
+                .shadow(color: Color.primary.opacity(0.1), radius: isSelected ? 4 : 2, x: 0, y: isSelected ? 2 : 1)
                 .scaleEffect(isSelected ? 1.02 : 1.0)
                 .animation(.easeInOut(duration: 0.2), value: isSelected)
         }
@@ -290,12 +294,12 @@ struct AssetCard: View {
     }
     
     private var cardBackground: Color {
-        isSelected ? Color.blue : Color.white
+        isSelected ? Color.blue : Color(.systemBackground)
     }
     
     private var cardBorder: some View {
         RoundedRectangle(cornerRadius: 12)
-            .stroke(isSelected ? Color.blue : Color.gray.opacity(0.3), lineWidth: isSelected ? 2 : 1)
+            .stroke(isSelected ? Color.blue : Color(.systemGray4), lineWidth: isSelected ? 2 : 1)
     }
     
     private var priceView: some View {
@@ -372,6 +376,15 @@ struct CardSelectStock_Previews: PreviewProvider {
         let previewAuthManager = AuthManager()
         // Create a StockDataLoader instance for the preview
         let previewStockLoader = StockDataLoader(authManager: previewAuthManager)
-        CardSelectStock(selectedSymbol: $selectedSymbol, authManager: previewAuthManager, stockLoader: previewStockLoader)
+        
+        Group {
+            CardSelectStock(selectedSymbol: $selectedSymbol, authManager: previewAuthManager, stockLoader: previewStockLoader)
+                .preferredColorScheme(.light)
+                .previewDisplayName("Light Mode")
+            
+            CardSelectStock(selectedSymbol: $selectedSymbol, authManager: previewAuthManager, stockLoader: previewStockLoader)
+                .preferredColorScheme(.dark)
+                .previewDisplayName("Dark Mode")
+        }
     }
 }

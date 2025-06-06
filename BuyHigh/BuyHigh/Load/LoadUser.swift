@@ -48,115 +48,93 @@ class UserLoader: ObservableObject {
     }
 
     func fetchUserData() {
-        guard let userId = authManager.userId, let token = authManager.idToken else {
-            self.errorMessage = "User ID or Token not available. Please log in."
+        Task {
+            await fetchUserDataAsync()
+        }
+    }
+    
+    @MainActor
+    private func fetchUserDataAsync() async {
+        guard let userId = authManager.userId else {
+            self.errorMessage = "User ID not available. Please log in."
             return
         }
-        // Debug: Print the userId
-        print("UserLoader: Attempting to fetch data for userId: \(userId)")
-
-        // Corrected URL interpolation
+        
+        // Get a fresh token
+        guard let token = await authManager.getValidToken() else {
+            self.errorMessage = "Authentication failed. Please log in again."
+            return
+        }
+        
         guard let url = URL(string: "https://api.stoyse.hackclub.app/user/\(userId)") else {
             self.errorMessage = "Invalid URL"
             return
         }
-        // Debug: Print the constructed URL
-        print("UserLoader: Constructed URL: \(url.absoluteString)")
+        
+        print("UserLoader: Using fresh token for userID: \(userId)")
 
-        self.isLoading = true
-        self.errorMessage = nil
-        self.userData = nil
+        isLoading = true
+        errorMessage = nil
+        userData = nil
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30.0
 
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                self.errorMessage = "Invalid response from server."
                 self.isLoading = false
-                // Original: if let error = error {
-                // self.errorMessage = "Network error: \\(error.localizedDescription)"
-                // return
-                // }
-                // Adressiert Warnung für Zeile 66
-                if error != nil {
-                    self.errorMessage = "Network error: \(error!.localizedDescription)"
-                    return
-                }
+                return
+            }
+            
+            print("UserLoader: HTTP Status Code: \(httpResponse.statusCode)")
+            
+            // Log raw response for debugging
+            if let rawString = String(data: data, encoding: .utf8) {
+                print("Raw UserData Response: \(rawString)")
+            }
 
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    self.errorMessage = "Invalid response from server."
-                    return
-                }
-                // Debug: Print HTTP status code
-                print("UserLoader: HTTP Status Code: \(httpResponse.statusCode)")
-                
-                // Log raw response for debugging
-                // Original: if let data = data, let rawResponseString = String(data: data, encoding: .utf8) {
-                // print("Raw UserData Response: \\(rawResponseString)")
-                // }
-                // Adressiert Warnung für Zeile 77
-                if let data = data {
-                    if let rawString = String(data: data, encoding: .utf8) {
-                        print("Raw UserData Response: \(rawString)") // Korrigierte Interpolation
-                    }
-                }
-
-
-                guard (200...299).contains(httpResponse.statusCode) else {
-                    var detailMessage = "Server error: \(httpResponse.statusCode)."
-                    // Original: if let data = data, let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data), let detail = errorResponse.detail {
-                    //      detailMessage += " Details: \\(detail)"
-                    // }
-                    // Adressiert Warnung für Zeile 84
-                    if let data = data, let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
-                        if let detailValue = errorResponse.detail { // Used detailValue directly
-                             detailMessage += " Details: \(detailValue)"
-                        }
-                    // Original: } else if let data = data, let responseString = String(data: data, encoding: .utf8) {
-                    //     detailMessage += " Response: \\(responseString)"
-                    // }
-                    // Adressiert Warnung für Zeile 86
-                    } else if let data = data {
-                        if let str = String(data: data, encoding: .utf8) { // Used str directly
-                            detailMessage += " Response: \(str)"
-                        }
-                    }
-                    self.errorMessage = detailMessage
-                    return
-                }
-
-                guard let data = data else {
-                    self.errorMessage = "No data received from server."
-                    return
-                }
-
+            switch httpResponse.statusCode {
+            case 200...299:
                 do {
                     let decodedResponse = try JSONDecoder().decode(UserDataApiResponse.self, from: data)
                     if decodedResponse.success {
                         self.userData = decodedResponse.user
                         if self.userData == nil {
-                             self.errorMessage = "User data not found in response, though success was true."
+                            self.errorMessage = "User data not found in response, though success was true."
                         }
                     } else {
                         self.errorMessage = "Failed to fetch user data. Server indicated failure."
-                         // Potentially use a message from the response if available
                     }
                 } catch {
-                    // Original: let rawDataForErrorMessage = String(data: data, encoding: .utf8) ?? "Raw data not convertible to String"
-                    // self.errorMessage = "Failed to decode user data: \\\\(error.localizedDescription). Raw data: \\\\(rawDataForErrorMessage)"
-                    // Adressiert Warnung für Zeile 110 und korrigiert Syntaxfehler
-                    self.errorMessage = "Failed to decode user data: \(error.localizedDescription). Raw data: \(String(data: data, encoding: .utf8) ?? "Raw data not convertible to String")"
+                    self.errorMessage = "Failed to decode user data: \(error.localizedDescription)"
                 }
+            case 401:
+                self.errorMessage = "Authentication expired. Please log in again."
+                authManager.logout()
+            case 404:
+                self.errorMessage = "User not found."
+            case 500...599:
+                self.errorMessage = "Server error. Please try again later."                default:
+                    self.errorMessage = "Server error: \(httpResponse.statusCode)."
             }
-        }.resume()
+            
+        } catch {
+            print("UserLoader: Network error: \(error.localizedDescription)")
+            if error.localizedDescription.contains("timeout") {
+                self.errorMessage = "Request timeout. Please check your connection."
+            } else {
+                self.errorMessage = "Network error: \(error.localizedDescription)"
+            }
+        }
+        
+        self.isLoading = false
     }
-}
-
-// Helper struct for decoding error responses if your API sends structured errors
-struct ErrorResponse: Codable {
-    let detail: String?
 }
 
 

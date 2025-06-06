@@ -86,15 +86,16 @@ extension DailyQuiz {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 30.0
 
-        // Use the idToken from the passed AuthManager instance
-        guard let authToken = authManager.idToken else {
-            print("Error: Authentication token (idToken) is not available from AuthManager. Ensure the user is logged in and the token is populated.")
+        // Get a fresh token using the new getValidToken method
+        guard let authToken = await authManager.getValidToken() else {
+            print("Error: Failed to get valid authentication token. Ensure the user is logged in.")
             throw DailyQuizLoadError.authenticationTokenMissing
         }
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
         
-        // print("Requesting Daily Quiz from URL: \(url.absoluteString)") // For debugging
+        print("DailyQuiz: Using fresh token for daily quiz request")
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -158,7 +159,8 @@ extension DailyQuiz {
             throw DailyQuizLoadError.badURL
         }
 
-        guard let token = authManager.idToken else {
+        // Get a fresh token
+        guard let token = await authManager.getValidToken() else {
             throw DailyQuizLoadError.authenticationTokenMissing
         }
 
@@ -166,17 +168,17 @@ extension DailyQuiz {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 30.0
 
         let requestBody = DailyQuizAttemptRequest(quizId: quizId, selectedAnswer: selectedAnswer)
         do {
             request.httpBody = try JSONEncoder().encode(requestBody)
         } catch {
             print("Error encoding DailyQuizAttemptRequest: \(error)")
-            throw DailyQuizLoadError.unknown(error) // Or a more specific encoding error
+            throw DailyQuizLoadError.unknown(error)
         }
         
-        print("Submitting Daily Quiz Answer to \(url.absoluteString) with quizId: \(quizId), answer: \(selectedAnswer)")
-
+        print("DailyQuiz: Submitting answer with fresh token to \(url.absoluteString) with quizId: \(quizId), answer: \(selectedAnswer)")
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -214,15 +216,17 @@ extension DailyQuiz {
             throw DailyQuizLoadError.badURL
         }
 
-        guard let token = authManager.idToken else {
+        // Get a fresh token
+        guard let token = await authManager.getValidToken() else {
             throw DailyQuizLoadError.authenticationTokenMissing
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 30.0
         
-        print("Fetching today's quiz attempt from \(url.absoluteString)")
+        print("DailyQuiz: Fetching today's quiz attempt with fresh token from \(url.absoluteString)")
 
         let (data, response) = try await URLSession.shared.data(for: request)
 

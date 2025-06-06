@@ -1,0 +1,598 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A39EDF062DE8CF9900589F77 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A39EDF052DE8CF9900589F77 /* Launch Screen.storyboard */; };
+		A39EDF1F2DE9264100589F77 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = A39EDF1E2DE9264100589F77 /* FirebaseAuth */; };
+		A39EDF212DE9264100589F77 /* FirebaseAuthCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = A39EDF202DE9264100589F77 /* FirebaseAuthCombine-Community */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A3A5D2CC2DE7592800BEA3FC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A3A5D2B62DE7592600BEA3FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A3A5D2BD2DE7592600BEA3FC;
+			remoteInfo = BuyHigh;
+		};
+		A3A5D2D62DE7592800BEA3FC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A3A5D2B62DE7592600BEA3FC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A3A5D2BD2DE7592600BEA3FC;
+			remoteInfo = BuyHigh;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A39EDF052DE8CF9900589F77 /* Launch Screen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
+		A3A5D2BE2DE7592600BEA3FC /* BuyHigh.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BuyHigh.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A3A5D2CB2DE7592800BEA3FC /* BuyHighTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BuyHighTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A3A5D2D52DE7592800BEA3FC /* BuyHighUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BuyHighUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A39EDF172DE8FC9D00589F77 /* View */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = View;
+			sourceTree = "<group>";
+		};
+		A3A5D2C02DE7592600BEA3FC /* BuyHigh */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BuyHigh;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A3A5D2BB2DE7592600BEA3FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A39EDF1F2DE9264100589F77 /* FirebaseAuth in Frameworks */,
+				A39EDF212DE9264100589F77 /* FirebaseAuthCombine-Community in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3A5D2C82DE7592800BEA3FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3A5D2D22DE7592800BEA3FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A3A5D2B52DE7592600BEA3FC = {
+			isa = PBXGroup;
+			children = (
+				A39EDF052DE8CF9900589F77 /* Launch Screen.storyboard */,
+				A3A5D2C02DE7592600BEA3FC /* BuyHigh */,
+				A3A5D2BF2DE7592600BEA3FC /* Products */,
+				A39EDF172DE8FC9D00589F77 /* View */,
+			);
+			sourceTree = "<group>";
+		};
+		A3A5D2BF2DE7592600BEA3FC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A3A5D2BE2DE7592600BEA3FC /* BuyHigh.app */,
+				A3A5D2CB2DE7592800BEA3FC /* BuyHighTests.xctest */,
+				A3A5D2D52DE7592800BEA3FC /* BuyHighUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A3A5D2BD2DE7592600BEA3FC /* BuyHigh */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A3A5D2DF2DE7592800BEA3FC /* Build configuration list for PBXNativeTarget "BuyHigh" */;
+			buildPhases = (
+				A3A5D2BA2DE7592600BEA3FC /* Sources */,
+				A3A5D2BB2DE7592600BEA3FC /* Frameworks */,
+				A3A5D2BC2DE7592600BEA3FC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A39EDF172DE8FC9D00589F77 /* View */,
+				A3A5D2C02DE7592600BEA3FC /* BuyHigh */,
+			);
+			name = BuyHigh;
+			packageProductDependencies = (
+				A39EDF1E2DE9264100589F77 /* FirebaseAuth */,
+				A39EDF202DE9264100589F77 /* FirebaseAuthCombine-Community */,
+			);
+			productName = BuyHigh;
+			productReference = A3A5D2BE2DE7592600BEA3FC /* BuyHigh.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A3A5D2CA2DE7592800BEA3FC /* BuyHighTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A3A5D2E22DE7592800BEA3FC /* Build configuration list for PBXNativeTarget "BuyHighTests" */;
+			buildPhases = (
+				A3A5D2C72DE7592800BEA3FC /* Sources */,
+				A3A5D2C82DE7592800BEA3FC /* Frameworks */,
+				A3A5D2C92DE7592800BEA3FC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A3A5D2CD2DE7592800BEA3FC /* PBXTargetDependency */,
+			);
+			name = BuyHighTests;
+			packageProductDependencies = (
+			);
+			productName = BuyHighTests;
+			productReference = A3A5D2CB2DE7592800BEA3FC /* BuyHighTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A3A5D2D42DE7592800BEA3FC /* BuyHighUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A3A5D2E52DE7592800BEA3FC /* Build configuration list for PBXNativeTarget "BuyHighUITests" */;
+			buildPhases = (
+				A3A5D2D12DE7592800BEA3FC /* Sources */,
+				A3A5D2D22DE7592800BEA3FC /* Frameworks */,
+				A3A5D2D32DE7592800BEA3FC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A3A5D2D72DE7592800BEA3FC /* PBXTargetDependency */,
+			);
+			name = BuyHighUITests;
+			packageProductDependencies = (
+			);
+			productName = BuyHighUITests;
+			productReference = A3A5D2D52DE7592800BEA3FC /* BuyHighUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A3A5D2B62DE7592600BEA3FC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1630;
+				LastUpgradeCheck = 1630;
+				TargetAttributes = {
+					A3A5D2BD2DE7592600BEA3FC = {
+						CreatedOnToolsVersion = 16.3;
+					};
+					A3A5D2CA2DE7592800BEA3FC = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = A3A5D2BD2DE7592600BEA3FC;
+					};
+					A3A5D2D42DE7592800BEA3FC = {
+						CreatedOnToolsVersion = 16.3;
+						TestTargetID = A3A5D2BD2DE7592600BEA3FC;
+					};
+				};
+			};
+			buildConfigurationList = A3A5D2B92DE7592600BEA3FC /* Build configuration list for PBXProject "BuyHigh" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = A3A5D2B52DE7592600BEA3FC;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A39EDF1D2DE9264100589F77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A3A5D2BF2DE7592600BEA3FC /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A3A5D2BD2DE7592600BEA3FC /* BuyHigh */,
+				A3A5D2CA2DE7592800BEA3FC /* BuyHighTests */,
+				A3A5D2D42DE7592800BEA3FC /* BuyHighUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A3A5D2BC2DE7592600BEA3FC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A39EDF062DE8CF9900589F77 /* Launch Screen.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3A5D2C92DE7592800BEA3FC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3A5D2D32DE7592800BEA3FC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A3A5D2BA2DE7592600BEA3FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3A5D2C72DE7592800BEA3FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3A5D2D12DE7592800BEA3FC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A3A5D2CD2DE7592800BEA3FC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A3A5D2BD2DE7592600BEA3FC /* BuyHigh */;
+			targetProxy = A3A5D2CC2DE7592800BEA3FC /* PBXContainerItemProxy */;
+		};
+		A3A5D2D72DE7592800BEA3FC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A3A5D2BD2DE7592600BEA3FC /* BuyHigh */;
+			targetProxy = A3A5D2D62DE7592800BEA3FC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A3A5D2DD2DE7592800BEA3FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = R3SQMA3JD7;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A3A5D2DE2DE7592800BEA3FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = R3SQMA3JD7;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A3A5D2E02DE7592800BEA3FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R3SQMA3JD7;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = BuyHigh.io;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = "Launch Screen.storyboard";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = stosse.BuyHigh;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A3A5D2E12DE7592800BEA3FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R3SQMA3JD7;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = BuyHigh.io;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = "Launch Screen.storyboard";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = stosse.BuyHigh;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		A3A5D2E32DE7592800BEA3FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R3SQMA3JD7;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = stosse.BuyHighTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BuyHigh.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BuyHigh";
+			};
+			name = Debug;
+		};
+		A3A5D2E42DE7592800BEA3FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R3SQMA3JD7;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = stosse.BuyHighTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BuyHigh.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BuyHigh";
+			};
+			name = Release;
+		};
+		A3A5D2E62DE7592800BEA3FC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R3SQMA3JD7;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = stosse.BuyHighUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BuyHigh;
+			};
+			name = Debug;
+		};
+		A3A5D2E72DE7592800BEA3FC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = R3SQMA3JD7;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = stosse.BuyHighUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BuyHigh;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A3A5D2B92DE7592600BEA3FC /* Build configuration list for PBXProject "BuyHigh" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3A5D2DD2DE7592800BEA3FC /* Debug */,
+				A3A5D2DE2DE7592800BEA3FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A3A5D2DF2DE7592800BEA3FC /* Build configuration list for PBXNativeTarget "BuyHigh" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3A5D2E02DE7592800BEA3FC /* Debug */,
+				A3A5D2E12DE7592800BEA3FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A3A5D2E22DE7592800BEA3FC /* Build configuration list for PBXNativeTarget "BuyHighTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3A5D2E32DE7592800BEA3FC /* Debug */,
+				A3A5D2E42DE7592800BEA3FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A3A5D2E52DE7592800BEA3FC /* Build configuration list for PBXNativeTarget "BuyHighUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3A5D2E62DE7592800BEA3FC /* Debug */,
+				A3A5D2E72DE7592800BEA3FC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A39EDF1D2DE9264100589F77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.13.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A39EDF1E2DE9264100589F77 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A39EDF1D2DE9264100589F77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		A39EDF202DE9264100589F77 /* FirebaseAuthCombine-Community */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A39EDF1D2DE9264100589F77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = "FirebaseAuthCombine-Community";
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A3A5D2B62DE7592600BEA3FC /* Project object */;
+}

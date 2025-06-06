@@ -6,13 +6,13 @@ class AuthManager: ObservableObject {
     @Published var isLoggedIn: Bool = UserDefaults.standard.bool(forKey: "isLoggedIn") {
         didSet {
             UserDefaults.standard.set(isLoggedIn, forKey: "isLoggedIn")
-            print("AuthManager: isLoggedIn didSet to \\(isLoggedIn)")
+            print("AuthManager: isLoggedIn didSet to \(isLoggedIn)")
         }
     }
     @Published var isGuest: Bool = UserDefaults.standard.bool(forKey: "isGuest") {
         didSet {
             UserDefaults.standard.set(isGuest, forKey: "isGuest")
-            print("AuthManager: isGuest didSet to \\(isGuest)")
+            print("AuthManager: isGuest didSet to \(isGuest)")
         }
     }
     @Published var idToken: String? = UserDefaults.standard.string(forKey: "idToken") {
@@ -28,7 +28,7 @@ class AuthManager: ObservableObject {
             } else {
                 UserDefaults.standard.removeObject(forKey: "userId")
             }
-            print("AuthManager: userId didSet to \\(String(describing: userId))")
+            print("AuthManager: userId didSet to \(String(describing: userId))")
         }
     }
     @Published var firebaseUid: String? = UserDefaults.standard.string(forKey: "firebaseUid") {
@@ -241,45 +241,100 @@ class AuthManager: ObservableObject {
             .store(in: &cancellables)
     }
 
+    //  Token Refresh Functions
+    
+    func getValidToken() async -> String? {
+        guard let currentUser = Auth.auth().currentUser else {
+            print("AuthManager: No current Firebase user")
+            await MainActor.run {
+                self.logout()
+            }
+            return nil
+        }
+        
+        do {
+            // Use completion handler version for compatibility
+            return try await withCheckedThrowingContinuation { continuation in
+                currentUser.getIDTokenForcingRefresh(true) { token, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                    } else if let token = token {
+                        Task { @MainActor in
+                            self.idToken = token
+                            print("AuthManager: Token refreshed successfully")
+                        }
+                        continuation.resume(returning: token)
+                    } else {
+                        continuation.resume(throwing: NSError(domain: "AuthManager", code: -1, userInfo: [NSLocalizedDescriptionKey: "No token received"]))
+                    }
+                }
+            }
+        } catch {
+            print("AuthManager: Error refreshing token: \(error.localizedDescription)")
+            await MainActor.run {
+                self.logout()
+            }
+            return nil
+        }
+    }
+    
+    /// Check if current token is expired (simplified check)
+    func isTokenExpired() -> Bool {
+        guard let token = idToken else { return true }
+        
+        // Simple check: if we have a Firebase user and token, assume it's valid
+        // Firebase handles token expiration internally
+        return Auth.auth().currentUser == nil
+    }
+    
+    /// Refresh token and update state
+    func refreshTokenAndUpdateState() {
+        guard let currentUser = Auth.auth().currentUser else {
+            print("AuthManager: No current user found")
+            logout()
+            return
+        }
+        
+        // Force refresh the token to get a new one with extended expiry
+        currentUser.getIDTokenForcingRefresh(true) { [weak self] token, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("AuthManager: Error refreshing token: \(error.localizedDescription)")
+                    self?.logout()
+                    return
+                }
+                
+                guard let token = token else {
+                    print("AuthManager: No token received")
+                    self?.logout()
+                    return
+                }
+                
+                print("AuthManager: Token refreshed successfully")
+                self?.idToken = token
+            }
+        }
+    }
+
     func logout() {
         print("AuthManager: logout() called")
         // Firebase Auth ausloggen, falls ein User angemeldet war (auch anonym)
         do {
             try Auth.auth().signOut()
             print("AuthManager: Successfully signed out from Firebase Auth.")
-        } catch let error as NSError { // Replaced signOutError with _ or a general 'error'
+        } catch let error as NSError {
             print("AuthManager: Error signing out from Firebase Auth: \\(error.localizedDescription)")
-            // Hier könntest du dem User eine Fehlermeldung anzeigen, falls das Ausloggen bei Firebase fehlschlägt,
-            // aber für den lokalen Zustand fahren wir trotzdem fort.
         }
 
-        // Lokalen Zustand und UserDefaults zurücksetzen
-        // Wichtig: UI-Updates (durch @Published Änderungen) sollten auf dem Main-Thread erfolgen.
-        // Die Zuweisungen hier lösen die didSet-Observer aus, die bereits auf dem Main-Thread laufen sollten,
-        // da AuthManager ein ObservableObject ist und Änderungen von Views auf dem Main-Thread konsumiert werden.
-        // Ein explizites DispatchQueue.main.async ist hier meist nicht nötig, schadet aber auch nicht für die reine Zustandsänderung.
         
         self.isLoggedIn = false
         self.isGuest = false
         self.idToken = nil
         self.userId = nil
         self.firebaseUid = nil
-        self.errorMessage = nil // Fehlermeldungen beim Logout löschen
-
-        // Obwohl die didSet-Observer die UserDefaults aktualisieren sollten,
-        // ist ein explizites Entfernen hier eine zusätzliche Sicherheitsebene,
-        // besonders wenn die didSet-Logik komplexer wird oder Fehler enthält.
-        // UserDefaults.standard.removeObject(forKey: "isLoggedIn") // Wird durch isLoggedIn.didSet erledigt
-        // UserDefaults.standard.removeObject(forKey: "isGuest")    // Wird durch isGuest.didSet erledigt
-        // UserDefaults.standard.removeObject(forKey: "idToken")   // Wird durch idToken.didSet erledigt
-        // UserDefaults.standard.removeObject(forKey: "userId")    // Wird durch userId.didSet erledigt
-        // UserDefaults.standard.removeObject(forKey: "firebaseUid")// Wird durch firebaseUid.didSet erledigt
+        self.errorMessage = nil
         
-        // Ein synchronize() ist in modernen iOS-Versionen normalerweise nicht mehr nötig,
-        // da UserDefaults Änderungen periodisch und bei wichtigen App-Lebenszyklusereignissen speichert.
-        // UserDefaults.standard.synchronize() 
-        
-        print("AuthManager: All local state cleared for logout. isLoggedIn=\\(self.isLoggedIn), isGuest=\\(self.isGuest)")
+        print("AuthManager: All local state cleared for logout. isLoggedIn=\(self.isLoggedIn), isGuest=\\(self.isGuest)")
     }
 }
 

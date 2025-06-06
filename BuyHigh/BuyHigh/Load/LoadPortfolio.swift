@@ -72,14 +72,23 @@ class PortfolioLoader: ObservableObject {
         }
 
         func loadPortfolio(userID: Int) {
-            guard let _ = authManager.userId, let token = authManager.idToken else {
-                self.errorMessage = "User ID or Token not available. Please log in."
+            Task {
+                await loadPortfolioAsync(userID: userID)
+            }
+        }
+        
+        @MainActor
+        private func loadPortfolioAsync(userID: Int) async {
+            guard let _ = authManager.userId else {
+                self.errorMessage = "User ID not available. Please log in."
                 return
             }
             
-            // Debug: Print the userID and token info
-            print("TransactionLoader: Attempting to fetch transactions for userID: \(userID)")
-            print("TransactionLoader: Token available: \(token.prefix(20))...") // Only show first 20 chars for security
+            // Get a fresh token
+            guard let token = await authManager.getValidToken() else {
+                self.errorMessage = "Authentication failed. Please log in again."
+                return
+            }
             
             guard let url = URL(string: "https://api.stoyse.hackclub.app/user/portfolio/\(userID)") else {
                 self.errorMessage = "Invalid URL"
@@ -87,8 +96,8 @@ class PortfolioLoader: ObservableObject {
                 return
             }
             
-            // Debug: Print the constructed URL
-            print("TransactionLoader: Constructed URL: \(url.absoluteString)")
+            print("PortfolioLoader: Using fresh token for userID: \(userID)")
+            print("PortfolioLoader: Constructed URL: \(url.absoluteString)")
 
             isLoading = true
             errorMessage = nil
@@ -97,58 +106,60 @@ class PortfolioLoader: ObservableObject {
             request.httpMethod = "GET"
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.timeoutInterval = 30.0
 
-            URLSession.shared.dataTask(with: request) { data, response, error in
-                DispatchQueue.main.async {
+            do {
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    self.errorMessage = "Invalid response from server."
                     self.isLoading = false
-                    
-                    // Debug: Print response info
-                    if let httpResponse = response as? HTTPURLResponse {
-                        print("TransactionLoader: HTTP Status Code: \(httpResponse.statusCode)")
-                    }
-                    
-                    if let error = error {
-                        print("TransactionLoader: Network error: \(error.localizedDescription)")
-                        self.errorMessage = "Failed to load data: \(error.localizedDescription)"
-                        return
-                    }
+                    return
+                }
+                
+                print("PortfolioLoader: HTTP Status Code: \(httpResponse.statusCode)")
+                
+                // Log raw response for debugging
+                if let rawString = String(data: data, encoding: .utf8) {
+                    print("PortfolioLoader: Raw response: \(rawString)")
+                }
 
-                    guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                        print("TransactionLoader: Invalid HTTP response or status code")
-                        self.errorMessage = "Invalid response from server"
-                        return
-                    }
-
-                    guard let data = data else {
-                        print("TransactionLoader: No data received")
-                        self.errorMessage = "No data received"
-                        return
-                    }
-                    
-                    // Debug: Print raw response
-                    if let rawString = String(data: data, encoding: .utf8) {
-                        print("TransactionLoader: Raw response: \(rawString)")
-                    }
-
+                switch httpResponse.statusCode {
+                case 200...299:
                     do {
                         let decodedResponse = try JSONDecoder().decode(PortfolioResponse.self, from: data)
-                        print("TransactionLoader: Decoded response - success: \(decodedResponse.success)")
-                        // portfolio ist nicht optional, daher ist ?? 0 nicht nötig
-                        print("TransactionLoader: Number of transactions: \(decodedResponse.portfolio.count)")
+                        print("PortfolioLoader: Decoded response - success: \(decodedResponse.success)")
+                        print("PortfolioLoader: Number of portfolio items: \(decodedResponse.portfolio.count)")
                         
                         if decodedResponse.success {
-                            // portfolio ist nicht optional, daher ist ?? [] nicht nötig
                             self.portfolio = decodedResponse.portfolio
                         } else {
-                            print("TransactionLoader: Server returned failure: \(decodedResponse.message ?? "No message")")
-                            self.errorMessage = decodedResponse.message ?? "Failed to load transactions."
+                            self.errorMessage = decodedResponse.message ?? "Failed to load portfolio."
                         }
                     } catch {
-                        print("TransactionLoader: JSON decode error: \(error.localizedDescription)")
-                        self.errorMessage = "Failed to decode JSON: \(error.localizedDescription)"
+                        self.errorMessage = "Failed to decode portfolio data: \(error.localizedDescription)"
                     }
+                case 401:
+                    self.errorMessage = "Authentication expired. Please log in again."
+                    authManager.logout()
+                case 403:
+                    self.errorMessage = "Access denied. Please check your permissions."
+                case 500...599:
+                    self.errorMessage = "Server error. Please try again later."
+                default:
+                    self.errorMessage = "Server error: \(httpResponse.statusCode)."
                 }
-            }.resume()
+                
+            } catch {
+                print("PortfolioLoader: Network error: \(error.localizedDescription)")
+                if error.localizedDescription.contains("timeout") {
+                    self.errorMessage = "Request timeout. Please check your connection."
+                } else {
+                    self.errorMessage = "Network error: \(error.localizedDescription)"
+                }
+            }
+            
+            self.isLoading = false
         }
     }
 
