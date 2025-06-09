@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import BaseLayout from '../../components/Layout/BaseLayout';
-import { GetUserInfo, GetPortfolioData, GetRecentTransactions, GetDailyQuiz, SubmitDailyQuizAnswer, GetDailyQuizAttemptToday, DailyQuizAttemptResponse } from '../../apiService';
+import { GetUserInfo, GetPortfolioData, GetRecentTransactions, GetDailyQuiz, SubmitDailyQuizAnswer, GetDailyQuizAttemptToday, DailyQuizAttemptResponse, GetSimpleStockPrice } from '../../apiService';
 import './Dashboard.css';
 import { useAuth } from '../../contexts/AuthContext'; // Import useAuth
 
@@ -87,8 +87,57 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [quizSubmitting, setQuizSubmitting] = useState<boolean>(false); // To disable buttons during submission
+  const [stockPrices, setStockPrices] = useState<Record<string, number>>({});
+  const [pricesLoading, setPricesLoading] = useState<boolean>(false);
 
   const { user: authUser, loading: authLoading, token } = useAuth(); // Get user and token from AuthContext
+
+  // Function to fetch live prices for all portfolio stocks
+  const fetchPortfolioPrices = async (portfolio: PortfolioItem[]) => {
+    if (!portfolio || portfolio.length === 0) return {};
+    
+    setPricesLoading(true);
+    const prices: Record<string, number> = {};
+    
+    try {
+      // Fetch all prices in parallel
+      const pricePromises = portfolio.map(async (item) => {
+        try {
+          const response = await GetSimpleStockPrice(item.symbol);
+          if (response.success && response.price !== undefined) {
+            return { symbol: item.symbol, price: response.price };
+          }
+          return { symbol: item.symbol, price: 100 }; // Fallback
+        } catch (error) {
+          console.error(`Error fetching price for ${item.symbol}:`, error);
+          return { symbol: item.symbol, price: 100 }; // Fallback
+        }
+      });
+
+      const results = await Promise.all(pricePromises);
+      results.forEach(result => {
+        prices[result.symbol] = result.price;
+      });
+
+      setStockPrices(prices);
+      return prices;
+    } catch (error) {
+      console.error('Error fetching portfolio prices:', error);
+      return {};
+    } finally {
+      setPricesLoading(false);
+    }
+  };
+
+  // Function to calculate portfolio total value with live prices
+  const calculatePortfolioValue = (portfolio: PortfolioItem[], prices: Record<string, number>) => {
+    return portfolio.reduce((sum: number, item: PortfolioItem) => {
+      const price = prices[item.symbol] || 100; // Fallback to 100 if price not available
+      const value = item.quantity * price;
+      console.log(`[Dashboard] Portfolio item: ${item.symbol}, quantity: ${item.quantity}, price: $${price}, value: $${value}`);
+      return sum + value;
+    }, 0);
+  };
 
   useEffect(() => {
     console.log("[Dashboard] useEffect triggered");
@@ -188,13 +237,13 @@ const Dashboard: React.FC = () => {
         console.log("[Dashboard] GetPortfolioData result:", portfolio);
         setPortfolioData(portfolio);
         if (portfolio && portfolio.success) {
-          const totalValue = portfolio.portfolio.reduce((sum: number, item: PortfolioItem) => {
-            const value = item.quantity * 100; // Placeholder
-            console.log(`[Dashboard] Portfolio item:`, item, "Value:", value);
-            return sum + value;
-          }, 0);
+          // Fetch live prices for all portfolio stocks
+          const prices = await fetchPortfolioPrices(portfolio.portfolio);
+          
+          // Calculate total value with live prices
+          const totalValue = calculatePortfolioValue(portfolio.portfolio, prices);
           setPortfolioTotalValue(totalValue);
-          console.log(`[Dashboard] Portfolio total value: ${totalValue}`);
+          console.log(`[Dashboard] Portfolio total value with live prices: $${totalValue}`);
 
           const totalQuantity = portfolio.portfolio.reduce((sum: number, item: PortfolioItem) => sum + item.quantity, 0);
           const allocation = portfolio.portfolio.map((item: PortfolioItem) => ({
