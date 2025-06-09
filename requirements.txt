@@ -44,7 +44,7 @@ pyparsing==3.2.3
 python-dotenv==1.0.0
 python-engineio==4.12.0
 python-socketio==5.13.0
-requests==2.32.3
+requests==2.32.4
 rsa==4.9.1
 setuptools==80.1.0
 simple-websocket==1.1.0
