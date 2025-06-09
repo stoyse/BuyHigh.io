@@ -12,6 +12,7 @@ import database.handler.postgres.postgre_transactions_handler as transactions_ha
 import database.handler.postgres.postgres_db_handler as db_handler
 from ..auth_utils import get_current_user, AuthenticatedUser
 from ..pydantic_models import ProfilePictureUploadResponse, UserDataResponse, TransactionsListResponse, PortfolioResponse, BasicUser, AllUsersResponse
+from ..utils.stoyk_price_yfinance import get_stock_price # Import der Funktion für Live-Preise
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -86,12 +87,46 @@ async def api_get_user_last_transactions(user_id_param: int, current_user: Authe
 @router.get("/user/portfolio/{user_id_param}", response_model=PortfolioResponse)
 async def api_get_portfolio(user_id_param: int, current_user: AuthenticatedUser = Depends(get_current_user)):
     portfolio_data = transactions_handler.show_user_portfolio(user_id_param)
+
     if portfolio_data and portfolio_data.get("success"):
-        return portfolio_data
+        if "portfolio" in portfolio_data and isinstance(portfolio_data["portfolio"], list):
+            for item in portfolio_data["portfolio"]:  # item ist ein dict
+                symbol = item.get("symbol")
+                # Annahme: 'average_price' ist der Schlüssel für den Durchschnitts-Kaufpreis im item dict
+                # Dies entspricht dem Feld 'average_price' des Pydantic-Modells PortfolioItem
+                average_buy_price = item.get("average_price")
+
+                # Standardmäßig die vorhandene Performance verwenden oder 0.0, falls die Neuberechnung fehlschlägt
+                calculated_performance = item.get("performance", 0.0)
+
+                if symbol and isinstance(average_buy_price, (float, int)) and average_buy_price > 0:
+                    try:
+                        live_price = get_stock_price(symbol)  # Synchroner Aufruf
+                        if live_price is not None and isinstance(live_price, (float, int)):
+                            calculated_performance = ((live_price - average_buy_price) / average_buy_price) * 100
+                            item["current_price"] = float(live_price)
+                            item["value"] = item.get("quantity", 0.0) * float(live_price)
+                        else:
+                            # Live-Preis nicht gefunden oder ungültig, Performance auf 0 setzen
+                            logger.warning(f"Live price not found or invalid for symbol {symbol}. Setting performance to 0.")
+                            calculated_performance = 0.0
+                            # current_price und value behalten ihre Werte aus show_user_portfolio
+                    except Exception as e:
+                        logger.error(f"Error during live price fetch or performance calculation for {symbol}: {e}")
+                        # Bei Fehler Performance auf 0 setzen
+                        calculated_performance = 0.0
+                        # current_price und value behalten ihre Werte
+                else:
+                    # Symbol fehlt oder average_buy_price ist ungültig/Null
+                    # Performance auf 0 setzen
+                    calculated_performance = 0.0
+                
+                item["performance"] = calculated_performance
+        return portfolio_data  # Rückgabe der modifizierten portfolio_data
     else:
         message = (portfolio_data.get("message") if portfolio_data 
                   else "Failed to retrieve portfolio or portfolio is empty.")
-        if portfolio_data:
+        if portfolio_data: # portfolio_data ist nicht None, aber success könnte False sein
             return portfolio_data 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
 
