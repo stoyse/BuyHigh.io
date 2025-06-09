@@ -533,7 +533,7 @@ const Trade: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="form-group mt-4">
+                    <div className="form-group mt-4">
                     <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Price ($)</label>
                     <input
                       type="number"
@@ -541,11 +541,11 @@ const Trade: React.FC = () => {
                       step="0.01"
                       min="0.01"
                       value={tradePrice}
-                      onChange={(e) => setTradePrice(parseFloat(e.target.value) || undefined)}
+                      readOnly
                       className="price-input dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      placeholder="Enter price"
+                      placeholder="Price is fixed"
                     />
-                  </div>
+                    </div>
                   
                   <div className="total-calculation mt-3">
                     <div className="flex justify-between items-center text-sm font-medium">
