@@ -1,11 +1,10 @@
-
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from typing import List, Optional
 from datetime import datetime, timedelta
 import logging
 import pandas as pd
+import yfinance as yf
 import utils.stock_data_api as stock_data
 from ..auth_utils import get_current_user, AuthenticatedUser
 from ..pydantic_models import StockDataPoint
@@ -138,3 +137,48 @@ async def api_stock_data(
     except Exception as e:
         logger.error(f"Error in /api/stock-data for {symbol} timeframe {timeframe}: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.get("/simple-stock-price")
+async def get_simple_stock_price(
+    symbol: str,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+
+    user_id_for_analytics = current_user.id if current_user else None
+    logger.info(f"Accessing /simple-stock-price for user: {user_id_for_analytics}. Symbol: {symbol}")
+    
+    try:
+        # Yahoo Finance verwenden für aktuellen Preis
+        ticker = yf.Ticker(symbol.upper())
+        hist = ticker.history(period="1d")
+        
+        if hist.empty:
+            logger.warning(f"No data found for symbol: {symbol}")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No data found for symbol: {symbol}"
+            )
+        
+        current_price = round(float(hist['Close'].iloc[-1]), 2)
+        
+        # Optional: Preis in Datenbank aktualisieren
+        try:
+            update_asset_price_in_db(symbol.upper(), current_price, user_id_for_analytics)
+        except Exception as e:
+            logger.warning(f"Could not update price in database: {e}")
+        
+        return {
+            "symbol": symbol.upper(),
+            "price": current_price,
+            "currency": "USD"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting price for {symbol}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving price for {symbol}: {str(e)}"
+        )

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, memo } from 'react';
-import { GetAssets, BuyStock, SellStock } from '../../apiService';
+import { GetAssets, BuyStock, SellStock, GetSimpleStockPrice } from '../../apiService';
 import BaseLayout from '../../components/Layout/BaseLayout';
 
 import './Trade.css';
@@ -207,6 +207,34 @@ const Trade: React.FC = () => {
     text: '',
     type: null
   });
+  const [priceLoading, setPriceLoading] = useState<boolean>(false);
+
+  // Funktion zum Abrufen des aktuellen Preises
+  const fetchCurrentPrice = async (symbol: string) => {
+    if (!symbol) return;
+    
+    setPriceLoading(true);
+    try {
+      const priceData = await GetSimpleStockPrice(symbol);
+      setTradePrice(priceData.price);
+      
+      // Optional: Aktualisiere auch den Preis in der stocks Liste
+      setStocks(prevStocks => 
+        prevStocks.map(stock => 
+          stock.symbol === symbol 
+            ? { ...stock, price: priceData.price, currency: priceData.currency }
+            : stock
+        )
+      );
+      
+      console.log(`Live price updated for ${symbol}: $${priceData.price}`);
+    } catch (error) {
+      console.error(`Error fetching current price for ${symbol}:`, error);
+      // Fallback auf den bestehenden Preis falls API fehlschlägt
+    } finally {
+      setPriceLoading(false);
+    }
+  };
 
   // Load stocks on first render
   useEffect(() => {
@@ -309,13 +337,19 @@ const Trade: React.FC = () => {
   }, [stocks]);
 
   useEffect(() => {
-    if (selectedStock && typeof selectedStock.price === 'number') {
-      setTradePrice(selectedStock.price);
-    } else if (selectedStock && typeof selectedStock.price === 'string') {
-      const parsedPrice = parseFloat(selectedStock.price);
-      if (!isNaN(parsedPrice)) {
-        setTradePrice(parsedPrice);
+    if (selectedStock) {
+      // Zuerst den lokalen Preis setzen
+      if (typeof selectedStock.price === 'number') {
+        setTradePrice(selectedStock.price);
+      } else if (selectedStock.price && typeof selectedStock.price === 'string') {
+        const parsedPrice = parseFloat(selectedStock.price);
+        if (!isNaN(parsedPrice)) {
+          setTradePrice(parsedPrice);
+        }
       }
+      
+      // Dann den Live-Preis abrufen
+      fetchCurrentPrice(selectedStock.symbol);
     }
   }, [selectedStock]);
 
@@ -504,8 +538,23 @@ const Trade: React.FC = () => {
                       <div className="stock-badge">
                         <span className="stock-symbol-badge">{selectedStock.symbol}</span>
                         <span className="stock-price-badge">
-                          {formatPrice(selectedStock.price, selectedStock.currency || '$')}
+                          {priceLoading ? (
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 mr-1 border border-white border-t-transparent rounded-full animate-spin"></div>
+                              Loading...
+                            </div>
+                          ) : (
+                            formatPrice(tradePrice || selectedStock.price, selectedStock.currency || '$')
+                          )}
                         </span>
+                        <button 
+                          onClick={() => fetchCurrentPrice(selectedStock.symbol)}
+                          disabled={priceLoading}
+                          className="ml-2 p-1 text-xs bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white rounded"
+                          title="Refresh live price"
+                        >
+                          🔄
+                        </button>
                       </div>
                     </div>
                     

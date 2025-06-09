@@ -653,3 +653,41 @@ export const playSlots = async (bet: number): Promise<SlotsResponseData> => {
     }
   }
 };
+
+// Interface für die einfache Stock Price Response
+export interface SimpleStockPriceResponse {
+  symbol: string;
+  price: number;
+  currency: string;
+}
+
+export const GetSimpleStockPrice = async (symbol: string): Promise<SimpleStockPriceResponse> => {
+  const params = { symbol };
+  logApiCall('GET', '/simple-stock-price', params);
+  
+  console.log('API_SERVICE: Making GetSimpleStockPrice request for:', symbol);
+  
+  try {
+    const response = await axios.get(`${API_BASE_URL}/simple-stock-price`, {
+      params,
+      withCredentials: true,
+    });
+    logDebug('Simple Stock Price Response:', response.data);
+    console.log('API_SERVICE: GetSimpleStockPrice successful for', symbol, '- Price:', response.data.price);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('API_SERVICE: GetSimpleStockPrice failed with status:', error.response?.status);
+      console.error('API_SERVICE: GetSimpleStockPrice error details:', error.response?.data || error.message);
+      if (error.response?.status === 404) {
+        console.error('API_SERVICE: 404 Not Found - Symbol may not exist:', symbol);
+      }
+      if (error.response?.status === 401) {
+        console.error('API_SERVICE: 401 Unauthorized - Token may be invalid or expired');
+      }
+    } else {
+      console.error('Unexpected error:', error);
+    }
+    throw error;
+  }
+};
