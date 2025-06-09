@@ -656,9 +656,11 @@ export const playSlots = async (bet: number): Promise<SlotsResponseData> => {
 
 // Interface für die einfache Stock Price Response
 export interface SimpleStockPriceResponse {
+  success: boolean;
   symbol: string;
   price: number;
   currency: string;
+  message?: string; // Optional für Fehlermeldungen
 }
 
 export const GetSimpleStockPrice = async (symbol: string): Promise<SimpleStockPriceResponse> => {
@@ -674,7 +676,14 @@ export const GetSimpleStockPrice = async (symbol: string): Promise<SimpleStockPr
     });
     logDebug('Simple Stock Price Response:', response.data);
     console.log('API_SERVICE: GetSimpleStockPrice successful for', symbol, '- Price:', response.data.price);
-    return response.data;
+    
+    // Ensure the response includes success property
+    return {
+      success: true,
+      symbol: response.data.symbol || symbol,
+      price: response.data.price,
+      currency: response.data.currency || 'USD'
+    };
   } catch (error) {
     if (axios.isAxiosError(error)) {
       console.error('API_SERVICE: GetSimpleStockPrice failed with status:', error.response?.status);
@@ -688,6 +697,14 @@ export const GetSimpleStockPrice = async (symbol: string): Promise<SimpleStockPr
     } else {
       console.error('Unexpected error:', error);
     }
-    throw error;
+    
+    // Return a consistent error response instead of throwing
+    return {
+      success: false,
+      symbol: symbol,
+      price: 0,
+      currency: 'USD',
+      message: 'Failed to fetch stock price'
+    };
   }
 };
