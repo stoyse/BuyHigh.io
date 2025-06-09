@@ -208,8 +208,9 @@ const Trade: React.FC = () => {
     type: null
   });
   const [priceLoading, setPriceLoading] = useState<boolean>(false);
+  const [bulkPriceLoading, setBulkPriceLoading] = useState<boolean>(false);
 
-  // Funktion zum Abrufen des aktuellen Preises
+  // Funktion zum Abrufen des aktuellen Preises für eine einzelne Aktie
   const fetchCurrentPrice = async (symbol: string) => {
     if (!symbol) return;
     
@@ -233,6 +234,62 @@ const Trade: React.FC = () => {
       // Fallback auf den bestehenden Preis falls API fehlschlägt
     } finally {
       setPriceLoading(false);
+    }
+  };
+
+  // Funktion zum Laden aller Preise gleichzeitig
+  const fetchAllPrices = async (stockList: Stock[]) => {
+    if (!stockList || stockList.length === 0) return;
+    
+    setBulkPriceLoading(true);
+    console.log(`Loading live prices for ${stockList.length} stocks...`);
+    
+    try {
+      // Alle Preise parallel laden
+      const pricePromises = stockList.map(async (stock) => {
+        try {
+          const priceData = await GetSimpleStockPrice(stock.symbol);
+          return {
+            symbol: stock.symbol,
+            price: priceData.price,
+            currency: priceData.currency,
+            success: true
+          };
+        } catch (error) {
+          console.error(`Failed to fetch price for ${stock.symbol}:`, error);
+          return {
+            symbol: stock.symbol,
+            price: stock.price,
+            currency: stock.currency,
+            success: false
+          };
+        }
+      });
+
+      const priceResults = await Promise.all(pricePromises);
+      
+      // Alle erfolgreichen Preise in die stocks Liste einbauen
+      setStocks(prevStocks => 
+        prevStocks.map(stock => {
+          const priceResult = priceResults.find(result => result.symbol === stock.symbol);
+          if (priceResult && priceResult.success) {
+            return {
+              ...stock,
+              price: priceResult.price,
+              currency: priceResult.currency
+            };
+          }
+          return stock;
+        })
+      );
+
+      const successCount = priceResults.filter(result => result.success).length;
+      console.log(`Successfully updated ${successCount}/${stockList.length} stock prices`);
+      
+    } catch (error) {
+      console.error('Error during bulk price loading:', error);
+    } finally {
+      setBulkPriceLoading(false);
     }
   };
 
@@ -291,6 +348,11 @@ const Trade: React.FC = () => {
           setSelectedStock(enrichedStocks[0]);
         }
         setLoading(false);
+        
+        // Alle Live-Preise laden
+        if (enrichedStocks.length > 0) {
+          await fetchAllPrices(enrichedStocks);
+        }
       } catch (err) {
         console.error('Error fetching stocks:', err);
         setError('Error loading stocks');
@@ -452,7 +514,15 @@ const Trade: React.FC = () => {
         
         <div className="trade-layout">
           <div className="stocks-list glass-card dark:bg-gray-800/40 dark:border-gray-700/30">
-            <h2 className="gradient-text text-xl mb-3">Available Stocks</h2>
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="gradient-text text-xl">Available Stocks</h2>
+              {bulkPriceLoading && (
+                <div className="flex items-center text-sm text-gray-500">
+                  <div className="w-3 h-3 mr-1 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                  Updating prices...
+                </div>
+              )}
+            </div>
             {loading && !stocks.length ? (
               <div className="flex justify-center py-10">
                 <div className="loader"></div>
