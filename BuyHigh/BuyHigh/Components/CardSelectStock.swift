@@ -24,6 +24,7 @@ struct CardSelectStock: View {
             contentView
             selectedAssetView
         }
+        .frame(maxWidth: .infinity)
         .onAppear {
             Task {
                 await assetLoader.loadAssets()
@@ -35,6 +36,7 @@ struct CardSelectStock: View {
         Text("Select an Asset")
             .font(.title2)
             .fontWeight(.bold)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal)
     }
     
@@ -45,6 +47,7 @@ struct CardSelectStock: View {
             
             TextField("Search assets...", text: $searchText)
                 .textFieldStyle(PlainTextFieldStyle())
+                .frame(maxWidth: .infinity)
             
             if !searchText.isEmpty {
                 Button(action: {
@@ -82,6 +85,7 @@ struct CardSelectStock: View {
                 .foregroundColor(.secondary)
             Spacer()
         }
+        .frame(maxWidth: .infinity)
         .padding()
     }
     
@@ -100,6 +104,7 @@ struct CardSelectStock: View {
             }
             .buttonStyle(.bordered)
         }
+        .frame(maxWidth: .infinity)
         .padding()
     }
     
@@ -111,14 +116,15 @@ struct CardSelectStock: View {
             Text("No assets available")
                 .foregroundColor(.secondary)
         }
+        .frame(maxWidth: .infinity)
         .padding()
     }
     
     private var assetsGridView: some View {
         ScrollView {
             LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12)
             ], spacing: 12) {
                 ForEach(filteredAssets) { asset in
                     AssetCard(
@@ -129,10 +135,12 @@ struct CardSelectStock: View {
                             selectAsset(asset)
                         }
                     )
+                    .frame(maxWidth: .infinity)
                 }
             }
             .padding(.horizontal)
         }
+        .frame(maxWidth: .infinity)
     }
     
     private var filteredAssets: [Asset] {
@@ -157,6 +165,7 @@ struct CardSelectStock: View {
                     Spacer()
                     selectedAssetPriceView(selectedAsset)
                 }
+                .frame(maxWidth: .infinity)
             }
             .padding()
             .background(Color(.systemGray6))
@@ -223,6 +232,7 @@ struct AssetCard: View {
         Button(action: onTap) {
             cardContent
                 .padding()
+                .frame(maxWidth: .infinity)
                 .frame(height: 120)
                 .background(cardBackground)
                 .overlay(cardBorder)
@@ -241,6 +251,7 @@ struct AssetCard: View {
             Spacer()
             bottomView
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     
     private var headerView: some View {
@@ -249,6 +260,7 @@ struct AssetCard: View {
             Spacer()
             assetTypeTag
         }
+        .frame(maxWidth: .infinity)
     }
     
     private var symbolView: some View {
@@ -282,6 +294,7 @@ struct AssetCard: View {
             Spacer()
             selectionIndicator
         }
+        .frame(maxWidth: .infinity)
     }
     
     @ViewBuilder
@@ -374,17 +387,24 @@ struct CardSelectStock_Previews: PreviewProvider {
     
     static var previews: some View {
         let previewAuthManager = AuthManager()
-        // Create a StockDataLoader instance for the preview
         let previewStockLoader = StockDataLoader(authManager: previewAuthManager)
         
         Group {
             CardSelectStock(selectedSymbol: $selectedSymbol, authManager: previewAuthManager, stockLoader: previewStockLoader)
+                .frame(maxWidth: .infinity)
                 .preferredColorScheme(.light)
                 .previewDisplayName("Light Mode")
             
             CardSelectStock(selectedSymbol: $selectedSymbol, authManager: previewAuthManager, stockLoader: previewStockLoader)
+                .frame(maxWidth: .infinity)
                 .preferredColorScheme(.dark)
                 .previewDisplayName("Dark Mode")
         }
     }
+}
+
+#Preview {
+    let mockAuthManager = AuthManager()
+    let mockStockLoader = StockDataLoader(authManager: mockAuthManager)
+    CardSelectStock(selectedSymbol: .constant("AAPL"), authManager: mockAuthManager, stockLoader: mockStockLoader)
 }

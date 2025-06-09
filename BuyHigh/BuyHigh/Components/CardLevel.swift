@@ -43,90 +43,112 @@ struct CardLevel: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header mit Icon
+        VStack(alignment: .leading, spacing: 16) {
+            // Header mit Glass Icon
             HStack {
-                // Icon Container
                 ZStack {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.orange.opacity(0.1))
-                        .frame(width: 40, height: 40)
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.thinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                        )
+                        .frame(width: 45, height: 45)
                     
                     Image(systemName: "star.fill")
-                        .foregroundColor(.orange)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.orange, Color.yellow],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                         .font(.title2)
+                        .shadow(color: .orange.opacity(0.5), radius: 5, x: 0, y: 2)
                 }
                 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text("Trader Level")
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     
                     Text("Experience Points")
                         .font(.caption2)
-                        .foregroundColor(.secondary.opacity(0.7))
+                        .foregroundStyle(.tertiary)
                 }
                 
                 Spacer()
             }
             
-            // Level Display
+            // Level Display mit Glow
             HStack(alignment: .bottom) {
                 Text("Level \(level)")
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.primary, Color.orange.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: .orange.opacity(0.3), radius: 8, x: 0, y: 4)
                 
                 Spacer()
             }
             
-            // XP Progress Bar
-            VStack(alignment: .leading, spacing: 4) {
-                // Progress Bar
+            // XP Progress Bar mit Glass Effect
+            VStack(alignment: .leading, spacing: 8) {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color(.systemGray5))
-                            .frame(height: 6)
+                        // Background Track
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(.thinMaterial)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                            )
+                            .frame(height: 8)
                         
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.orange)
-                            .frame(width: geometry.size.width * xpPercentage, height: 6)
+                        // Progress Fill
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.orange, Color.yellow, Color.orange],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: geometry.size.width * xpPercentage, height: 8)
+                            .shadow(color: .orange.opacity(0.5), radius: 4, x: 0, y: 2)
                     }
                 }
-                .frame(height: 6)
+                .frame(height: 8)
                 
                 // XP Text
                 HStack {
                     Text("\(xp) XP")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.secondary)
                     
                     Spacer()
                     
                     if nextLevelXP > 0 {
                         Text("\(nextLevelXP) XP")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.secondary)
                     } else {
                         Text("Max Level")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.orange)
                     }
                 }
             }
         }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color(.systemGray5), lineWidth: 1)
-        )
+        .glassCard(cornerRadius: 20)
     }
 }
 

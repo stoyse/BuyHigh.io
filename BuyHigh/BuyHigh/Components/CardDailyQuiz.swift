@@ -10,7 +10,7 @@ import SwiftUI
 struct CardDailyQuiz: View {
     @EnvironmentObject var authManager: AuthManager
     @State private var dailyQuiz: DailyQuiz?
-    @State private var isLoading = true // Start with loading true
+    @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var selectedAnswer: String?
     @State private var isSubmitting: Bool = false
@@ -23,102 +23,217 @@ struct CardDailyQuiz: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Daily Quiz")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding(.bottom, 5)
+        VStack(alignment: .leading, spacing: 20) {
+            // Header with Glass Icon
+            HStack {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.thinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                        )
+                        .frame(width: 45, height: 45)
+                    
+                    Image(systemName: "questionmark.circle.fill")
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.mint, Color.green],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .font(.title2)
+                        .shadow(color: .mint.opacity(0.3), radius: 3, x: 0, y: 2)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Daily Quiz")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.primary)
+                    
+                    Text("Test your knowledge")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+            }
 
             if isLoading {
-                ProgressView("Loading Quiz...")
-                    .frame(maxWidth: .infinity, alignment: .center)
+                HStack {
+                    Spacer()
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .scaleEffect(1.2)
+                        Text("Loading Quiz...")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 20)
             } else if let errorMessage = errorMessage {
-                VStack {
+                VStack(spacing: 16) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.title)
+                        .foregroundStyle(.orange)
+                        .shadow(color: .orange.opacity(0.3), radius: 5, x: 0, y: 2)
+                    
                     Text("Error: \(errorMessage)")
-                        .foregroundColor(.red)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                    
                     Button("Retry") {
                         Task {
                             await loadInitialData()
                         }
                     }
-                    .padding(.top)
+                    .glassButton()
                 }
+                .padding(.vertical, 16)
             } else if let quiz = dailyQuiz {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Question
                     Text(quiz.question)
                         .font(.headline)
-                        .fixedSize(horizontal: false, vertical: true) // Allow text to wrap
+                        .fontWeight(.medium)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.bottom, 8)
 
-                    ForEach(possibleAnswers, id: \.self) { answer in
-                        Button(action: {
-                            if !hasAttemptedToday {
-                                self.selectedAnswer = answer
-                                Task {
-                                    await handleSubmitAnswer(quizId: quiz.id, answer: answer)
-                                }
-                            }
-                        }) {
-                            HStack {
-                                Text(answer)
-                                    .foregroundColor(determineButtonForegroundColor(for: answer))
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 12)
-                                if hasAttemptedToday && attemptResult?.selectedAnswer == answer {
-                                    if attemptResult?.isCorrect == true {
-                                        Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
-                                    } else {
-                                        Image(systemName: "xmark.circle.fill").foregroundColor(.red)
+                    // Answer Options
+                    VStack(spacing: 12) {
+                        ForEach(possibleAnswers, id: \.self) { answer in
+                            Button(action: {
+                                if !hasAttemptedToday {
+                                    self.selectedAnswer = answer
+                                    Task {
+                                        await handleSubmitAnswer(quizId: quiz.id, answer: answer)
                                     }
                                 }
+                            }) {
+                                HStack {
+                                    Text(answer)
+                                        .foregroundStyle(determineButtonForegroundColor(for: answer))
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                    
+                                    if hasAttemptedToday && attemptResult?.selectedAnswer == answer {
+                                        if attemptResult?.isCorrect == true {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundStyle(.green)
+                                                .font(.title3)
+                                        } else {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .foregroundStyle(.red)
+                                                .font(.title3)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
+                                .background(
+                                    ZStack {
+                                        // Base material background
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(determineButtonBackgroundMaterial(for: answer))
+                                        
+                                        // Color overlay for states
+                                        determineButtonBackgroundOverlay(for: answer)
+                                    }
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(determineButtonBorderColor(for: answer), lineWidth: 1.5)
+                                    )
+                                    .shadow(color: determineButtonShadowColor(for: answer), radius: 8, x: 0, y: 4)
+                                )
                             }
-                            .frame(maxWidth: .infinity)
-                            .background(determineButtonBackgroundColor(for: answer))
-                            .cornerRadius(8)
+                            .disabled(isSubmitting || hasAttemptedToday)
                         }
-                        .disabled(isSubmitting || hasAttemptedToday)
                     }
 
                     if isSubmitting {
-                        ProgressView("Submitting...")
-                            .padding(.top)
+                        HStack {
+                            Spacer()
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                Text("Submitting...")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                        .padding(.top, 8)
                     }
 
                     if hasAttemptedToday, let result = attemptResult {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(result.isCorrect ? "Correct!" : "Incorrect")
-                                .font(.headline)
-                                .foregroundColor(result.isCorrect ? .green : .red)
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Image(systemName: result.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                    .foregroundStyle(result.isCorrect ? .green : .red)
+                                    .font(.title3)
+                                
+                                Text(result.isCorrect ? "Correct!" : "Incorrect")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(result.isCorrect ? .green : .red)
+                                
+                                Spacer()
+                            }
+                            
                             if !result.isCorrect {
                                 Text("Correct Answer: \(result.correctAnswer)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
+                            
                             if let explanation = result.explanation, !explanation.isEmpty {
                                 Text("Explanation: \(explanation)")
                                     .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
+                            
                             if let xp = result.xpGained, xp > 0 {
-                                Text("XP Gained: \(xp)")
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
-                            }
-                            if let message = result.message, result.message != "Attempt recorded successfully." && result.message != "Quiz already attempted today." {
-                                Text(message)
-                                    .font(.caption)
-                                    .foregroundColor(.orange)
+                                HStack {
+                                    Image(systemName: "star.fill")
+                                        .foregroundStyle(.orange)
+                                        .font(.caption)
+                                    Text("XP Gained: \(xp)")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(.orange)
+                                }
                             }
                         }
-                        .padding(.top)
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                )
+                        )
                     }
                 }
             } else {
-                Text("No quiz data available for today.")
-                    .frame(maxWidth: .infinity, alignment: .center)
+                VStack(spacing: 12) {
+                    Image(systemName: "questionmark.circle")
+                        .font(.title)
+                        .foregroundStyle(.secondary)
+                    
+                    Text("No quiz data available for today.")
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.vertical, 20)
             }
         }
-        .padding()
-        .background(Color(UIColor.systemGray6)) // Explicitly use UIColor for systemGray6
-        .cornerRadius(10)
-        .shadow(radius: 3)
+        .glassCard(cornerRadius: 20)
         .task {
             await loadInitialData()
         }
@@ -217,23 +332,102 @@ struct CardDailyQuiz: View {
     }
 
     func determineButtonForegroundColor(for answer: String) -> Color {
-        guard hasAttemptedToday, let result = attemptResult, let currentQuiz = dailyQuiz else {
-            return .white
+        guard hasAttemptedToday, let result = attemptResult else {
+            return .primary // Use primary color for better light/dark mode adaptation
         }
-        if answer == result.correctAnswer || (answer == selectedAnswer && !result.isCorrect) {
-            return .white
+        
+        if answer == result.correctAnswer {
+            return .white // White text on green background
         }
-        return .primary // Default for other answers after attempt
+        if answer == selectedAnswer && !result.isCorrect {
+            return .white // White text on red background
+        }
+        return .primary // Use primary color for other answers after attempt
+    }
+    
+    func determineButtonBackgroundMaterial(for answer: String) -> Material {
+        guard hasAttemptedToday, let result = attemptResult else {
+            return selectedAnswer == answer ? .regularMaterial : .ultraThinMaterial
+        }
+        
+        if answer == result.correctAnswer {
+            return .regularMaterial // Use regular material for correct answer
+        }
+        if answer == selectedAnswer && !result.isCorrect {
+            return .regularMaterial // Use regular material for incorrect answer
+        }
+        return .ultraThinMaterial
+    }
+
+    func determineButtonBorderColor(for answer: String) -> Color {
+        guard hasAttemptedToday, let result = attemptResult else {
+            return selectedAnswer == answer ? 
+                Color.accentColor.opacity(0.6) : // Use accent color for selection
+                Color.primary.opacity(0.2) // Use primary color with opacity for borders
+        }
+        
+        if answer == result.correctAnswer {
+            return Color.green.opacity(0.8)
+        }
+        if answer == selectedAnswer && !result.isCorrect {
+            return Color.red.opacity(0.8)
+        }
+        return Color.primary.opacity(0.2)
+    }
+
+    func determineButtonShadowColor(for answer: String) -> Color {
+        guard hasAttemptedToday, let result = attemptResult else {
+            return selectedAnswer == answer ? 
+                Color.accentColor.opacity(0.3) : // Use accent color for selection shadow
+                Color.primary.opacity(0.1) // Use primary color for normal shadow
+        }
+        
+        if answer == result.correctAnswer {
+            return Color.green.opacity(0.4)
+        }
+        if answer == selectedAnswer && !result.isCorrect {
+            return Color.red.opacity(0.4)
+        }
+        return Color.primary.opacity(0.1)
+    }
+    
+    // Add new function for background overlay when answer is selected/correct/incorrect
+    func determineButtonBackgroundOverlay(for answer: String) -> some View {
+        Group {
+            if hasAttemptedToday, let result = attemptResult {
+                if answer == result.correctAnswer {
+                    // Green overlay for correct answer
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.green.opacity(0.2))
+                } else if answer == selectedAnswer && !result.isCorrect {
+                    // Red overlay for incorrect selected answer
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.red.opacity(0.2))
+                } else {
+                    // No overlay for other answers
+                    Color.clear
+                }
+            } else if selectedAnswer == answer {
+                // Blue/accent overlay for currently selected answer before submission
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.accentColor.opacity(0.15))
+            } else {
+                Color.clear
+            }
+        }
+    }
+}
+
+// Update the button background in the main body
+extension CardDailyQuiz {
+    var adaptiveButtonBackground: some View {
+        // This would be used in the button styling within the main body
+        EmptyView()
     }
 }
 
 #Preview {
-    // Create a mock AuthManager for the preview
     let mockAuthManager = AuthManager()
-    // Optionally set a dummy token if your load functions require it for previewing data
-    // mockAuthManager.idToken = "dummy_token_for_preview"
-
-    return CardDailyQuiz()
+    CardDailyQuiz()
         .environmentObject(mockAuthManager)
-        // You might want to mock a DailyQuiz and DailyQuizAttemptResponse for different preview states
 }

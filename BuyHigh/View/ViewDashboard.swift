@@ -17,96 +17,142 @@ struct ViewDashboard: View {
     }
     
     var body: some View {
-        NavigationView { // Wrap with NavigationView
-            ScrollView { // Wrap the main content in a ScrollView
-                VStack {
-                    if userLoader.isLoading {
-                        ProgressView("Loading Profile...")
-                            .padding()
-                    }
-                    else if let errorMessage = userLoader.errorMessage {
-                        VStack { // Error message block
-                            Text("Error")
-                                .font(.title3) // Smaller than .largeTitle
-                                .foregroundColor(.red)
-                                .padding(.bottom, 2)
-                            Text(errorMessage)
-                                .foregroundColor(.red)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal)
-                            Button("Try Again") {
-                                userLoader.fetchUserData()
+        NavigationView {
+            ZStack {
+                // Animated Glass Background
+                LinearGradient(
+                    colors: [
+                        Color(.systemBackground),
+                        Color.blue.opacity(0.05),
+                        Color.purple.opacity(0.03),
+                        Color(.systemBackground)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 20) {
+                        if userLoader.isLoading {
+                            VStack {
+                                ProgressView("Loading Profile...")
+                                    .padding()
+                                    .glassBackground(cornerRadius: 16)
                             }
-                            .padding(.top, 5)
                         }
-                        .padding() // Add padding to the error VStack itself for better spacing
-                    }
-                    else if let userData = userLoader.userData {
-                        let xp = Int(userData.xp ?? 0)
-                        let level = Int(userData.level ?? 0)
-                        
-                        // Improved greeting design
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Hi there!")
-                                    .font(.headline)
-                                    .foregroundColor(.secondary)
+                        else if let errorMessage = userLoader.errorMessage {
+                            VStack(spacing: 16) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.title)
+                                    .foregroundStyle(.orange)
+                                    .shadow(color: .orange.opacity(0.3), radius: 5, x: 0, y: 2)
                                 
-                                if let username = userData.username {
-                                    Text(username)
-                                        .font(.title2)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.primary)
-                                } else {
-                                    Text("Welcome")
-                                        .font(.title2)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.primary)
+                                Text("Error")
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
+                                
+                                Text(errorMessage)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                                
+                                Button("Try Again") {
+                                    userLoader.fetchUserData()
+                                }
+                                .glassButton()
+                            }
+                            .glassCard()
+                            .padding(.horizontal)
+                        }
+                        else if let userData = userLoader.userData {
+                            let xp = Int(userData.xp ?? 0)
+                            let level = Int(userData.level ?? 0)
+                            
+                            // Improved greeting design mit Glass
+                            HStack {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Hi there!")
+                                        .font(.headline)
+                                        .foregroundStyle(.secondary)
+                                    
+                                    if let username = userData.username {
+                                        Text(username)
+                                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                                            .foregroundStyle(
+                                                LinearGradient(
+                                                    colors: [Color.primary, Color.blue.opacity(0.8)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                            )
+                                            .shadow(color: .blue.opacity(0.2), radius: 5, x: 0, y: 2)
+                                    } else {
+                                        Text("Welcome")
+                                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                                            .foregroundStyle(.primary)
+                                    }
+                                }
+                                
+                                Spacer()
+                                
+                                NavigationLink(destination: ViewProfile(authManager: authManagerEnv)) {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(.thinMaterial)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 16)
+                                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                            )
+                                            .frame(width: 50, height: 50)
+                                            .shadow(color: .purple.opacity(0.2), radius: 8, x: 0, y: 4)
+                                        
+                                        Image(systemName: "person.circle.fill")
+                                            .font(.title)
+                                            .foregroundStyle(
+                                                LinearGradient(
+                                                    colors: [Color.purple, Color.blue],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                            )
+                                    }
                                 }
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
+                            .padding(.bottom, 16)
                             
-                            Spacer()
-                            
-                            // Profile navigation icon
-                            NavigationLink(destination: ViewProfile(authManager: authManagerEnv)) {
-                                Image(systemName: "person.circle.fill")
-                                    .font(.title)
-                                    .foregroundColor(.purple)
+                            NavigationLink(destination: ViewTransactions(authManager: authManagerEnv)) {
+                                CardBalance(balance: userData.balance)
+                                    .padding(.horizontal)
                             }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            CardLevel(xp: xp, level: level)
+                                .padding(.horizontal)
+                            
+                            CardPortfolio(authManager: authManagerEnv)
                         }
-                        .padding(.horizontal)
-                        .padding(.top, 8)
-                        .padding(.bottom, 16)
-                        
-                        NavigationLink(destination: ViewTransactions(authManager: authManagerEnv)) { // Wrap CardBalance in NavigationLink
-                            CardBalance(balance: userData.balance)
+                        else {
+                            VStack {
+                                Text("No user Data found.")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .glassCard()
+                            .padding(.horizontal)
                         }
-                        CardLevel(xp: xp, level: level)
-                        
-                        // Portfolio-Karte hinzufügen
-                        CardPortfolio(authManager: authManagerEnv)
-                            .padding(.top) // Etwas Abstand nach oben
-                        
-                        // Spacer() // Removed Spacer to allow ScrollView to manage content height
                     }
-                    //.padding() // Padding for the error block
-                    else {
-                        Text("No user Data found.")
-                            .padding()
-                        // Spacer() // Removed Spacer here as well
+                }
+                .onAppear {
+                    // Fetch user data if not already loaded or if retrying
+                    if userLoader.userData == nil && !userLoader.isLoading {
+                        userLoader.fetchUserData()
                     }
-                    
-                } // End of main VStack
-            } // End of ScrollView
-            .onAppear {
-                // Fetch user data if not already loaded or if retrying
-                if userLoader.userData == nil && !userLoader.isLoading {
-                    userLoader.fetchUserData()
                 }
             }
-            // .navigationTitle("Dashboard") // Optional: Add a title if desired
         }
-        .navigationViewStyle(.stack) // Add for consistent stack navigation
+        .navigationViewStyle(.stack)
     }
 }
 

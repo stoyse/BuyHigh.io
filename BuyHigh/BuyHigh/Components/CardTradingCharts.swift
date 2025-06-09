@@ -79,3 +79,7 @@ func generateTradingViewHTML(for symbol: String) -> String {
         }
     }
 }
+
+#Preview {
+    CardTradingCharts(stock: "AAPL")
+}

@@ -29,11 +29,36 @@ struct CardPortfolio: View {
         }()
 
         VStack(alignment: .leading, spacing: 0) {
-            Text("My Portfolio")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding([.leading, .top])
-                .padding(.bottom, 8)
+            // Header mit Glass Design
+            HStack {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(.thinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                        )
+                        .frame(width: 40, height: 40)
+                    
+                    Image(systemName: "briefcase.fill")
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.blue, Color.purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .font(.title3)
+                }
+                
+                Text("My Portfolio")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+                
+                Spacer()
+            }
+            .padding(.bottom, 16)
 
             if portfolioLoader.isLoading {
                 let _ = print("CardPortfolio body: Zeige ProgressView")
@@ -41,43 +66,45 @@ struct CardPortfolio: View {
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .center)
             } else if let errorMessage = portfolioLoader.errorMessage {
-                let _ = print("CardPortfolio body: Zeige ErrorMessage: \(errorMessage)")
-                VStack {
+                VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.red)
+                        .foregroundStyle(.orange)
                         .font(.title)
-                        .padding(.bottom, 2)
+                        .shadow(color: .orange.opacity(0.3), radius: 5, x: 0, y: 2)
+                    
                     Text("Error Loading Portfolio")
                         .font(.headline)
+                        .foregroundStyle(.primary)
+                    
                     Text(errorMessage)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                    
                     Button("Try Again") {
                         if let userId = authManagerEnv.userId {
                             portfolioLoader.loadPortfolio(userID: userId)
                         }
                     }
-                    .padding(.top, 8)
-                    .buttonStyle(.bordered)
+                    .glassButton()
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .center)
             } else if portfolioLoader.portfolio.isEmpty {
-                let _ = print("CardPortfolio body: Zeige 'Portfolio ist leer'-Nachricht")
-                VStack {
+                VStack(spacing: 12) {
                     Image(systemName: "briefcase.fill")
-                        .font(.largeTitle)
-                        .foregroundColor(.secondary)
-                        .padding(.bottom, 4)
+                        .font(.system(size: 40))
+                        .foregroundStyle(.tertiary)
+                        .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 2)
+                    
                     Text("Your Portfolio is Empty")
                         .font(.headline)
+                        .foregroundStyle(.primary)
+                    
                     Text("Start trading to see your assets here.")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -96,49 +123,55 @@ struct CardPortfolio: View {
                 List {
                     ForEach(portfolioLoader.portfolio) { item in
                         PortfolioItemRow(item: item)
-                            // .background(Color.yellow) // Hintergrund für jedes Item - ENTFERNT
+                            .listRowBackground(Color.clear)
                     }
                 }
                 .listStyle(PlainListStyle())
+                .scrollContentBackground(.hidden)
                 // .background(Color.green) // Hintergrund für die gesamte Liste - ENTFERNT
                 // Wende die berechnete Höhe an. Stelle sicher, dass die Höhe nicht Null ist, wenn Elemente vorhanden sind.
                 .frame(height: numberOfRows > 0 ? listDisplayHeight : 0) 
             }
         }
-        .onAppear {
-            // Protokolliert, wann onAppear aufgerufen wird und was es entscheidet zu tun.
-            print("CardPortfolio onAppear: portfolio.isEmpty = \(portfolioLoader.portfolio.isEmpty), errorMessageIsNil = \(portfolioLoader.errorMessage == nil), isLoading = \(!portfolioLoader.isLoading)")
-            if portfolioLoader.portfolio.isEmpty && portfolioLoader.errorMessage == nil && !portfolioLoader.isLoading {
-                if let userId = authManagerEnv.userId {
-                    print("CardPortfolio onAppear: Rufe loadPortfolio für userID: \(userId) auf")
-                    portfolioLoader.loadPortfolio(userID: userId)
-                } else {
-                    print("CardPortfolio onAppear: userId ist nil, lade Portfolio nicht.")
-                    // portfolioLoader.errorMessage = "Please log in to view your portfolio."
-                }
-            } else {
-                print("CardPortfolio onAppear: Bedingungen zum Laden des Portfolios nicht erfüllt.")
-            }
-        }
+        .padding(20)
         .background(Color.gray.opacity(0.1)) // Reine SwiftUI-Farbe für den Hintergrund
         .cornerRadius(12)
+        .glassCard(cornerRadius: 20)
         .padding(.horizontal)
         .padding(.vertical, 10)
     }
 }
 
 struct PortfolioItemRow: View {
-    let item: Portfolio // Sicherstellen, dass die Struktur `Portfolio` hier bekannt ist.
+    let item: Portfolio
 
     var body: some View {
-        HStack {
+        HStack(spacing: 16) {
+            // Asset Icon mit Glass Effect
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    )
+                    .frame(width: 35, height: 35)
+                
+                Text(String(item.symbol.prefix(2)))
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+            }
+            
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.name)
                     .font(.headline)
                     .lineLimit(1)
+                    .foregroundStyle(.primary)
+                
                 Text(item.symbol)
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundStyle(.secondary)
             }
             
             Spacer()
@@ -146,11 +179,13 @@ struct PortfolioItemRow: View {
             VStack(alignment: .trailing, spacing: 4) {
                 Text(String(format: "$%.2f", item.value))
                     .font(.headline)
-                    .foregroundColor(item.performance >= 0 ? .green : .red)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(item.performance >= 0 ? Color.green : Color.red)
+                    .shadow(color: (item.performance >= 0 ? Color.green : Color.red).opacity(0.3), radius: 3, x: 0, y: 1)
                 
-                Text("Qty: \(item.quantity)")
+                Text("Qty: \(item.quantity, specifier: "%.2f")")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.tertiary)
                 
                 HStack(spacing: 4) {
                     Image(systemName: item.performance >= 0 ? "arrow.up.right" : "arrow.down.left")
@@ -159,7 +194,7 @@ struct PortfolioItemRow: View {
                         .font(.caption)
                         .fontWeight(.medium)
                 }
-                .foregroundColor(item.performance >= 0 ? .green : .red)
+                .foregroundStyle(item.performance >= 0 ? Color.green : Color.red)
             }
         }
         .padding(.vertical, 8)
@@ -239,4 +274,15 @@ struct CardPortfolio_Previews: PreviewProvider {
     }
 }
 #endif
+
+#Preview {
+    let mockAuthManager = AuthManager()
+    let mockPortfolioLoader = PortfolioLoader(authManager: mockAuthManager)
+    mockPortfolioLoader.portfolio = [
+        Portfolio(symbol: "AAPL", name: "Apple Inc.", type: "Stock", quantity: 10, averagePrice: 150.0, currentPrice: 175.0, performance: 0.1667, sector: "Technology", value: 1750.0),
+        Portfolio(symbol: "TSLA", name: "Tesla Inc.", type: "Stock", quantity: 5, averagePrice: 600.0, currentPrice: 700.0, performance: 0.1667, sector: "Automotive", value: 3500.0)
+    ]
+    return CardPortfolio(authManager: mockAuthManager)
+        .environmentObject(mockAuthManager)
+}
 

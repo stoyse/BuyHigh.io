@@ -15,27 +15,43 @@ struct ContentView: View {
         // Entscheiden, welche Ansicht basierend auf dem Login-Status angezeigt wird
         if authManager.isLoggedIn {
             // Hauptansicht der App nach dem Login
-            VStack(spacing: 0) {
-                Group {
-                    switch selectedPage {
-                    case .dashboard:
-                        ViewDashboard(authManager: authManager)
-                    case .trade:
-                        ViewTrade(authManager: authManager)
-                    case .game:
-                        ViewGame()
-                    case .learn:
-                        ViewLearn()
-                    case .profile:
-                        ViewProfile(authManager: authManager)
-                    case .transactions:
-                        ViewTransactions(authManager: authManager)
-                    case .ai:
-                        ViewAI()
-                        
+            ZStack {
+                // Glass Background für die gesamte App
+                LinearGradient(
+                    colors: [
+                        Color(.systemBackground),
+                        Color.blue.opacity(0.02),
+                        Color.purple.opacity(0.01),
+                        Color(.systemBackground)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    Group {
+                        switch selectedPage {
+                        case .dashboard:
+                            ViewDashboard(authManager: authManager)
+                        case .trade:
+                            ViewTrade(authManager: authManager)
+                        case .game:
+                            ViewGame()
+                        case .learn:
+                            ViewLearn()
+                        case .profile:
+                            ViewProfile(authManager: authManager)
+                        case .transactions:
+                            ViewTransactions(authManager: authManager)
+                        case .ai:
+                            ViewAI()
+                            
+                        }
                     }
+                    
+                    NavBar(selectedPage: $selectedPage)
                 }
-                NavBar(selectedPage: $selectedPage)
             }
             .onAppear {
                 print("ContentView: Displaying main app content (isLoggedIn is true)")

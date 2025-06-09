@@ -8,140 +8,363 @@
 import SwiftUI
 
 struct ViewProfile: View {
-    @EnvironmentObject var authManagerEnv: AuthManager // Renamed to avoid conflict if needed, or keep as authManager
+    let authManager: AuthManager
     @StateObject private var userLoader: UserLoader
-
-    // Explicit initializer to pass AuthManager to UserLoader
+    
     init(authManager: AuthManager) {
-        _userLoader = StateObject(wrappedValue: UserLoader(authManager: authManager))
+        self.authManager = authManager
+        self._userLoader = StateObject(wrappedValue: UserLoader(authManager: authManager))
     }
-
+    
     var body: some View {
-        VStack { // Main container
-            // User ID Area (Top)
-            VStack {
-                if let uid = userLoader.userData?.id { // Prefer userData.id if fetch was successful
-                    Text("User ID: \(uid)")
-                } else if let uid = authManagerEnv.userId { // Fallback to authManager.userId
-                    Text("User ID: \(uid)")
-                } else {
-                    Text("User ID: Not available")
-                }
-            }
-            .font(.headline)
-            .padding(.top)
-
-            // Dynamic Content Area (Middle)
-            if userLoader.isLoading {
-                ProgressView("Loading Profile...")
-                    .padding()
-            } else if let errorMessage = userLoader.errorMessage {
-                VStack { // Error message block
-                    Text("Error")
-                        .font(.title3) // Smaller than .largeTitle
-                        .foregroundColor(.red)
-                        .padding(.bottom, 2)
-                    Text(errorMessage)
-                        .foregroundColor(.red)
-                        .multilineTextAlignment(.center)
+        ZStack {
+            // Glass Background
+            LinearGradient(
+                colors: [
+                    Color(.systemBackground),
+                    Color.purple.opacity(0.05),
+                    Color.blue.opacity(0.03),
+                    Color(.systemBackground)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            ScrollView {
+                VStack(spacing: 24) {
+                    if userLoader.isLoading {
+                        VStack {
+                            ProgressView("Loading Profile...")
+                                .padding()
+                        }
+                        .glassCard()
                         .padding(.horizontal)
-                    Button("Try Again") {
-                        userLoader.fetchUserData()
                     }
-                    .padding(.top, 5)
-                }
-                .padding() // Padding for the error block
-            } else if let userData = userLoader.userData { // Changed to unwrap userData
-                // Display User Details
-                List { // Using a List for better structure and scrollability if content grows
-                    Section(header: Text("User Info:").font(.title2)) {
-                        HStack {
-                            Text("Username:")
-                                .fontWeight(.bold)
-                            Spacer()
-                            Text(userData.username ?? "N/A")
+                    else if let errorMessage = userLoader.errorMessage {
+                        VStack(spacing: 16) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.title)
+                                .foregroundStyle(.orange)
+                                .shadow(color: .orange.opacity(0.3), radius: 5, x: 0, y: 2)
+                            
+                            Text("Error Loading Profile")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            
+                            Text(errorMessage)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                            
+                            Button("Try Again") {
+                                userLoader.fetchUserData()
+                            }
+                            .glassButton()
                         }
-                        HStack {
-                            Text("Email:")
-                                .fontWeight(.bold)
-                            Spacer()
-                            Text(userData.email)
-                        }
-                        if let balance = userData.balance {
-                            HStack {
-                                Text("Balance:")
-                                    .fontWeight(.bold)
-                                Spacer()
-                                Text(String(format: "%.2f", balance))
+                        .glassCard()
+                        .padding(.horizontal)
+                    }
+                    else if let userData = userLoader.userData {
+                        // Profile Header
+                        VStack(spacing: 20) {
+                            // Avatar Section
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 25)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 25)
+                                            .stroke(
+                                                LinearGradient(
+                                                    colors: [
+                                                        Color.white.opacity(0.6),
+                                                        Color.purple.opacity(0.3),
+                                                        Color.blue.opacity(0.2)
+                                                    ],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                ),
+                                                lineWidth: 2
+                                            )
+                                    )
+                                    .frame(width: 100, height: 100)
+                                    .shadow(color: .purple.opacity(0.3), radius: 15, x: 0, y: 8)
+                                
+                                Image(systemName: "person.fill")
+                                    .font(.system(size: 45))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [Color.purple, Color.blue],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
+                            
+                            // Name and Email
+                            VStack(spacing: 8) {
+                                if let username = userData.username {
+                                    Text(username)
+                                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: [Color.primary, Color.purple.opacity(0.8)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .shadow(color: .purple.opacity(0.2), radius: 5, x: 0, y: 2)
+                                } else {
+                                    Text("User")
+                                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.primary)
+                                }
+                                
+                                Text(userData.email)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
                         }
-                        if let level = userData.level {
+                        .glassCard()
+                        .padding(.horizontal)
+                        
+                        // Profile Stats Grid
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: 16) {
+                            ProfileStatCard(
+                                icon: "star.fill",
+                                title: "Level",
+                                value: "\(userData.level ?? 0)",
+                                gradientColors: [Color.orange, Color.yellow]
+                            )
+                            
+                            ProfileStatCard(
+                                icon: "bolt.fill",
+                                title: "XP",
+                                value: "\(userData.xp ?? 0)",
+                                gradientColors: [Color.blue, Color.purple]
+                            )
+                            
+                            ProfileStatCard(
+                                icon: "chart.line.uptrend.xyaxis",
+                                title: "Total Trades",
+                                value: "\(userData.total_trades ?? 0)",
+                                gradientColors: [Color.green, Color.mint]
+                            )
+                            
+                            ProfileStatCard(
+                                icon: "dollarsign.circle.fill",
+                                title: "P&L",
+                                value: String(format: "%.2f", userData.profit_loss ?? 0.0),
+                                gradientColors: [Color.pink, Color.orange]
+                            )
+                        }
+                        .padding(.horizontal)
+                        
+                        // Account Settings
+                        VStack(alignment: .leading, spacing: 16) {
                             HStack {
-                                Text("Level:")
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(.thinMaterial)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                        )
+                                        .frame(width: 40, height: 40)
+                                    
+                                    Image(systemName: "gear")
+                                        .foregroundStyle(
+                                            LinearGradient(
+                                                colors: [Color.gray, Color.secondary],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .font(.title3)
+                                }
+                                
+                                Text("Account Settings")
+                                    .font(.title2)
                                     .fontWeight(.bold)
+                                    .foregroundStyle(.primary)
+                                
                                 Spacer()
-                                Text(String(level))
+                            }
+                            
+                            VStack(spacing: 12) {
+                                ProfileSettingRow(
+                                    icon: "envelope.fill",
+                                    title: "Email",
+                                    value: userData.email,
+                                    isVerified: userData.email_verified ?? false
+                                )
+                                
+                                ProfileSettingRow(
+                                    icon: "calendar",
+                                    title: "Member Since",
+                                    value: formatDate(userData.created_at ?? ""),
+                                    isVerified: true
+                                )
+                                
+                                ProfileSettingRow(
+                                    icon: "paintbrush.fill",
+                                    title: "Theme",
+                                    value: userData.theme?.capitalized ?? "System",
+                                    isVerified: true
+                                )
                             }
                         }
-                        if let xp = userData.xp {
+                        .glassCard()
+                        .padding(.horizontal)
+                        
+                        // Logout Button
+                        Button(action: {
+                            authManager.logout()
+                        }) {
                             HStack {
-                                Text("XP:")
-                                    .fontWeight(.bold)
-                                Spacer()
-                                Text(String(xp))
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    .font(.title3)
+                                Text("Logout")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
                             }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                LinearGradient(
+                                    colors: [Color.red, Color.pink],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                in: RoundedRectangle(cornerRadius: 12)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                            .shadow(color: .red.opacity(0.4), radius: 15, x: 0, y: 8)
                         }
-                        if let trades = userData.total_trades {
-                            HStack {
-                                Text("Trades:")
-                                    .fontWeight(.bold)
-                                Spacer()
-                                Text(String(trades))
-                            }
-                        }
+                        .padding(.horizontal)
                     }
                 }
-                .listStyle(GroupedListStyle()) // Apply a grouped list style
-                
-            } else {
-                // Initial state, not loading, no error, no data.
-                Text("No userdata Available")
-                    .padding()
-                Spacer() // Ensures logout button is pushed down.
+                .padding(.vertical, 20)
             }
-
-            Spacer() // Pushes Logout button to the bottom
-
-            // Logout Button Area (Bottom)
-            Button(action: {
-                authManagerEnv.logout()
-            }) {
-                Text("Logout")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(width: 220, height: 60)
-                    .background(Color.red)
-                    .cornerRadius(15.0)
-            }
-            .padding(.bottom)
         }
+        .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            // Fetch user data if not already loaded or if retrying
             if userLoader.userData == nil && !userLoader.isLoading {
-                 userLoader.fetchUserData()
+                userLoader.fetchUserData()
             }
         }
+    }
+    
+    private func formatDate(_ dateString: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"
+        
+        if let date = formatter.date(from: dateString) {
+            let displayFormatter = DateFormatter()
+            displayFormatter.dateStyle = .medium
+            return displayFormatter.string(from: date)
+        }
+        
+        return "Unknown"
     }
 }
 
-// Adjust Preview to provide AuthManager for UserLoader
-#Preview {
-    let authManager = AuthManager()
-
-
+struct ProfileStatCard: View {
+    let icon: String
+    let title: String
+    let value: String
+    let gradientColors: [Color]
     
-    // Use the new initializer for the preview
-    return ViewProfile(authManager: authManager)
-        .environmentObject(authManager) // Still provide it for @EnvironmentObject if used directly in ViewProfile
+    var body: some View {
+        VStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.thinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                    )
+                    .frame(width: 45, height: 45)
+                
+                Image(systemName: icon)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: gradientColors,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .font(.title2)
+            }
+            
+            VStack(spacing: 4) {
+                Text(value)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.primary)
+                
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .glassCard(cornerRadius: 16)
+    }
+}
+
+struct ProfileSettingRow: View {
+    let icon: String
+    let title: String
+    let value: String
+    let isVerified: Bool
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    )
+                    .frame(width: 30, height: 30)
+                
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                
+                Text(value)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+            }
+            
+            Spacer()
+            
+            if isVerified {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.caption)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+#Preview {
+    NavigationView {
+        ViewProfile(authManager: AuthManager())
+    }
 }
