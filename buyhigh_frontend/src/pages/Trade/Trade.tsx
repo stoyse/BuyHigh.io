@@ -366,12 +366,13 @@ const Trade: React.FC = () => {
     
     if (isNaN(numericPrice)) return 'N/A';
     
+    // Immer $ verwenden, unabhängig vom currency Parameter
     if (numericPrice >= 1000) {
-      return `${currency}${numericPrice.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+      return `$${numericPrice.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
     } else if (numericPrice >= 10) {
-      return `${currency}${numericPrice.toFixed(2)}`;
+      return `$${numericPrice.toFixed(2)}`;
     } else {
-      return `${currency}${numericPrice.toFixed(3)}`;
+      return `$${numericPrice.toFixed(3)}`;
     }
   };
   
