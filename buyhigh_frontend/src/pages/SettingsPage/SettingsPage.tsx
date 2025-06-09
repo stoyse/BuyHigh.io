@@ -67,17 +67,17 @@ const SettingsPage: React.FC = () => {
 
   const handlePasswordReset = async () => {
     if (!authUser || !authUser.email) {
-      setResetPasswordError("Benutzer-E-Mail nicht gefunden. Bitte stellen Sie sicher, dass Sie angemeldet sind.");
+      setResetPasswordError("User email not found. Please ensure you are logged in.");
       return;
     }
     const auth = getAuth();
     try {
       await sendPasswordResetEmail(auth, authUser.email);
-      setResetPasswordMessage("E-Mail zum Zurücksetzen des Passworts gesendet. Bitte überprüfen Sie Ihren Posteingang.");
+      setResetPasswordMessage("Password reset email sent. Please check your inbox.");
       setResetPasswordError(null);
     } catch (error: any) {
-      console.error("Fehler beim Senden der E-Mail zum Zurücksetzen des Passworts:", error);
-      setResetPasswordError(error.message || "Fehler beim Senden der E-Mail zum Zurücksetzen des Passworts.");
+      console.error("Error sending password reset email:", error);
+      setResetPasswordError(error.message || "Error sending password reset email.");
       setResetPasswordMessage(null);
     }
   };
@@ -133,9 +133,9 @@ const SettingsPage: React.FC = () => {
             {/* Navigation Tabs */}
             <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl">
               {[
-                { id: 'profile', label: 'Profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
+                { id: 'profile', label: 'Profile', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', disabled: true },
                 { id: 'security', label: 'Security', icon: 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' },
-                { id: 'preferences', label: 'Preferences', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
+                { id: 'preferences', label: 'Preferences', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01', disabled: true },
                 { id: 'danger', label: 'Danger Zone', icon: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' }
               ].map((tab) => (
                 <button
@@ -146,6 +146,7 @@ const SettingsPage: React.FC = () => {
                       ? 'bg-white dark:bg-gray-700 shadow-sm text-neo-purple' 
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
                   }`}
+                  disabled={tab.disabled} // Disable button if tab.disabled is true
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={tab.icon}></path>
@@ -218,16 +219,13 @@ const SettingsPage: React.FC = () => {
                 <div className="absolute -top-20 -right-20 w-40 h-40 bg-neo-purple rounded-full opacity-10 blur-3xl animate-pulse-slow"></div>
                 <div className="relative z-10">
                   <h2 className="text-xl font-semibold mb-6 flex items-center">
-                    <svg className="w-5 h-5 mr-2 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                    </svg>
-                    Passwort
+                    Password
                   </h2>
                   
                   {(!authUser?.firebase_provider || authUser?.firebase_provider === 'password') ? (
                     <div>
                       <p className="text-gray-600 dark:text-gray-400 mb-4">
-                        Klicken Sie auf die Schaltfläche unten, um eine E-Mail zum Zurücksetzen Ihres Passworts zu erhalten.
+                        Click the button below to receive an email to reset your password.
                       </p>
                       <button 
                         onClick={handlePasswordReset}
@@ -236,7 +234,7 @@ const SettingsPage: React.FC = () => {
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1v-4a6 6 0 016-6h4a6 6 0 016 6zM15 7V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2"></path>
                         </svg>
-                        Passwort-Reset-E-Mail senden
+                        Send Password Reset Email
                       </button>
                       {resetPasswordMessage && (
                         <p className="mt-4 text-sm text-neo-emerald">{resetPasswordMessage}</p>
@@ -253,7 +251,7 @@ const SettingsPage: React.FC = () => {
                         </svg>
                       </div>
                       <p className="text-gray-600 dark:text-gray-400">
-                        Passwortänderungen werden von Ihrem Social-Login-Anbieter ({authUser?.firebase_provider}) verwaltet.
+                        Password changes are managed by your social login provider ({authUser?.firebase_provider}).
                       </p>
                     </div>
                   )}
