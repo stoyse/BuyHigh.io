@@ -3,25 +3,29 @@ import Combine
 import FirebaseAuth // Import FirebaseAuth - Ensure this is correctly linked in your project
 
 class AuthManager: ObservableObject {
-    @Published var isLoggedIn: Bool = UserDefaults.standard.bool(forKey: "isLoggedIn") {
+    @Published var isLoggedIn: Bool = false {
         didSet {
             UserDefaults.standard.set(isLoggedIn, forKey: "isLoggedIn")
             print("AuthManager: isLoggedIn didSet to \(isLoggedIn)")
         }
     }
-    @Published var isGuest: Bool = UserDefaults.standard.bool(forKey: "isGuest") {
+    @Published var isGuest: Bool = false {
         didSet {
             UserDefaults.standard.set(isGuest, forKey: "isGuest")
             print("AuthManager: isGuest didSet to \(isGuest)")
         }
     }
-    @Published var idToken: String? = UserDefaults.standard.string(forKey: "idToken") {
+    @Published var idToken: String? = nil {
         didSet {
-            UserDefaults.standard.set(idToken, forKey: "idToken")
+            if let idToken = idToken {
+                UserDefaults.standard.set(idToken, forKey: "idToken")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "idToken")
+            }
             print("AuthManager: idToken didSet")
         }
     }
-    @Published var userId: Int? = UserDefaults.standard.object(forKey: "userId") as? Int {
+    @Published var userId: Int? = nil {
         didSet {
             if let userId = userId {
                 UserDefaults.standard.set(userId, forKey: "userId")
@@ -31,15 +35,20 @@ class AuthManager: ObservableObject {
             print("AuthManager: userId didSet to \(String(describing: userId))")
         }
     }
-    @Published var firebaseUid: String? = UserDefaults.standard.string(forKey: "firebaseUid") {
+    @Published var firebaseUid: String? = nil {
         didSet {
-            UserDefaults.standard.set(firebaseUid, forKey: "firebaseUid")
+            if let firebaseUid = firebaseUid {
+                UserDefaults.standard.set(firebaseUid, forKey: "firebaseUid")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "firebaseUid")
+            }
             print("AuthManager: firebaseUid didSet")
         }
     }
     @Published var errorMessage: String?
 
     private var cancellables = Set<AnyCancellable>()
+    private var authStateHandler: AuthStateDidChangeListenerHandle?
 
     // Replace with your actual API endpoint
     private let loginURL = URL(string: "https://api.stoyse.hackclub.app/auth/login")!
@@ -47,8 +56,69 @@ class AuthManager: ObservableObject {
 
     init() {
         // Werte werden durch @Published Initialisierer geladen.
-        // Hinzufügen von print-Anweisungen, um den initialen Zustand zu überprüfen.
-        print("AuthManager init: isLoggedIn = \\(isLoggedIn), isGuest = \\(isGuest), userId = \\(String(describing: userId)), idToken isNil = \\(idToken == nil), firebaseUid isNil = \\(firebaseUid == nil)")
+        print("AuthManager init: isLoggedIn = \(isLoggedIn), isGuest = \(isGuest), userId = \(String(describing: userId)), idToken isNil = \(idToken == nil), firebaseUid isNil = \(firebaseUid == nil)")
+        addAuthStateListener()
+    }
+
+    deinit {
+        removeAuthStateListener()
+    }
+
+    private func addAuthStateListener() {
+        authStateHandler = Auth.auth().addStateDidChangeListener { [weak self] (auth, user) in
+            guard let self = self else { return }
+            print("AuthManager: AuthStateDidChange - User: \(user?.uid ?? "nil"), current app isLoggedIn: \(self.isLoggedIn)")
+
+            if let fbUser = user { // Firebase user is present
+                self.firebaseUid = fbUser.uid // Keep firebaseUid in sync
+
+                Task { // Perform async operations in a Task
+                    print("AuthManager: AuthStateDidChange: Firebase user \(fbUser.uid) detected. Attempting to get/refresh Firebase token.")
+                    if let firebaseToken = await self.getFirebaseToken(user: fbUser) {
+                        await MainActor.run {
+                            self.idToken = firebaseToken // Store/update Firebase token
+                            
+                            // Check if we have stored login state and restore it
+                            let storedIsLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
+                            let storedIsGuest = UserDefaults.standard.bool(forKey: "isGuest")
+                            let storedUserId = UserDefaults.standard.object(forKey: "userId") as? Int
+                            
+                            if storedIsLoggedIn && storedUserId != nil {
+                                // Restore previous session
+                                self.isLoggedIn = true
+                                self.isGuest = storedIsGuest
+                                self.userId = storedUserId
+                                print("AuthManager: Restored previous session - UserId: \(storedUserId ?? -1), isGuest: \(storedIsGuest)")
+                            } else {
+                                print("AuthManager: Firebase user exists but no valid stored session found.")
+                            }
+                        }
+                    } else {
+                        print("AuthManager: AuthStateDidChange: Failed to get/refresh Firebase token for user \(fbUser.uid). Logging out.")
+                        DispatchQueue.main.async { self.logout() } // Logout if we can't get a token
+                    }
+                }
+            } else { // Firebase user is nil
+                print("AuthManager: AuthStateDidChange: Firebase user is nil.")
+                if self.isLoggedIn {
+                    print("AuthManager: AuthStateDidChange: Firebase user is nil, but app thought we were logged in. Logging out.")
+                    DispatchQueue.main.async {
+                        self.logout()
+                    }
+                } else {
+                    // Consistent state: Firebase user is nil, and app isLoggedIn is false.
+                    // Clear any potentially stale local tokens/UIDs.
+                    self.idToken = nil
+                    self.firebaseUid = nil
+                }
+            }
+        }
+    }
+
+    private func removeAuthStateListener() {
+        if let handle = authStateHandler {
+            Auth.auth().removeStateDidChangeListener(handle)
+        }
     }
 
     func login(email: String, password: String) {
@@ -123,12 +193,11 @@ class AuthManager: ObservableObject {
 
             if let error = error {
                 self.errorMessage = "Firebase Anonymous Sign-In Error: \(error.localizedDescription)"
-                // Ensure UI updates on the main thread
                 DispatchQueue.main.async {
                     self.isLoggedIn = false
                     self.isGuest = false
                 }
-                print("Firebase Anonymous Sign-In Error: \(error)")
+                print("Firebase Anonymous Sign-In Error: \(error.localizedDescription)")
                 return
             }
 
@@ -142,28 +211,35 @@ class AuthManager: ObservableObject {
                 return
             }
 
-            user.getIDTokenResult(forcingRefresh: true) { idTokenResult, error in
-                if let error = error {
-                    self.errorMessage = "Error fetching Firebase ID Token: \(error.localizedDescription)"
+            // Successfully signed in with Firebase. The AuthStateChangeListener will also pick this up.
+            // Get the token to send to your backend.
+            user.getIDTokenResult(forcingRefresh: true) { [weak self] idTokenResult, tokenFetchingError in
+                guard let self = self else { return }
+
+                if let actualError = tokenFetchingError {
+                    self.errorMessage = "Error fetching Firebase ID Token: \(actualError.localizedDescription)"
                     DispatchQueue.main.async {
-                        self.isLoggedIn = false
-                        self.isGuest = false
+                        // self.isLoggedIn = false; self.isGuest = false; // Let AuthStateChangeListener handle logout on token failure
+                        print("AuthManager: Error fetching Firebase ID Token for backend call: \(actualError.localizedDescription). Logging out.")
+                        self.logout() // If we can't get a token to send to backend, abort login.
                     }
-                    print("Error fetching Firebase ID Token: \(error)")
                     return
                 }
 
                 guard let firebaseIdToken = idTokenResult?.token else {
-                    self.errorMessage = "Could not get Firebase ID Token."
+                    self.errorMessage = "Could not get Firebase ID Token for backend call."
                     DispatchQueue.main.async {
-                        self.isLoggedIn = false
-                        self.isGuest = false
+                        print("AuthManager: Could not get Firebase ID Token for backend call. Logging out.")
+                        self.logout() // If we can't get a token, abort.
                     }
-                    print("Could not get Firebase ID Token.")
                     return
                 }
 
-                // Now call your backend with this token
+                // Explicitly set token and UID here before backend call,
+                // though AuthStateChangeListener should also set them.
+                self.idToken = firebaseIdToken
+                self.firebaseUid = user.uid
+
                 self.callBackendForAnonymousLogin(firebaseIdToken: firebaseIdToken)
             }
         }
@@ -223,110 +299,67 @@ class AuthManager: ObservableObject {
                     break
                 }
             }, receiveValue: { [weak self] response in
+                guard let self = self else { return }
                 if response.success {
-                    self?.isLoggedIn = true
-                    self?.isGuest = response.isGuest 
-                    self?.idToken = response.id_token // Store the backend-provided token
-                    self?.userId = response.userId
-                    self?.firebaseUid = response.firebase_uid
-                    self?.errorMessage = nil
-                    // Corrected print statement by properly escaping the inner quote
-                    print("AuthManager (Guest) - Successfully logged in as guest. UserID: \(response.userId ?? -1), FirebaseUID: \(response.firebase_uid ?? "N/A")")
+                    // Backend login successful.
+                    // self.idToken should already be the Firebase token.
+                    // self.firebaseUid should also be set.
+                    self.isLoggedIn = true
+                    self.isGuest = response.isGuest
+                    self.userId = response.userId
+                    self.errorMessage = nil
+                    print("AuthManager (Guest) - Backend login successful. UserID: \(response.userId ?? -1), FirebaseUID from AuthManager: \(self.firebaseUid ?? "N/A")")
                 } else {
-                    self?.errorMessage = response.message ?? "Guest login failed. Please try again."
-                    self?.isLoggedIn = false
-                    self?.isGuest = false
+                    self.errorMessage = response.message ?? "Guest login failed. Please try again."
+                    self.isLoggedIn = false // Ensure this is set on failure
+                    self.isGuest = false
                 }
             })
             .store(in: &cancellables)
     }
 
-    //  Token Refresh Functions
+    // New helper function to get Firebase token
+    private func getFirebaseToken(user: FirebaseAuth.User) async -> String? {
+        return await withCheckedContinuation { continuation in
+            user.getIDTokenForcingRefresh(true) { token, error in
+                if let error = error {
+                    print("AuthManager: Error refreshing Firebase token for user \(user.uid): \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                } else if let token = token {
+                    print("AuthManager: Firebase token obtained/refreshed successfully for user \(user.uid)")
+                    continuation.resume(returning: token)
+                } else {
+                    print("AuthManager: No token received for user \(user.uid)")
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
     
     func getValidToken() async -> String? {
         guard let currentUser = Auth.auth().currentUser else {
-            print("AuthManager: No current Firebase user")
-            await MainActor.run {
-                self.logout()
-            }
+            print("AuthManager: getValidToken: No current Firebase user. Current app isLoggedIn state: \(self.isLoggedIn)")
+            // If isLoggedIn is true here, AuthStateChangeListener should eventually correct it by calling logout.
             return nil
         }
-        
-        do {
-            // Use completion handler version for compatibility
-            return try await withCheckedThrowingContinuation { continuation in
-                currentUser.getIDTokenForcingRefresh(true) { token, error in
-                    if let error = error {
-                        continuation.resume(throwing: error)
-                    } else if let token = token {
-                        Task { @MainActor in
-                            self.idToken = token
-                            print("AuthManager: Token refreshed successfully")
-                        }
-                        continuation.resume(returning: token)
-                    } else {
-                        continuation.resume(throwing: NSError(domain: "AuthManager", code: -1, userInfo: [NSLocalizedDescriptionKey: "No token received"]))
-                    }
-                }
-            }
-        } catch {
-            print("AuthManager: Error refreshing token: \(error.localizedDescription)")
-            await MainActor.run {
-                self.logout()
-            }
-            return nil
-        }
+        // currentUser exists, try to get/refresh its token.
+        // This will also update self.idToken via the AuthStateChangeListener if successful.
+        return await getFirebaseToken(user: currentUser)
     }
     
-    /// Check if current token is expired (simplified check)
-    func isTokenExpired() -> Bool {
-        guard let token = idToken else { return true }
-        
-        // Simple check: if we have a Firebase user and token, assume it's valid
-        // Firebase handles token expiration internally
-        return Auth.auth().currentUser == nil
-    }
-    
-    /// Refresh token and update state
-    func refreshTokenAndUpdateState() {
-        guard let currentUser = Auth.auth().currentUser else {
-            print("AuthManager: No current user found")
-            logout()
-            return
-        }
-        
-        // Force refresh the token to get a new one with extended expiry
-        currentUser.getIDTokenForcingRefresh(true) { [weak self] token, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    print("AuthManager: Error refreshing token: \(error.localizedDescription)")
-                    self?.logout()
-                    return
-                }
-                
-                guard let token = token else {
-                    print("AuthManager: No token received")
-                    self?.logout()
-                    return
-                }
-                
-                print("AuthManager: Token refreshed successfully")
-                self?.idToken = token
-            }
-        }
-    }
+    // Removing isTokenExpired and refreshTokenAndUpdateState as their logic is covered
+    // by getValidToken and the AuthStateDidChangeListener.
 
     func logout() {
         print("AuthManager: logout() called")
-        // Firebase Auth ausloggen, falls ein User angemeldet war (auch anonym)
         do {
             try Auth.auth().signOut()
             print("AuthManager: Successfully signed out from Firebase Auth.")
-        } catch let error as NSError {
-            print("AuthManager: Error signing out from Firebase Auth: \\(error.localizedDescription)")
+        } catch let signOutError as NSError {
+            print("AuthManager: Error signing out from Firebase Auth: \(signOutError.localizedDescription)")
         }
 
-        
+        // Reset local authentication state
         self.isLoggedIn = false
         self.isGuest = false
         self.idToken = nil
@@ -334,7 +367,7 @@ class AuthManager: ObservableObject {
         self.firebaseUid = nil
         self.errorMessage = nil
         
-        print("AuthManager: All local state cleared for logout. isLoggedIn=\(self.isLoggedIn), isGuest=\\(self.isGuest)")
+        print("AuthManager: All local state cleared for logout. isLoggedIn=\(self.isLoggedIn), isGuest=\(self.isGuest)")
     }
 }
 

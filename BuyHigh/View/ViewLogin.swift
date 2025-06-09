@@ -168,6 +168,7 @@ struct ViewLogin: View {
             }
             .padding(.horizontal, 24)
         }
+        .ignoresSafeArea(.keyboard) // Fügen Sie diesen Modifier hinzu
     }
 }
 

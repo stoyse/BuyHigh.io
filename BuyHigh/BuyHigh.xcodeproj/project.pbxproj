@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A38082E02DF763F90006EBE4 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = A38082DF2DF763F90006EBE4 /* FirebaseCore */; };
 		A39EDF062DE8CF9900589F77 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A39EDF052DE8CF9900589F77 /* Launch Screen.storyboard */; };
 		A39EDF1F2DE9264100589F77 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = A39EDF1E2DE9264100589F77 /* FirebaseAuth */; };
 		A39EDF212DE9264100589F77 /* FirebaseAuthCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = A39EDF202DE9264100589F77 /* FirebaseAuthCombine-Community */; };
@@ -55,6 +56,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A39EDF1F2DE9264100589F77 /* FirebaseAuth in Frameworks */,
+				A38082E02DF763F90006EBE4 /* FirebaseCore in Frameworks */,
 				A39EDF212DE9264100589F77 /* FirebaseAuthCombine-Community in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -119,6 +121,7 @@
 			packageProductDependencies = (
 				A39EDF1E2DE9264100589F77 /* FirebaseAuth */,
 				A39EDF202DE9264100589F77 /* FirebaseAuthCombine-Community */,
+				A38082DF2DF763F90006EBE4 /* FirebaseCore */,
 			);
 			productName = BuyHigh;
 			productReference = A3A5D2BE2DE7592600BEA3FC /* BuyHigh.app */;
@@ -584,6 +587,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A38082DF2DF763F90006EBE4 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A39EDF1D2DE9264100589F77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
 		A39EDF1E2DE9264100589F77 /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A39EDF1D2DE9264100589F77 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

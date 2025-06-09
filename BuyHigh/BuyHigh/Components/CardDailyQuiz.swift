@@ -318,8 +318,13 @@ struct CardDailyQuiz: View {
     }
 
     func determineButtonBackgroundColor(for answer: String) -> Color {
-        guard hasAttemptedToday, let result = attemptResult, let currentQuiz = dailyQuiz else {
+        guard hasAttemptedToday, let result = attemptResult else {
             return selectedAnswer == answer ? Color.blue.opacity(0.7) : Color.blue.opacity(0.4)
+        }
+        
+        // Ensure dailyQuiz is not nil before use
+        guard self.dailyQuiz != nil else { 
+            return Color.gray.opacity(0.3) // Fallback color if quiz data is missing
         }
         
         if answer == result.correctAnswer {
@@ -333,28 +338,36 @@ struct CardDailyQuiz: View {
 
     func determineButtonForegroundColor(for answer: String) -> Color {
         guard hasAttemptedToday, let result = attemptResult else {
-            return .primary // Use primary color for better light/dark mode adaptation
+            return .primary 
+        }
+        // Ensure dailyQuiz is not nil before use (though less critical here if logic depends on result)
+        guard self.dailyQuiz != nil else { 
+            return .primary // Fallback color
         }
         
         if answer == result.correctAnswer {
-            return .white // White text on green background
+            return .white 
         }
         if answer == selectedAnswer && !result.isCorrect {
-            return .white // White text on red background
+            return .white 
         }
-        return .primary // Use primary color for other answers after attempt
+        return .primary 
     }
     
     func determineButtonBackgroundMaterial(for answer: String) -> Material {
         guard hasAttemptedToday, let result = attemptResult else {
             return selectedAnswer == answer ? .regularMaterial : .ultraThinMaterial
         }
+        // Ensure dailyQuiz is not nil before use
+        guard self.dailyQuiz != nil else { 
+            return .ultraThinMaterial // Fallback material
+        }
         
         if answer == result.correctAnswer {
-            return .regularMaterial // Use regular material for correct answer
+            return .regularMaterial 
         }
         if answer == selectedAnswer && !result.isCorrect {
-            return .regularMaterial // Use regular material for incorrect answer
+            return .regularMaterial 
         }
         return .ultraThinMaterial
     }
@@ -362,8 +375,12 @@ struct CardDailyQuiz: View {
     func determineButtonBorderColor(for answer: String) -> Color {
         guard hasAttemptedToday, let result = attemptResult else {
             return selectedAnswer == answer ? 
-                Color.accentColor.opacity(0.6) : // Use accent color for selection
-                Color.primary.opacity(0.2) // Use primary color with opacity for borders
+                Color.accentColor.opacity(0.6) : 
+                Color.primary.opacity(0.2) 
+        }
+        // Ensure dailyQuiz is not nil before use
+        guard self.dailyQuiz != nil else { 
+            return Color.primary.opacity(0.2) // Fallback color
         }
         
         if answer == result.correctAnswer {
@@ -378,8 +395,12 @@ struct CardDailyQuiz: View {
     func determineButtonShadowColor(for answer: String) -> Color {
         guard hasAttemptedToday, let result = attemptResult else {
             return selectedAnswer == answer ? 
-                Color.accentColor.opacity(0.3) : // Use accent color for selection shadow
-                Color.primary.opacity(0.1) // Use primary color for normal shadow
+                Color.accentColor.opacity(0.3) : 
+                Color.primary.opacity(0.1) 
+        }
+        // Ensure dailyQuiz is not nil before use
+        guard self.dailyQuiz != nil else { 
+            return Color.primary.opacity(0.1) // Fallback color
         }
         
         if answer == result.correctAnswer {
@@ -391,43 +412,66 @@ struct CardDailyQuiz: View {
         return Color.primary.opacity(0.1)
     }
     
-    // Add new function for background overlay when answer is selected/correct/incorrect
+    @ViewBuilder
     func determineButtonBackgroundOverlay(for answer: String) -> some View {
-        Group {
+        // Ensure dailyQuiz is not nil before use
+        if self.dailyQuiz != nil {
             if hasAttemptedToday, let result = attemptResult {
                 if answer == result.correctAnswer {
-                    // Green overlay for correct answer
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.green.opacity(0.2))
                 } else if answer == selectedAnswer && !result.isCorrect {
-                    // Red overlay for incorrect selected answer
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.red.opacity(0.2))
                 } else {
-                    // No overlay for other answers
-                    Color.clear
+                    EmptyView()
                 }
             } else if selectedAnswer == answer {
-                // Blue/accent overlay for currently selected answer before submission
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color.accentColor.opacity(0.15))
             } else {
-                Color.clear
+                EmptyView()
             }
+        } else {
+            EmptyView() // If dailyQuiz is nil
         }
     }
 }
 
-// Update the button background in the main body
-extension CardDailyQuiz {
-    var adaptiveButtonBackground: some View {
-        // This would be used in the button styling within the main body
-        EmptyView()
+// Preview Provider - Ensure AuthManager and DailyQuiz are available or use mocks
+#if DEBUG
+struct CardDailyQuiz_Previews: PreviewProvider {
+    static var previews: some View {
+        // Attempt to create a mock AuthManager. If AuthManager is not found,
+        // this preview will fail to compile. This indicates a target membership issue
+        // or that AuthManager.swift needs to be in a shared module.
+        let mockAuthManager = AuthManager() 
+
+        // Similarly for DailyQuiz, if its definition is not accessible here,
+        // creating mock data will fail. For now, we'll assume it might be available.
+        // If not, these lines related to mockQuiz would need to be commented out or handled.
+        /*
+        let mockQuiz = DailyQuiz( // Assuming DailyQuiz struct exists and is accessible
+            id: 1,
+            question: "What will the market do tomorrow?",
+            possibleAnswer1: "Go up",
+            possibleAnswer2: "Go down",
+            possibleAnswer3: "Stay flat",
+            correctAnswer: "Go up", // Example
+            explanation: "Because reasons.", // Example
+            date: "2025-06-09"
+        )
+        */
+
+        ScrollView {
+            CardDailyQuiz()
+                .environmentObject(mockAuthManager)
+                // To properly preview different states (loading, quiz loaded, attempted),
+                // the CardDailyQuiz might need to be modified to accept initial state
+                // or use a more complex preview setup with @State variables.
+                .padding()
+        }
+        .background(Color(.systemGroupedBackground))
     }
 }
-
-#Preview {
-    let mockAuthManager = AuthManager()
-    CardDailyQuiz()
-        .environmentObject(mockAuthManager)
-}
+#endif

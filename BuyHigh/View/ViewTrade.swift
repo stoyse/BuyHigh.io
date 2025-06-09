@@ -12,6 +12,19 @@ struct ViewTrade: View {
     @State private var selectedSymbol: String?
     @StateObject private var stockLoader: StockDataLoader
     
+    // States for trade inputs and alerts
+    @State private var quantityString: String = "1.0"
+    @State private var priceString: String = ""
+    @State private var isShowingAlert: Bool = false
+    @State private var alertTitle: String = ""
+    @State private var alertMessage: String = ""
+    
+    private let tradeService = TradeService()
+    
+    private enum TradeAction {
+        case buy, sell
+    }
+
     init(authManager: AuthManager) {
         self.authManager = authManager
         self._stockLoader = StateObject(wrappedValue: StockDataLoader(authManager: authManager))
@@ -124,21 +137,42 @@ struct ViewTrade: View {
                             .padding(.horizontal, 12)
                         }
                         
-                        if selectedSymbol != nil {
+                        // Trading Actions Card - full width
+                        if let currentSymbol = selectedSymbol {
                             VStack(alignment: .leading, spacing: 16) {
+                                Text("Trading Actions for \(currentSymbol)")
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                    .padding(.horizontal, 16)
+                                
+                                // Quantity Input
                                 HStack {
-                                    Text("Trading Actions")
-                                        .font(.headline)
-                                        .foregroundStyle(.primary)
-                                    
-                                    Spacer()
+                                    Text("Quantity:")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    TextField("e.g., 1.0", text: $quantityString)
+                                        .keyboardType(.decimalPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .padding(.horizontal, 16)
+                                
+                                // Price Input
+                                HStack {
+                                    Text("Price:")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                    TextField("e.g., 150.25", text: $priceString)
+                                        .keyboardType(.decimalPad)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                        .frame(maxWidth: .infinity)
                                 }
                                 .padding(.horizontal, 16)
                                 
                                 // Buy/Sell buttons
                                 HStack(spacing: 12) {
                                     Button(action: {
-                                        // Handle buy action
+                                        performTrade(action: .buy, symbol: currentSymbol)
                                     }) {
                                         HStack {
                                             Image(systemName: "plus.circle.fill")
@@ -160,7 +194,7 @@ struct ViewTrade: View {
                                     }
                                     
                                     Button(action: {
-                                        // Handle sell action
+                                        performTrade(action: .sell, symbol: currentSymbol)
                                     }) {
                                         HStack {
                                             Image(systemName: "minus.circle.fill")
@@ -193,10 +227,79 @@ struct ViewTrade: View {
                     .padding(.vertical, 8)
                 }
                 .frame(maxWidth: .infinity)
+                .onChange(of: stockLoader.currentPrice) { newValue in
+                    if let price = newValue {
+                        self.priceString = String(format: "%.2f", price)
+                    } else {
+                        self.priceString = ""
+                    }
+                }
+                .onChange(of: selectedSymbol) { newValue in
+                    if let currentMarketPrice = stockLoader.currentPrice {
+                         self.priceString = String(format: "%.2f", currentMarketPrice)
+                    } else {
+                         self.priceString = "" // Or "Loading..."
+                    }
+                }
+                .alert(isPresented: $isShowingAlert) {
+                    Alert(title: Text(alertTitle), message: Text(alertMessage), dismissButton: .default(Text("OK")))
+                }
             }
             .navigationBarHidden(true)
         }
         .navigationViewStyle(.stack)
+    }
+
+    private func performTrade(action: TradeAction, symbol: String) {
+        guard let quantity = Double(quantityString), quantity > 0 else {
+            self.alertTitle = "Invalid Quantity"
+            self.alertMessage = "Please enter a valid positive quantity."
+            self.isShowingAlert = true
+            return
+        }
+        
+        let finalTradePrice: Double
+        
+        if let priceInput = Double(priceString), priceInput > 0 {
+            finalTradePrice = priceInput
+        } else if priceString.isEmpty, let marketPrice = stockLoader.currentPrice, marketPrice > 0 {
+            // Wenn das Preisfeld leer ist, aber ein Marktpreis verfügbar ist, verwende den Marktpreis.
+            finalTradePrice = marketPrice
+            // Optional: Aktualisiere das Preisfeld, um den verwendeten Marktpreis anzuzeigen
+            // self.priceString = String(format: "%.2f", marketPrice)
+        } else {
+            self.alertTitle = "Invalid Price"
+            self.alertMessage = "Please enter a valid positive price, or ensure a market price is available if the field is empty."
+            self.isShowingAlert = true
+            return
+        }
+
+        Task {
+            let result: Result<TradeResponse, TradeError>
+            switch action {
+            case .buy:
+                result = await tradeService.buyStock(symbol: symbol, quantity: quantity, price: finalTradePrice, authManager: authManager)
+            case .sell:
+                result = await tradeService.sellStock(symbol: symbol, quantity: quantity, price: finalTradePrice, authManager: authManager)
+            }
+            
+            await MainActor.run {
+                switch result {
+                case .success(let response):
+                    self.alertTitle = response.success ? "Trade Successful" : "Trade Failed"
+                    self.alertMessage = response.message
+                    if response.success {
+                        // Optionally, refresh user balance or other relevant data
+                        // authManager.fetchUserDetails() // Example
+                        // stockLoader.loadPortfolio() // Example
+                    }
+                case .failure(let error):
+                    self.alertTitle = "Trade Error"
+                    self.alertMessage = "An error occurred: \(error.localizedDescription)"
+                }
+                self.isShowingAlert = true
+            }
+        }
     }
 }
 
