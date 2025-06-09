@@ -8,7 +8,7 @@ const SettingsPage: React.FC = () => {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState('profile');
+  const [activeSection, setActiveSection] = useState('security');
   const [resetPasswordMessage, setResetPasswordMessage] = useState<string | null>(null); // For password reset feedback
   const [resetPasswordError, setResetPasswordError] = useState<string | null>(null); // For password reset error
 
