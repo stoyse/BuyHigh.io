@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { logoutUser, GetUserInfo } from '../../apiService';
 import { useAuth } from '../../contexts/AuthContext';
 import BaseLayout from '../../components/Layout/BaseLayout'; // Added import
+import { getAuth, sendPasswordResetEmail } from "firebase/auth"; // Firebase import
 
 const SettingsPage: React.FC = () => {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState('profile');
-  
+  const [resetPasswordMessage, setResetPasswordMessage] = useState<string | null>(null); // For password reset feedback
+  const [resetPasswordError, setResetPasswordError] = useState<string | null>(null); // For password reset error
+
   const { user: authUser, loading: authLoading, logout } = useAuth();
 
   useEffect(() => {
@@ -59,6 +62,23 @@ const SettingsPage: React.FC = () => {
     } catch (error) {
       console.error('Logout failed:', error);
       logout();
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!authUser || !authUser.email) {
+      setResetPasswordError("Benutzer-E-Mail nicht gefunden. Bitte stellen Sie sicher, dass Sie angemeldet sind.");
+      return;
+    }
+    const auth = getAuth();
+    try {
+      await sendPasswordResetEmail(auth, authUser.email);
+      setResetPasswordMessage("E-Mail zum Zurücksetzen des Passworts gesendet. Bitte überprüfen Sie Ihren Posteingang.");
+      setResetPasswordError(null);
+    } catch (error: any) {
+      console.error("Fehler beim Senden der E-Mail zum Zurücksetzen des Passworts:", error);
+      setResetPasswordError(error.message || "Fehler beim Senden der E-Mail zum Zurücksetzen des Passworts.");
+      setResetPasswordMessage(null);
     }
   };
 
@@ -201,36 +221,30 @@ const SettingsPage: React.FC = () => {
                     <svg className="w-5 h-5 mr-2 text-neo-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                     </svg>
-                    Change Password
+                    Passwort
                   </h2>
                   
                   {(!authUser?.firebase_provider || authUser?.firebase_provider === 'password') ? (
-                    <form className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Password</label>
-                        <input 
-                          type="password" 
-                          className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-neo-purple focus:border-transparent transition-all duration-200"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
-                        <input 
-                          type="password" 
-                          className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-neo-purple focus:border-transparent transition-all duration-200"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm New Password</label>
-                        <input 
-                          type="password" 
-                          className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-neo-purple focus:border-transparent transition-all duration-200"
-                        />
-                      </div>
-                      <button type="submit" className="neo-button bg-neo-purple/80 hover:bg-neo-purple text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200">
-                        Update Password
+                    <div>
+                      <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        Klicken Sie auf die Schaltfläche unten, um eine E-Mail zum Zurücksetzen Ihres Passworts zu erhalten.
+                      </p>
+                      <button 
+                        onClick={handlePasswordReset}
+                        className="neo-button bg-neo-purple/80 hover:bg-neo-purple text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 flex items-center"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1v-4a6 6 0 016-6h4a6 6 0 016 6zM15 7V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2"></path>
+                        </svg>
+                        Passwort-Reset-E-Mail senden
                       </button>
-                    </form>
+                      {resetPasswordMessage && (
+                        <p className="mt-4 text-sm text-neo-emerald">{resetPasswordMessage}</p>
+                      )}
+                      {resetPasswordError && (
+                        <p className="mt-4 text-sm text-neo-red">{resetPasswordError}</p>
+                      )}
+                    </div>
                   ) : (
                     <div className="text-center py-8">
                       <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
@@ -239,7 +253,7 @@ const SettingsPage: React.FC = () => {
                         </svg>
                       </div>
                       <p className="text-gray-600 dark:text-gray-400">
-                        Password changes are managed by your social login provider ({authUser?.firebase_provider}).
+                        Passwortänderungen werden von Ihrem Social-Login-Anbieter ({authUser?.firebase_provider}) verwaltet.
                       </p>
                     </div>
                   )}
