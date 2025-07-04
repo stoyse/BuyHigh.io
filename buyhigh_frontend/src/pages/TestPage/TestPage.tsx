@@ -172,6 +172,29 @@ const TestPage: React.FC = () => {
     }
   };
 
+  // Handle Chatbot API call
+  const handleChatbotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setChatbotResult(null);
+    setChatbotError(null);
+    setChatbotLoading(true);
+
+    if (!loggedInUserId) {
+      setChatbotError("Please login first to use the chatbot.");
+      setChatbotLoading(false);
+      return;
+    }
+
+    try {
+      const result = await callChatbotApi(chatbotPrompt);
+      setChatbotResult(result);
+    } catch (err: any) {
+      setChatbotError(`Chatbot request failed: ${err.message}`);
+    } finally {
+      setChatbotLoading(false);
+    }
+  };
+
   // Handle Daily Quiz Attempt Submission
   const handleQuizAttemptSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -232,38 +255,6 @@ const TestPage: React.FC = () => {
       setCoinFlipError(err.message || 'An error occurred during coin flip recording.');
     } finally {
       setCoinFlipLoading(false);
-    }
-  };
-
-  // Handle Chatbot submission
-  const handleChatbotSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setChatbotResult(null);
-    setChatbotError(null);
-    setChatbotLoading(true);
-
-    if (!loggedInUserId) {
-      setChatbotError("Please login first to use the chatbot.");
-      setChatbotLoading(false);
-      return;
-    }
-
-    if (!chatbotPrompt.trim()) {
-      setChatbotError("Prompt cannot be empty.");
-      setChatbotLoading(false);
-      return;
-    }
-
-    try {
-      const result = await callChatbotApi(chatbotPrompt);
-      setChatbotResult(result);
-      if (result && !result.success) {
-        setChatbotError(result.error || "Chatbot request failed.");
-      }
-    } catch (err: any) {
-      setChatbotError(err.message || 'An error occurred during the chatbot request.');
-    } finally {
-      setChatbotLoading(false);
     }
   };
 
@@ -463,31 +454,70 @@ const TestPage: React.FC = () => {
         {coinFlipError && <div className="error">{coinFlipError}</div>}
       </div>
 
-      <div className="test-section">
-        <h2>Chatbot Test</h2>
-        <p>Note: You must be logged in.</p>
-        <form onSubmit={handleChatbotSubmit} className="test-form">
-          <textarea
-            value={chatbotPrompt}
-            onChange={(e) => setChatbotPrompt(e.target.value)}
-            placeholder="Enter your prompt for the AI"
-            rows={3}
-          />
-          <button type="submit" disabled={chatbotLoading}>
-            {chatbotLoading ? 'Loading...' : 'Send to AI'}
-          </button>
-        </form>
-        
-        {chatbotLoading && <p>Loading...</p>}
-        
-        {chatbotResult && (
-          <div className="result">
-            <h4>Chatbot Result:</h4>
-            <pre className="json-result">{JSON.stringify(chatbotResult, null, 2)}</pre>
-          </div>
-        )}
-        
-        {chatbotError && <div className="error">{chatbotError}</div>}
+      <div className="api-test-section">
+        {/* Chatbot API Test */}
+        <div className="api-test-form">
+          <h3>Chatbot API Test</h3>
+          <form onSubmit={handleChatbotSubmit}>
+            <div>
+              <label>Prompt:</label>
+              <input 
+                type="text" 
+                value={chatbotPrompt} 
+                onChange={(e) => setChatbotPrompt(e.target.value)} 
+                placeholder="Enter your prompt"
+              />
+            </div>
+            <button type="submit" disabled={chatbotLoading || !loggedInUserId}>
+              {chatbotLoading ? 'Loading...' : 'Send to Chatbot'}
+            </button>
+            {!loggedInUserId && <p style={{ color: 'orange', fontSize: '12px' }}>Login required to use chatbot.</p>}
+          </form>
+          {chatbotError && <div className="error-message">{chatbotError}</div>}
+          {chatbotResult && (
+            <div className="api-result">
+              <h4>Chatbot Response:</h4>
+              <pre>{JSON.stringify(chatbotResult, null, 2)}</pre>
+            </div>
+          )}
+        </div>
+
+        {/* Daily Quiz Attempt */}
+        <div className="api-test-form">
+          <h3>Daily Quiz Attempt</h3>
+          <form onSubmit={handleQuizAttemptSubmit}>
+            <div>
+              <label>Quiz ID:</label>
+              <input 
+                type="text" 
+                value={quizIdForAttempt} 
+                onChange={(e) => setQuizIdForAttempt(e.target.value)} 
+                placeholder="Enter Quiz ID"
+                required
+              />
+            </div>
+            <div>
+              <label>Your Answer:</label>
+              <input 
+                type="text" 
+                value={selectedAnswerForAttempt} 
+                onChange={(e) => setSelectedAnswerForAttempt(e.target.value)} 
+                placeholder="Enter your answer"
+                required
+              />
+            </div>
+            <button type="submit" disabled={quizAttemptLoading}>
+              {quizAttemptLoading ? 'Submitting...' : 'Submit Answer'}
+            </button>
+          </form>
+          {quizAttemptError && <div className="error-message">{quizAttemptError}</div>}
+          {quizAttemptResult && (
+            <div className="api-result">
+              <h4>Quiz Attempt Result:</h4>
+              <pre>{JSON.stringify(quizAttemptResult, null, 2)}</pre>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="api-results">
