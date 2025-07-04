@@ -105,6 +105,12 @@ function App() {
               <MrStonksPage />
             </ProtectedRoute>
           } />
+          <Route path="/chatbot" element={
+            <ProtectedRoute>
+              <ChatbotPage />
+            </ProtectedRoute>
+          } />
+          {/* Redirect all other paths to the home page */}
         </Routes>
       </Router>
     </AuthProvider>
