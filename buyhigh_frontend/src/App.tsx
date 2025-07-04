@@ -20,6 +20,7 @@ import SettingsPage from './pages/SettingsPage/SettingsPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import TraderBadgesPage from './pages/TraderBadges/TraderBadgesPage';
 import TransactionsPage from './pages/TransactionsPage/TransactionsPage';
+import ChatbotPage from './pages/Chatbot/ChatbotPage';
 function App() {
   return (
     <AuthProvider>
@@ -96,6 +97,11 @@ function App() {
           <Route path="/transactions" element={
             <ProtectedRoute>
               <TransactionsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/chatbot" element={
+            <ProtectedRoute>
+              <ChatbotPage />
             </ProtectedRoute>
           } />
         </Routes>
