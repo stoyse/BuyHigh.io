@@ -12,6 +12,11 @@ module.exports = {
         'pixel': ['"Press Start 2P"', 'cursive'],
       },
       colors: {
+        transparent: 'transparent',
+        current: 'currentColor',
+        black: colors.black,
+        white: colors.white,
+        gray: colors.trueGray,
         'neo': {
           'purple': '#8b5cf6',
           'blue': '#3b82f6',

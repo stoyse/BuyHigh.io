@@ -30,6 +30,7 @@ const TopNavBar: React.FC<TopNavBarProps> = ({ user, handleLogout, darkMode, set
               <Link to="/dashboard" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Dashboard</Link>
               <Link to="/trade" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Trade</Link>
               <Link to="/casino" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Casino</Link>
+              <Link to="/mr-stonks" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Mr. Stonks</Link>
               <Link to="/news" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">News</Link>
               <Link to="/chatbot" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">AI Assistant</Link>
               <Link to="/social" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Social</Link>
@@ -159,6 +160,7 @@ const TopNavBar: React.FC<TopNavBarProps> = ({ user, handleLogout, darkMode, set
                 <Link to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
                 <Link to="/trade" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Trade</Link>
                 <Link to="/casino" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Casino</Link>
+                <Link to="/mr-stonks" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Mr. Stonks</Link>
                 <Link to="/news" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>News</Link>
                 <Link to="/chatbot" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>AI Assistant</Link>
                 <Link to="/social" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Social</Link>
