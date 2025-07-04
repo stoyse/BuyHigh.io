@@ -1,3 +1,5 @@
+const colors = require('tailwindcss/colors');
+
 module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
@@ -63,61 +65,11 @@ module.exports = {
       },
       backdropBlur: {
         xs: '2px',
-      },
-      typography: (theme) => ({
-        DEFAULT: {
-          css: {
-            color: theme('colors.gray.700'),
-            a: {
-              color: theme('colors.blue.500'),
-              '&:hover': {
-                color: theme('colors.blue.700'),
-              },
-            },
-          },
-        },
-        dark: {
-          css: {
-            color: theme('colors.gray.300'),
-            a: {
-              color: theme('colors.blue.400'),
-              '&:hover': {
-                color: theme('colors.blue.600'),
-              },
-            },
-            h1: {
-              color: theme('colors.gray.100'),
-            },
-            h2: {
-              color: theme('colors.gray.100'),
-            },
-            h3: {
-              color: theme('colors.gray.100'),
-            },
-            strong: {
-              color: theme('colors.gray.100'),
-            },
-            code: {
-              color: theme('colors.gray.300'),
-              backgroundColor: theme('colors.gray.800'),
-              padding: '2px 4px',
-              borderRadius: '4px',
-            },
-            pre: {
-              color: theme('colors.gray.200'),
-              backgroundColor: theme('colors.gray.800'),
-            },
-            blockquote: {
-              color: theme('colors.gray.400'),
-              borderLeftColor: theme('colors.gray.700'),
-            },
-          },
-        },
-      }),
+      }
     }
   },
   plugins: [
-    require('@tailwindcss/typography'),
+    // require('@tailwindcss/typography'),
   ],
   safelist: [
     // Dynamisch generierte Klassen für Farben
