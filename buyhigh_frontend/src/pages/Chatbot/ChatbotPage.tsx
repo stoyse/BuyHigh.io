@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import BaseLayout from '../../components/Layout/BaseLayout';
 import { callChatbotApi } from '../../apiService'; // Import the real API function
 
@@ -143,7 +144,9 @@ const ChatbotPage: React.FC = () => {
                                         ? 'bg-neo-blue text-white'
                                         : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
                                 }`}>
-                                    <p className="text-sm">{message.text}</p>
+                                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                                        <ReactMarkdown>{message.text}</ReactMarkdown>
+                                    </div>
                                     <p className={`text-xs mt-1 ${
                                         message.sender === 'user' 
                                             ? 'text-blue-100' 
