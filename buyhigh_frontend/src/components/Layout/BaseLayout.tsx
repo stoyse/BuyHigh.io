@@ -153,6 +153,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
                 <Link to="/dashboard" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Dashboard</Link>
                 <Link to="/trade" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Trade</Link>
                 <Link to="/casino" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Casino</Link>
+                <Link to="/mr-stonks" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Mr. Stonks</Link>
                 <Link to="/news" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">News</Link>
                 <Link to="/social" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Social</Link> {/* Added Social link */}
               </div>
@@ -316,6 +317,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title = "BuyHigh.io" 
                   <Link to="/dashboard" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">Dashboard</Link>
                   <Link to="/trade" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">Trade</Link>
                   <Link to="/casino" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">Casino</Link>
+                  <Link to="/mr-stonks" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">Mr. Stonks</Link>
                   <Link to="/news" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">News</Link>
                   <Link to="/social" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20">Social</Link> {/* Added Social link for mobile */}
                   <button 
