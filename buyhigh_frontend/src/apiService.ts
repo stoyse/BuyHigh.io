@@ -708,3 +708,32 @@ export const GetSimpleStockPrice = async (symbol: string): Promise<SimpleStockPr
     };
   }
 };
+
+export const callChatbotApi = async (prompt: string) => {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Authentication token not found');
+    }
+
+    const response = await axios.post(`${API_BASE_URL}/api/chatbot`, 
+      { prompt }, 
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        withCredentials: true,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error calling chatbot API:', error.response?.data || error.message);
+    } else {
+      console.error('Unexpected error calling chatbot API:', error);
+    }
+    throw error;
+  }
+};

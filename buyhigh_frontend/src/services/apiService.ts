@@ -36,5 +36,33 @@ export const getAllUsers = async () => {
   }
 };
 
+export const callChatbotApi = async (prompt: string) => {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('Authentication token not found');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/chatbot`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Chatbot API request failed');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error calling chatbot API:', error);
+    throw error;
+  }
+};
+
 // If there was other code in this file intended to be kept, 
 // it would need to be reviewed. Assuming this file was primarily for getAllUsers after my previous edit.

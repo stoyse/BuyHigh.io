@@ -1,23 +1,25 @@
-import TopNavBar from '../../components/Navbar/TopNavBar';
-import React, { useState, useEffect } from 'react';
-import {
-  loginUser,
-  fetchFunnyTips,
-  GetUserInfo,
-  GetPortfolioData,
-  GetRecentTransactions,
-  GetDailyQuiz,
-  GetAssets,
-  GetStockData,
-  BuyStock,
+import { 
+  fetchFunnyTips, 
+  GetUserInfo, 
+  GetPortfolioData, 
+  GetRecentTransactions, 
+  loginUser, 
+  BuyStock, 
   SellStock,
+  GetDailyQuiz,
   SubmitDailyQuizAnswer,
   DailyQuizAttemptPayload,
   DailyQuizAttemptResponse,
-  recordCoinFlip,
+  GetAssets,
+  GetStockData,
   CoinFlipRequestData,
-  CoinFlipResponseData
+  recordCoinFlip,
+  CoinFlipResponseData,
+  callChatbotApi, // Import the new chatbot API function
 } from '../../apiService';
+import TopNavBar from '../../components/Navbar/TopNavBar';
+import './TestPage.css';
+import React, { useState, useEffect } from 'react';
 
 interface ApiTestResult {
   name: string;
@@ -67,6 +69,12 @@ const TestPage: React.FC = () => {
   const [coinFlipResult, setCoinFlipResult] = useState<CoinFlipResponseData | null>(null);
   const [coinFlipError, setCoinFlipError] = useState<string | null>(null);
   const [coinFlipLoading, setCoinFlipLoading] = useState<boolean>(false);
+
+  // Chatbot fields
+  const [chatbotPrompt, setChatbotPrompt] = useState<string>('What are the risks of options trading?');
+  const [chatbotResult, setChatbotResult] = useState<any>(null);
+  const [chatbotError, setChatbotError] = useState<string | null>(null);
+  const [chatbotLoading, setChatbotLoading] = useState<boolean>(false);
 
   // Props for TopNavBar
   const [user, setUser] = useState<any>(null); // Mock user, replace with actual user state
@@ -224,6 +232,38 @@ const TestPage: React.FC = () => {
       setCoinFlipError(err.message || 'An error occurred during coin flip recording.');
     } finally {
       setCoinFlipLoading(false);
+    }
+  };
+
+  // Handle Chatbot submission
+  const handleChatbotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setChatbotResult(null);
+    setChatbotError(null);
+    setChatbotLoading(true);
+
+    if (!loggedInUserId) {
+      setChatbotError("Please login first to use the chatbot.");
+      setChatbotLoading(false);
+      return;
+    }
+
+    if (!chatbotPrompt.trim()) {
+      setChatbotError("Prompt cannot be empty.");
+      setChatbotLoading(false);
+      return;
+    }
+
+    try {
+      const result = await callChatbotApi(chatbotPrompt);
+      setChatbotResult(result);
+      if (result && !result.success) {
+        setChatbotError(result.error || "Chatbot request failed.");
+      }
+    } catch (err: any) {
+      setChatbotError(err.message || 'An error occurred during the chatbot request.');
+    } finally {
+      setChatbotLoading(false);
     }
   };
 
@@ -421,6 +461,33 @@ const TestPage: React.FC = () => {
         )}
         
         {coinFlipError && <div className="error">{coinFlipError}</div>}
+      </div>
+
+      <div className="test-section">
+        <h2>Chatbot Test</h2>
+        <p>Note: You must be logged in.</p>
+        <form onSubmit={handleChatbotSubmit} className="test-form">
+          <textarea
+            value={chatbotPrompt}
+            onChange={(e) => setChatbotPrompt(e.target.value)}
+            placeholder="Enter your prompt for the AI"
+            rows={3}
+          />
+          <button type="submit" disabled={chatbotLoading}>
+            {chatbotLoading ? 'Loading...' : 'Send to AI'}
+          </button>
+        </form>
+        
+        {chatbotLoading && <p>Loading...</p>}
+        
+        {chatbotResult && (
+          <div className="result">
+            <h4>Chatbot Result:</h4>
+            <pre className="json-result">{JSON.stringify(chatbotResult, null, 2)}</pre>
+          </div>
+        )}
+        
+        {chatbotError && <div className="error">{chatbotError}</div>}
       </div>
 
       <div className="api-results">

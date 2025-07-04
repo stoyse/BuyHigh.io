@@ -31,6 +31,7 @@ const TopNavBar: React.FC<TopNavBarProps> = ({ user, handleLogout, darkMode, set
               <Link to="/trade" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Trade</Link>
               <Link to="/casino" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Casino</Link>
               <Link to="/news" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">News</Link>
+              <Link to="/chatbot" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">AI Assistant</Link>
               <Link to="/social" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-neo-purple/20">Social</Link>
             </div>
           </div>
@@ -159,6 +160,7 @@ const TopNavBar: React.FC<TopNavBarProps> = ({ user, handleLogout, darkMode, set
                 <Link to="/trade" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Trade</Link>
                 <Link to="/casino" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Casino</Link>
                 <Link to="/news" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>News</Link>
+                <Link to="/chatbot" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>AI Assistant</Link>
                 <Link to="/social" className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neo-purple/20" onClick={() => setMobileMenuOpen(false)}>Social</Link>
                 { user.user && (
                     <>
