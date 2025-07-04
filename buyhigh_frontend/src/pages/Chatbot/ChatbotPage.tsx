@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import BaseLayout from '../../components/Layout/BaseLayout';
+import { callChatbotApi } from '../../apiService'; // Import the real API function
 
 interface Message {
     id: string;
@@ -30,38 +31,13 @@ const ChatbotPage: React.FC = () => {
         scrollToBottom();
     }, [messages]);
 
-    const simulateBotResponse = (userMessage: string): string => {
-        const lowerMessage = userMessage.toLowerCase();
-        
-        if (lowerMessage.includes('price') || lowerMessage.includes('stock')) {
-            return "I can help you with stock prices! However, I don't have real-time data access right now. For live prices, please check our Trade page or use our market dashboard.";
-        }
-        
-        if (lowerMessage.includes('buy') || lowerMessage.includes('sell')) {
-            return "Remember our motto: Buy High, Sell Low! 😄 But seriously, I recommend doing thorough research before making any trades. Check out our News section for market insights.";
-        }
-        
-        if (lowerMessage.includes('casino') || lowerMessage.includes('gamble')) {
-            return "Our Casino section offers some fun trading games! Remember to only risk what you can afford to lose. It's all about entertainment and learning.";
-        }
-        
-        if (lowerMessage.includes('help') || lowerMessage.includes('support')) {
-            return "I'm here to help! You can ask me about trading strategies, platform features, or general market questions. What specific topic interests you?";
-        }
-        
-        if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-            return "Hello there! Great to see you on BuyHigh.io. What trading adventure can I help you with today?";
-        }
-        
-        return "That's an interesting question! While I'm still learning, I'd recommend checking our News section for the latest market insights or visiting our Social page to discuss with other traders.";
-    };
-
     const handleSendMessage = async () => {
-        if (!inputMessage.trim()) return;
+        const trimmedInput = inputMessage.trim();
+        if (!trimmedInput) return;
 
         const userMessage: Message = {
             id: Date.now().toString(),
-            text: inputMessage,
+            text: trimmedInput,
             sender: 'user',
             timestamp: new Date()
         };
@@ -70,18 +46,41 @@ const ChatbotPage: React.FC = () => {
         setInputMessage('');
         setIsTyping(true);
 
-        // Simulate API delay
-        setTimeout(() => {
+        try {
+            // Call the actual API
+            const result = await callChatbotApi(trimmedInput);
+            let botText: string;
+
+            if (result && result.success && result.response) {
+                botText = result.response;
+            } else {
+                // Handle cases where the API returns success: false or an error
+                botText = result.error || "Sorry, I encountered an issue. Please try again.";
+            }
+
             const botResponse: Message = {
                 id: (Date.now() + 1).toString(),
-                text: simulateBotResponse(inputMessage),
+                text: botText,
                 sender: 'bot',
                 timestamp: new Date()
             };
             
             setMessages(prev => [...prev, botResponse]);
+
+        } catch (error) {
+            console.error("Failed to send message to API:", error);
+            const errorResponse: Message = {
+                id: (Date.now() + 1).toString(),
+                text: "There was an error connecting to the AI assistant. Please check your connection and try again.",
+                sender: 'bot',
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, errorResponse]);
+        } finally {
             setIsTyping(false);
-        }, 1000 + Math.random() * 2000);
+            // Refocus the input field for a better user experience
+            inputRef.current?.focus();
+        }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
