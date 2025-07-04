@@ -55,25 +55,22 @@ _setup_logger.info(f"MAIN.PY: FastAPI app instance created: {id(app)}")
 
 # Define allowed origins
 allowed_origins = [
-    "https://buy-high-io.vercel.app/"
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://buy-high-io.vercel.app",
 ]
 
 # CORS middleware to enable cross-origin requests
-# This should be placed before other middlewares that modify or generate responses.
-#app.add_middleware(
-#    CORSMiddleware,
-#    allow_origins=[
-#    "https://buy-high-io.vercel.app",
-#    "https://buy-high-io.vercel.app/",], 
-#    allow_credentials=True,
-#    allow_methods=["*"],
-#    allow_headers=["*"],
-#    expose_headers=["Authorization", "Content-Disposition"],
-#    max_age=600,  # Cache the CORS response for 10 minutes
-#)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins, 
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 # Add the request logging middleware
-#app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 
 _setup_logger.info(f"MAIN.PY: Attempting to include api_router (id: {id(api_router)}) from buy_high_backend.router into app (id: {id(app)}) with prefix=''.")
 # Include API routes without prefix (empty string instead of "")
@@ -119,4 +116,4 @@ async def preflight_handler(rest_of_path: str):
     return Response(status_code=200)
 
 # To start the app with uvicorn:
-# uvicorn buy_high_backend.main:app --reload
+# python -m uvicorn buy_high_backend.main:app --reload
