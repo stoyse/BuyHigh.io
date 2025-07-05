@@ -201,8 +201,8 @@ class BasicUser(BaseModel):
 
 class AllUsersResponse(BaseModel):
     success: bool
-    message: str
-    users: List[UserDataResponse] = []
+    message: Optional[str] = None
+    users: List[BasicUser] = []
 
 class ChatbotRequest(BaseModel):
     prompt: str
